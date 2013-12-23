@@ -73,10 +73,10 @@ if __name__ == "__main__":
 	if args.original:
 		args.orig_crc = getCrc(args.original)
 		args.original.close()
-	
+
 	print "Will create firmware at %s," % args.outfile
 	print "using %s for manifest, %s for tintin binary" % (args.manifest, args.tintin_fw)
-	print "and %s for resource pack." % args.respack 
+	print "and %s for resource pack." % args.respack
 	if args.orig_crc:
 		print "Will replace 0x%08X with new CRC." % args.orig_crc
 	else:
@@ -107,6 +107,8 @@ if __name__ == "__main__":
 		with open(args.respack) as f:
 			rp_crc = crc32(f.read())
 		print "   res pack crc = %d" % rp_crc
+		tintin_size = os.path.getsize(workdir+"tintin_fw.bin")
+		print "   tintin size = %d" % tintin_size
 		with open(workdir+"tintin_fw.bin") as f:
 			tintin_crc = crc32(f.read())
 		print "   tintin crc = %d" % tintin_crc
@@ -116,13 +118,15 @@ if __name__ == "__main__":
 		manifest['resources']['size'] = rp_size
 		print "  resources.crc: %d => %d" % (manifest['resources']['crc'], rp_crc)
 		manifest['resources']['crc'] = rp_crc
+		print "  firmware.size: %d => %d" % (manifest['firmware']['size'], tintin_size)
+		manifest['firmware']['size'] = tintin_size
 		print "  firmware.crc: %d => %d" % (manifest['firmware']['crc'], tintin_crc)
 		manifest['firmware']['crc'] = tintin_crc
 
 		print " # Storing manifest..."
 		with open(workdir+"manifest.json", "wb") as f:
 			json.dump(manifest, f)
-		
+
 		print " # Creating output zip..."
 		with zipfile.ZipFile(args.outfile, "w", zipfile.ZIP_STORED) as z:
 			for f in ("tintin_fw.bin", "system_resources.pbpack", "manifest.json"):
