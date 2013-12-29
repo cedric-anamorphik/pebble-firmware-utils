@@ -91,7 +91,7 @@ def parse_args():
 def read_strings(f):
     strings = {}
     for line in f:
-        if line.startswith('#'): # comment
+        if len(line) == 0 or line.startswith('#'): # comment or empty
             continue
         line = line[:-1] # remove trailing \n
         line = line.replace('\\n', '\n').replace('\\#', '#').replace('\\\\', '\\') # unescape
