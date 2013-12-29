@@ -161,6 +161,9 @@ if __name__ == "__main__":
                 print " !! No pointers to that string, cannot translate!"
                 continue
             print " == found %d ptrs; appending string and updating them" % len(ps)
+            if len(datar) + len(val) + 1 > 0x70000: # available space is limited
+                print "** Error: no more space available in firmware. Saving and stopping."
+                break
             newp = len(datar) + 0x08010000
             newps = pack('I', newp)
             datar = datar + val + '\0'
