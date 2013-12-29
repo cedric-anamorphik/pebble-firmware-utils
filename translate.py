@@ -77,7 +77,9 @@ def parse_args():
         description="Translation helper for Pebble firmware",
         epilog="Strings format:\nOriginal String:=Translated String\n"+
         "Any newlines in strings must be replaced with '\\n', any backslashes with '\\\\'.\n"+
-        "Lines starting with # are comments, so if you need # at start replace it with \\#")
+        "Lines starting with # are comments, so if you need # at line start replace it with \\#.\n"+
+        "Lines starting with ! are those which may be translated 'in place' "+
+        "(for strings which have free space after them).")
     parser.add_argument("tintin", nargs='?', default="tintin_fw.bin", type=argparse.FileType("rb"),
                         help="Input tintin_fw file, defaults to tintin_fw.bin")
     parser.add_argument("output", nargs='?', default=sys.stdout, # bad idea: type=argparse.FileType("wb"),
@@ -91,6 +93,7 @@ def parse_args():
 def read_strings(f):
     strings = {}
     keys = []
+    inplace = []
     for line in f:
         line = line[:-1] # remove trailing \n
         if len(line) == 0 or line.startswith('#'): # comment or empty
@@ -104,8 +107,11 @@ def read_strings(f):
             print "Warning: translation is empty; ignoring:", line
             continue
         if ':=' in right:
-            print "Warning: unambigous line in strings:", line
+            print "Warning: ambigous line in strings:", line
             continue
+        if left.startswith('!'): # inplace translating
+            left = left[1:]
+            inplace.append(left)
         if left in strings:
             print "Warning: duplicate string, ignoring:", line
             print "Original: "+strings[left]
@@ -132,7 +138,7 @@ if __name__ == "__main__":
         args.output.close()
         sys.exit(0)
 
-    strings, keys = read_strings(args.strings)
+    strings, keys, inplace = read_strings(args.strings)
 
     for key in keys:
         val = strings[key]
@@ -141,7 +147,7 @@ if __name__ == "__main__":
         if not os: # no such string
             print " -- not found, ignoring"
             continue
-        if len(val) <= len(key): # can just replace
+        if len(val) <= len(key) or key in inplace: # can just replace
             print " -- found %d occurance(s), replacing" % len(os)
             for o in os:
                 print " -- 0x%X" % o
@@ -149,7 +155,7 @@ if __name__ == "__main__":
                 datar = datar[0:o] + val + '\0' + datar[o+len(val)+1:]
                 if len(datar) != oldlen:
                     raise AssertionError("Length mismatch")
-        else: # new string is longer than old, so will add it to end of tintin file
+        else: # new string is longer than old (and not an inplace one), so will add it to end of tintin file
             print " -- found %d occurance(s), looking for pointers" % len(os)
             ps = []
             for o in os:
