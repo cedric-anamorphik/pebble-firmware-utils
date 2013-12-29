@@ -68,7 +68,7 @@ def find_string_offsets(s):
     i = data.find(s)
     while i != -1:
         ret.append(i)
-        i = data.find(s, i)
+        i = data.find(s, i+1)
     return ret
 
 def parse_args():
