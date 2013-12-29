@@ -91,9 +91,9 @@ def parse_args():
 def read_strings(f):
     strings = {}
     for line in f:
+        line = line[:-1] # remove trailing \n
         if len(line) == 0 or line.startswith('#'): # comment or empty
             continue
-        line = line[:-1] # remove trailing \n
         line = line.replace('\\n', '\n').replace('\\#', '#').replace('\\\\', '\\') # unescape
         if not ':=' in line:
             print "Warning: bad line in strings:", line
@@ -140,7 +140,7 @@ if __name__ == "__main__":
             print " -- not found, ignoring"
             continue
         if len(val) <= len(key): # can just replace
-            print " -- found %d occurance(s), replacing"
+            print " -- found %d occurance(s), replacing" % len(os)
             for o in os:
                 print " -- 0x%X" % o
                 oldlen = len(datar)
@@ -148,7 +148,7 @@ if __name__ == "__main__":
                 if len(datar) != oldlen:
                     raise AssertionError("Length mismatch")
         else: # new string is longer than old, so will add it to end of tintin file
-            print " -- found %d occurance(s), looking for pointers"
+            print " -- found %d occurance(s), looking for pointers" % len(os)
             ps = []
             for o in os:
                 newps = find_pointers_to_offset(o)
@@ -164,7 +164,7 @@ if __name__ == "__main__":
             datar = datar + val + '\0'
             for p in ps:
                 oldlen = len(datar)
-                datar = datar[0:p] + newps + datar[p+4]
+                datar = datar[0:p] + newps + datar[p+4:]
                 if len(datar) != oldlen:
                     raise AssertionError("Length mismatch")
     print "Saving..."
