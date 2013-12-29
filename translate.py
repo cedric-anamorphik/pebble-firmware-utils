@@ -76,7 +76,8 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Translation helper for Pebble firmware",
         epilog="Strings format:\nOriginal String:=Translated String\n"+
-        "Any newlines in strings must be replaced with '\\n', any backslashes with '\\\\'.")
+        "Any newlines in strings must be replaced with '\\n', any backslashes with '\\\\'.\n"+
+        "Lines starting with # are comments, so if you need # at start replace it with \\#")
     parser.add_argument("tintin", nargs='?', default="tintin_fw.bin", type=argparse.FileType("rb"),
                         help="Input tintin_fw file, defaults to tintin_fw.bin")
     parser.add_argument("output", nargs='?', default=sys.stdout, # bad idea: type=argparse.FileType("wb"),
@@ -90,8 +91,10 @@ def parse_args():
 def read_strings(f):
     strings = {}
     for line in f:
+        if line.startswith('#'): # comment
+            continue
         line = line[:-1] # remove trailing \n
-        line = line.replace('\\n', '\n').replace('\\\\', '\\') # unescape
+        line = line.replace('\\n', '\n').replace('\\#', '#').replace('\\\\', '\\') # unescape
         if not ':=' in line:
             print "Warning: bad line in strings:"
             print line
