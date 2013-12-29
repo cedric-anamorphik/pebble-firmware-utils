@@ -90,6 +90,7 @@ def parse_args():
 
 def read_strings(f):
     strings = {}
+    keys = []
     for line in f:
         line = line[:-1] # remove trailing \n
         if len(line) == 0 or line.startswith('#'): # comment or empty
@@ -110,7 +111,8 @@ def read_strings(f):
             print "Original: "+strings[left]
             continue
         strings[left] = right
-    return strings
+        keys.append(left)
+    return strings, keys
 
 if __name__ == "__main__":
     args = parse_args()
@@ -130,9 +132,9 @@ if __name__ == "__main__":
         args.output.close()
         sys.exit(0)
 
-    strings = read_strings(args.strings)
+    strings, keys = read_strings(args.strings)
 
-    for key in strings:
+    for key in keys:
         val = strings[key]
         print "Processing", key
         os = find_string_offsets(key)
