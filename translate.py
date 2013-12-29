@@ -96,21 +96,17 @@ def read_strings(f):
         line = line[:-1] # remove trailing \n
         line = line.replace('\\n', '\n').replace('\\#', '#').replace('\\\\', '\\') # unescape
         if not ':=' in line:
-            print "Warning: bad line in strings:"
-            print line
+            print "Warning: bad line in strings:", line
             continue
         left, right = line.split(':=', 1)
         if not right: # empty
-            print "Warning: translation is empty; ignoring"
-            print line
+            print "Warning: translation is empty; ignoring:", line
             continue
         if ':=' in right:
-            print "Warning: unambigous line in strings:"
-            print line
+            print "Warning: unambigous line in strings:", line
             continue
         if left in strings:
-            print "Warning: duplicate string, ignoring."
-            print line
+            print "Warning: duplicate string, ignoring:", line
             print "Original: "+strings[left]
             continue
         strings[left] = right
