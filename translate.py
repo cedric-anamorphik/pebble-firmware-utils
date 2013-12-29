@@ -113,7 +113,7 @@ def read_strings(f):
             print line
             print "Original: "+strings[left]
             continue
-        strings[left] = rignt
+        strings[left] = right
     return strings
 
 if __name__ == "__main__":
