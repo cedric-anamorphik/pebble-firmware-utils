@@ -88,6 +88,8 @@ def parse_args():
                         help="File with strings to translate, by default will read from stdin")
     parser.add_argument("-p", "--print-only", action="store_true",
                         help="Don't translate anything, just print out all referenced strings from input file")
+    parser.add_argument("-f", "--force", action="store_true",
+                        help="Disable safety checks for inplace translations")
     return parser.parse_args()
 
 def read_strings(f):
@@ -151,6 +153,12 @@ if __name__ == "__main__":
             print " -- found %d occurance(s), replacing" % len(os)
             for o in os:
                 print " -- 0x%X" % o
+                if key in inplace and len(val) > len(key) and not args.force: # check that "rest" has only \0's
+                    rest = datar[o+len(key):o+len(val)+1]
+                    for i in range(len(rest)):
+                        if rest[i] != '\0':
+                            print " ** SKIPPING because overwriting is unsave here; use -f to override"
+                            val = key # to "void" pending replacement
                 oldlen = len(datar)
                 datar = datar[0:o] + val + '\0' + datar[o+len(val)+1:]
                 if len(datar) != oldlen:
