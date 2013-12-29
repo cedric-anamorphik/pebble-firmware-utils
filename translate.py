@@ -100,6 +100,10 @@ def read_strings(f):
             print line
             continue
         left, right = line.split(':=', 1)
+        if not right: # empty
+            print "Warning: translation is empty; ignoring"
+            print line
+            continue
         if ':=' in right:
             print "Warning: unambigous line in strings:"
             print line
