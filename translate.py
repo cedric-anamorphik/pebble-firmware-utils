@@ -83,6 +83,8 @@ def parse_args():
                         help="Output file, defaults to stdout")
     parser.add_argument("-s", "--strings", default=sys.stdin, type=argparse.FileType("r"),
                         help="File with strings to translate, by default will read from stdin")
+    parser.add_argument("-p", "--print-only", action="store_true",
+                        help="Don't translate anything, just print out all referenced strings from input file")
     return parser.parse_args()
 
 def read_strings(f):
@@ -116,11 +118,16 @@ if __name__ == "__main__":
     data = args.tintin.read()
     datar = data
 
-    strings = read_strings(args.strings)
+    if args.print_only:
+        print "Scanning tintin_fw..."
+        ptrs = find_all_strings()
+        print "Found %d referenced strings" % len(ptrs)
+        for p in ptrs:
+            args.output.write(p[2]+'\n')
+        args.output.close()
+        sys.exit(0)
 
-    #print "Scanning tintin_fw..."
-    #ptrs = find_all_strings()
-    #print "Found %d referenced strings" % len(ptrs)
+    strings = read_strings(args.strings)
 
     for key in strings:
         val = strings[key]
