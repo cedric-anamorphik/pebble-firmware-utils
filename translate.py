@@ -120,7 +120,7 @@ def read_strings(f):
             continue
         strings[left] = right
         keys.append(left)
-    return strings, keys
+    return strings, keys, inplace
 
 if __name__ == "__main__":
     args = parse_args()
