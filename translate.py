@@ -82,7 +82,7 @@ def parse_args():
         "(for strings which have free space after them).")
     parser.add_argument("tintin", nargs='?', default="tintin_fw.bin", type=argparse.FileType("rb"),
                         help="Input tintin_fw file, defaults to tintin_fw.bin")
-    parser.add_argument("output", nargs='?', default=sys.stdout, # bad idea: type=argparse.FileType("wb"),
+    parser.add_argument("output", nargs='?', default=sys.stdout, type=argparse.FileType("wb"),
                         help="Output file, defaults to stdout")
     parser.add_argument("-s", "--strings", default=sys.stdin, type=argparse.FileType("r"),
                         help="File with strings to translate, by default will read from stdin")
@@ -90,6 +90,11 @@ def parse_args():
                         help="Don't translate anything, just print out all referenced strings from input file")
     parser.add_argument("-f", "--force", action="store_true",
                         help="Disable safety checks for inplace translations")
+    parser.add_argument("-r", "--range", action="append", nargs=2, metavar=("start","end"), type=lambda x: int(x,0),
+                        dest="ranges",
+                        help="Offset range to use for translated messages (in addition to space at the end of file). "+
+                        "Use this to specify unneeded firmware parts, e.g. debugging console or disabled watchfaces. "+
+                        "Values may be either 0xHex, Decimal or 0octal. This option may be repeated.")
     return parser.parse_args()
 
 def read_strings(f):
@@ -157,13 +162,14 @@ if __name__ == "__main__":
                     rest = datar[o+len(key):o+len(val)+1]
                     for i in range(len(rest)):
                         if rest[i] != '\0':
-                            print " ** SKIPPING because overwriting is unsave here; use -f to override"
+                            print " ** SKIPPING because overwriting is unsafe here; use -f to override"
                             val = key # to "void" pending replacement
+                            break # break inner loop
                 oldlen = len(datar)
                 datar = datar[0:o] + val + '\0' + datar[o+len(val)+1:]
                 if len(datar) != oldlen:
                     raise AssertionError("Length mismatch")
-        else: # new string is longer than old (and not an inplace one), so will add it to end of tintin file
+        else: # new string is longer than old (and not an inplace one), so will add it to end of tintin file or to ranges
             print " -- found %d occurance(s), looking for pointers" % len(os)
             ps = []
             for o in os:
@@ -175,13 +181,26 @@ if __name__ == "__main__":
                 print " !! No pointers to that string, cannot translate!"
                 continue
             print " == found %d ptrs; appending string and updating them" % len(ps)
-            if len(datar) + len(val) + 1 > 0x70000: # available space is limited
-                print "** Error: no more space available in firmware. Saving and stopping."
-                break
-            newp = len(datar) + 0x08010000
-            newps = pack('I', newp)
-            datar = datar + val + '\0'
-            for p in ps:
+            r = None # range to use
+            if args.ranges: # have some ranges
+                for rx in args.ranges:
+                    if rx[1]-rx[0] >= len(val)+1: # have enough space
+                        r = rx
+                        break # break inner loop (on ranges)
+            if r: # found good range
+                newp = r[0]
+                datar = datar[0:newp] + val + '\0' + datar[o+len(val)+1:]
+                r[0] += len(val) + 1 # remove used space from that range
+                newp += 0x08010000 # convert from offset to pointer
+                newps = pack('I', newp)
+            else: # no ranges, appending
+                if len(datar) + len(val) + 1 > 0x70000: # available space is limited
+                    print "** Error: no more space available in firmware. Saving and stopping."
+                    break
+                newp = len(datar) + 0x08010000
+                newps = pack('I', newp)
+                datar = datar + val + '\0'
+            for p in ps: # now update pointers
                 oldlen = len(datar)
                 datar = datar[0:p] + newps + datar[p+4:]
                 if len(datar) != oldlen:
