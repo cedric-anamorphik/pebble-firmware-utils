@@ -91,7 +91,7 @@ def parse_args():
     parser.add_argument("-f", "--force", action="store_true",
                         help="Disable safety checks for inplace translations")
     parser.add_argument("-r", "--range", action="append", nargs=2, metavar=("start","end"), type=lambda x: int(x,0),
-                        target="ranges",
+                        dest="ranges",
                         help="Offset range to use for translated messages (in addition to space at the end of file). "+
                         "Use this to specify unneeded firmware parts, e.g. debugging console or disabled watchfaces. "+
                         "Values may be either 0xHex, Decimal or 0octal. This option may be repeated.")
