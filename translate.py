@@ -72,6 +72,11 @@ def find_string_offsets(s):
     return ret
 
 def parse_args():
+    def hexarg(x):
+        try:
+            return x.decode("hex")
+        except:
+            return int(x,0)
     import argparse
     parser = argparse.ArgumentParser(
         description="Translation helper for Pebble firmware",
@@ -95,6 +100,12 @@ def parse_args():
                         help="Offset range to use for translated messages (in addition to space at the end of file). "+
                         "Use this to specify unneeded firmware parts, e.g. debugging console or disabled watchfaces. "+
                         "Values may be either 0xHex, Decimal or 0octal. This option may be repeated.")
+    parser.add_argument("-R", "--range-mask", action="append", nargs=3, metavar=("start","end","size"),
+                        type=hexarg, dest="ranges",
+                        help="Ranges defined by signatures: START and END are hex signatures of first and last bytes "+
+                        "of range. For example, -R 48656C6C6F 3031323334 0x243 will select range of 0x243 bytes "+
+                        "starting with 'Hello' and ending with '12345'. "+
+                        "You must always specify range size for checking.")
     return parser.parse_args()
 
 def read_strings(f):
