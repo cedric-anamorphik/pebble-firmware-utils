@@ -190,7 +190,7 @@ if __name__ == "__main__":
         if not ps:
             print " !! No pointers to that string, cannot translate!"
             continue
-        print " == found %d ptrs; appending string and updating them" % len(ps)
+        print " == found %d ptrs; appending or inserting string and updating them" % len(ps)
         r = None # range to use
         if args.ranges: # have some ranges
             for rx in args.ranges:
@@ -198,12 +198,17 @@ if __name__ == "__main__":
                     r = rx
                     break # break inner loop (on ranges)
         if r: # found good range
+            print " -- using range 0x%X-0x%X" % (r[0],r[1])
             newp = r[0]
-            datar = datar[0:newp] + val + '\0' + datar[o+len(val)+1:]
+            oldlen = len(datar)
+            datar = datar[0:newp] + val + '\0' + datar[newp+len(val)+1:]
+            if len(datar) != oldlen:
+                raise AssertionError("Length mismatch")
             r[0] += len(val) + 1 # remove used space from that range
             newp += 0x08010000 # convert from offset to pointer
             newps = pack('I', newp)
         else: # no ranges, appending
+            print " -- no (more) ranges, appending to end of file"
             if len(datar) + len(val) + 1 > 0x70000: # available space is limited
                 print "** Error: no more space available in firmware. Saving and stopping."
                 break
