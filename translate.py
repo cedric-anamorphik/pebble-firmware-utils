@@ -161,7 +161,7 @@ if __name__ == "__main__":
                 doreplace = True
                 print " -- 0x%X:" % o,
                 if key in inplace and len(val) > len(key) and not args.force: # check that "rest" has only \0's
-                    rest = datar[o+len(key):o+len(val)+1]
+                    rest = datar[o+len(key):o+32]
                     for i in range(len(rest)):
                         if rest[i] != '\0':
                             print " ** SKIPPING because overwriting is unsafe here; use -f to override. Will try to rewrite pointers"
