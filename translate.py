@@ -82,7 +82,7 @@ def parse_args():
         "(for strings which have free space after them).")
     parser.add_argument("tintin", nargs='?', default="tintin_fw.bin", type=argparse.FileType("rb"),
                         help="Input tintin_fw file, defaults to tintin_fw.bin")
-    parser.add_argument("output", nargs='?', default=sys.stdout, # bad idea: type=argparse.FileType("wb"),
+    parser.add_argument("output", nargs='?', default=sys.stdout, type=argparse.FileType("wb"),
                         help="Output file, defaults to stdout")
     parser.add_argument("-s", "--strings", default=sys.stdin, type=argparse.FileType("r"),
                         help="File with strings to translate, by default will read from stdin")
@@ -162,8 +162,9 @@ if __name__ == "__main__":
                     rest = datar[o+len(key):o+len(val)+1]
                     for i in range(len(rest)):
                         if rest[i] != '\0':
-                            print " ** SKIPPING because overwriting is unsave here; use -f to override"
+                            print " ** SKIPPING because overwriting is unsafe here; use -f to override"
                             val = key # to "void" pending replacement
+                            break # break inner loop
                 oldlen = len(datar)
                 datar = datar[0:o] + val + '\0' + datar[o+len(val)+1:]
                 if len(datar) != oldlen:
