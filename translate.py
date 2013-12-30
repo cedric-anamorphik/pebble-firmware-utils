@@ -147,6 +147,28 @@ if __name__ == "__main__":
     data = args.tintin.read()
     datar = data
 
+    for r in args.ranges:
+        if len(r) == 3: # signature-specified range - convert it to offsets
+            if type(r[0]) != str or type(r[1]) != str or type(r[2]) != int:
+                print "-Warning: invalid range mask specification %s; ignoring" % repr(r)
+                continue
+            start = data.find(r[0])
+            if start < 0:
+                print "-Warning: starting mask %s not found, ignoring this range" % repr(r[0])
+                continue
+            end = data.find(r[1])
+            if end < 0:
+                print "-Warning: ending mask %s not found, ignoring this range" % repr(r[1])
+                continue
+            length = end + len(r[1]) - start
+            if length != r[2]:
+                print "-Warning: length mismatch for range %s..%s, expected %d, found %d; ignoring this range" %\
+                    (repr(r[0]), repr(r[1]), r[2], length)
+            args.ranges[args.ranges.index(r)] = [start, end] # replace this range spec with offsets
+    for r in args.ranges: # remove bad ranges
+        if len(r) == 3:
+            args.ranges.remove(r)
+
     if args.print_only:
         print "Scanning tintin_fw..."
         ptrs = find_all_strings()
