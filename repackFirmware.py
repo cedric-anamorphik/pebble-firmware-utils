@@ -49,11 +49,10 @@ def parse_args():
 	parser = argparse.ArgumentParser(description="Update checksums and pack firmware package with modified resource pbpack file")
 	parser.add_argument("outfile",
 			help="Output file, e.g. Pebble-1.10-ev2_4.pbz")
-	parser.add_argument("respack", type=readable,
-			help="Updated resource pack filename, e.g. app_resources.pbpack")
-	group = parser.add_mutually_exclusive_group(required=True)
-	group.add_argument("-o", "--original", type=argparse.FileType('rb'),
-			help="Original resource pack from the original firmware", metavar="ORIGINAL_RESPACK")
+	group = parser.add_mutually_exclusive_group(required=False)
+	group.add_argument("-o", "--original", default="system_resources.pbpack", type=argparse.FileType('rb'),
+			help="Original resource pack from the original firmware, defaults to system_resources.pbpack",
+            metavar="ORIGINAL_RESPACK")
 	group.add_argument("-c", "--orig-crc", type=lambda x: int(x,16),
 			help="CRC sum from the original resource pack (hexadecimal), e.g. 0xDEADBE05")
 	group.add_argument("-s", "--offset", type=lambda x: int(x,16),
@@ -63,6 +62,8 @@ def parse_args():
 			help="Manifest file from the original firmware, defaults to manifest.json")
 	parser.add_argument("-t", "--tintin-fw", "--tintin", default="tintin_fw.bin", type=readable,
 			help="Tintin_fw file from the original firmware, defaults to tintin_fw.bin")
+	parser.add_argument("-r", "--respack", default="system_resources.pbpack", type=readable,
+			help="Updated resource pack filename, defaults to system_resources.pbpack")
 	group = parser.add_argument_group("Optional parameters")
 	group.add_argument("-k", "--keep-dir", action="store_true",
 			help="Don't remove temporary directory after work")
