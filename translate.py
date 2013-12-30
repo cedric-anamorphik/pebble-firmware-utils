@@ -165,57 +165,72 @@ if __name__ == "__main__":
         if not os: # no such string
             print " -- not found, ignoring"
             continue
+        mustrepoint=[] # list of "inplace" key occurances which cannot be replaced inplace
         if len(val) <= len(key) or key in inplace: # can just replace
             print " -- found %d occurance(s), replacing" % len(os)
             for o in os:
-                print " -- 0x%X" % o
+                doreplace = True
+                print " -- 0x%X:" % o,
                 if key in inplace and len(val) > len(key) and not args.force: # check that "rest" has only \0's
-                    rest = datar[o+len(key):o+len(val)+1]
+                    rest = datar[o+len(key):o+32]
                     for i in range(len(rest)):
                         if rest[i] != '\0':
-                            print " ** SKIPPING because overwriting is unsafe here; use -f to override"
-                            val = key # to "void" pending replacement
+                            print " ** SKIPPING because overwriting is unsafe here; use -f to override. Will try to rewrite pointers"
+                            mustrepoint.append(o)
+                            doreplace = False # don't replace this occurance
                             break # break inner loop
+                if not doreplace:
+                    continue # skip to next occurance, this will be handled later
                 oldlen = len(datar)
                 datar = datar[0:o] + val + '\0' + datar[o+len(val)+1:]
                 if len(datar) != oldlen:
                     raise AssertionError("Length mismatch")
-        else: # new string is longer than old (and not an inplace one), so will add it to end of tintin file or to ranges
-            print " -- found %d occurance(s), looking for pointers" % len(os)
-            ps = []
-            for o in os:
-                newps = find_pointers_to_offset(o)
-                ps.extend(newps)
-                if not newps:
-                    print " !? String at 0x%X is unreferenced, will ignore!" % o
-            if not ps:
-                print " !! No pointers to that string, cannot translate!"
-                continue
-            print " == found %d ptrs; appending string and updating them" % len(ps)
-            r = None # range to use
-            if args.ranges: # have some ranges
-                for rx in args.ranges:
-                    if rx[1]-rx[0] >= len(val)+1: # have enough space
-                        r = rx
-                        break # break inner loop (on ranges)
-            if r: # found good range
-                newp = r[0]
-                datar = datar[0:newp] + val + '\0' + datar[o+len(val)+1:]
-                r[0] += len(val) + 1 # remove used space from that range
-                newp += 0x08010000 # convert from offset to pointer
-                newps = pack('I', newp)
-            else: # no ranges, appending
-                if len(datar) + len(val) + 1 > 0x70000: # available space is limited
-                    print "** Error: no more space available in firmware. Saving and stopping."
-                    break
-                newp = len(datar) + 0x08010000
-                newps = pack('I', newp)
-                datar = datar + val + '\0'
-            for p in ps: # now update pointers
-                oldlen = len(datar)
-                datar = datar[0:p] + newps + datar[p+4:]
-                if len(datar) != oldlen:
-                    raise AssertionError("Length mismatch")
+                print "OK" # this occurance replaced successfully
+            if not mustrepoint:
+                continue # everything replaced fine for that key
+        # we are here means that new string is longer than old (and not an
+        # inplace one - or at least has one non-inplace-possible occurance)
+        # so will add it to end of tintin file or to ranges
+        print " -- %s %d occurance(s), looking for pointers" % ("still have" if mustrepoint else "found", len(mustrepoint or os))
+        ps = []
+        for o in mustrepoint or os: # use mustrepoint if it is not empty
+            newps = find_pointers_to_offset(o)
+            ps.extend(newps)
+            if not newps:
+                print " !? String at 0x%X is unreferenced, will ignore!" % o
+        if not ps:
+            print " !! No pointers to that string, cannot translate!"
+            continue
+        print " == found %d ptrs; appending or inserting string and updating them" % len(ps)
+        r = None # range to use
+        if args.ranges: # have some ranges
+            for rx in args.ranges:
+                if rx[1]-rx[0] >= len(val)+1: # have enough space
+                    r = rx
+                    break # break inner loop (on ranges)
+        if len(datar) + len(val) + 1 <= 0x70000: # have some more space at the end of firmware
+            print " -- appending to the end of file"
+            newp = len(datar) + 0x08010000
+            newps = pack('I', newp)
+            datar = datar + val + '\0'
+        else:
+            if not r: # no more ranges
+                print "** Fatal: no more space available in firmware, and no (more) ranges. Saving and stopping."
+                break # main loop
+            print " -- using range 0x%X-0x%X" % (r[0],r[1])
+            newp = r[0]
+            oldlen = len(datar)
+            datar = datar[0:newp] + val + '\0' + datar[newp+len(val)+1:]
+            if len(datar) != oldlen:
+                raise AssertionError("Length mismatch")
+            r[0] += len(val) + 1 # remove used space from that range
+            newp += 0x08010000 # convert from offset to pointer
+            newps = pack('I', newp)
+        for p in ps: # now update pointers
+            oldlen = len(datar)
+            datar = datar[0:p] + newps + datar[p+4:]
+            if len(datar) != oldlen:
+                raise AssertionError("Length mismatch")
     print "Saving..."
     args.output.write(datar)
     args.output.close()
