@@ -90,6 +90,10 @@ def parse_args():
                         help="Don't translate anything, just print out all referenced strings from input file")
     parser.add_argument("-f", "--force", action="store_true",
                         help="Disable safety checks for inplace translations")
+    parser.add_argument("-r", "--userange", action="append", nargs=2, metavar=("start","end"), type=lambda x: int(x,0),
+                        help="Offset range to use for translated messages (in addition to space at the end of file). "+
+                        "Use this to specify unneeded firmware parts, e.g. debugging console or disabled watchfaces. "+
+                        "Values may be either 0xHex, Decimal or 0octal. This option may be repeated.")
     return parser.parse_args()
 
 def read_strings(f):
@@ -126,6 +130,7 @@ if __name__ == "__main__":
     args = parse_args()
     if args.output == sys.stdout:
         sys.stdout = sys.stderr # if writing new tintin to sdout, print all messages to stderr to avoid cluttering
+    print args.userange
 
     # load source fw:
     data = args.tintin.read()
