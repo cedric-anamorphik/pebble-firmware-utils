@@ -106,6 +106,10 @@ def parse_args():
                         "of range. For example, -R 48656C6C6F 3031323334 0x243 will select range of 0x243 bytes "+
                         "starting with 'Hello' and ending with '12345'. "+
                         "You must always specify range size for checking.")
+    parser.add_argument("-e", "--end", action="append_const", const="append", dest="ranges",
+                        help="Use space between end of firmware and 0x08080000 (which seems to be the last address "+
+                        "allowed) to store strings. Note that this will change size of firmware binary "+
+                        "which may possible interfere with iOS Pebble app.")
     return parser.parse_args()
 
 def read_strings(f):
@@ -165,9 +169,20 @@ if __name__ == "__main__":
                 print "-Warning: length mismatch for range %s..%s, expected %d, found %d; ignoring this range" %\
                     (repr(r[0]), repr(r[1]), r[2], length)
             args.ranges[args.ranges.index(r)] = [start, end] # replace this range spec with offsets
-    for r in args.ranges: # remove bad ranges
+    for r in args.ranges: # remove bad ranges, and process "append" range
         if len(r) == 3:
             args.ranges.remove(r)
+        elif r == "append":
+            start = len(data)
+            end = 0x70000
+            if start < end:
+                args.ranges[args.ranges.index(r)] = [start, end]
+            else:
+                args.ranges.remove(r)
+                print "Warning: cannot append to end of file because its size is >= 0x70000 (max fw size)"
+
+    if len(args.ranges) == 0:
+        print "WARNING: no usable ranges!"
 
     if args.print_only:
         print "Scanning tintin_fw..."
@@ -225,29 +240,22 @@ if __name__ == "__main__":
             continue
         print " == found %d ptrs; appending or inserting string and updating them" % len(ps)
         r = None # range to use
-        if args.ranges: # have some ranges
-            for rx in args.ranges:
-                if rx[1]-rx[0] >= len(val)+1: # have enough space
-                    r = rx
-                    break # break inner loop (on ranges)
-        if len(datar) + len(val) + 1 <= 0x70000: # have some more space at the end of firmware
-            print " -- appending to the end of file"
-            newp = len(datar) + 0x08010000
-            newps = pack('I', newp)
-            datar = datar + val + '\0'
-        else:
-            if not r: # no more ranges
-                print "** Fatal: no more space available in firmware, and no (more) ranges. Saving and stopping."
-                break # main loop
-            print " -- using range 0x%X-0x%X" % (r[0],r[1])
-            newp = r[0]
-            oldlen = len(datar)
-            datar = datar[0:newp] + val + '\0' + datar[newp+len(val)+1:]
-            if len(datar) != oldlen:
-                raise AssertionError("Length mismatch")
-            r[0] += len(val) + 1 # remove used space from that range
-            newp += 0x08010000 # convert from offset to pointer
-            newps = pack('I', newp)
+        for rx in args.ranges:
+            if rx[1]-rx[0] >= len(val)+1: # this range have enough space
+                r = rx
+                break # break inner loop (on ranges)
+        if not r: # suitable range not found
+            print "** Notice: no (more) ranges available for this phrase. Will skip it."
+            continue # main loop
+        print " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
+        newp = r[0]
+        oldlen = len(datar)
+        datar = datar[0:newp] + val + '\0' + datar[newp+len(val)+1:]
+        if len(datar) != oldlen and r[1] != 0x70000: #70000 is "range" at the end of file
+            raise AssertionError("Length mismatch")
+        r[0] += len(val) + 1 # remove used space from that range
+        newp += 0x08010000 # convert from offset to pointer
+        newps = pack('I', newp)
         for p in ps: # now update pointers
             oldlen = len(datar)
             datar = datar[0:p] + newps + datar[p+4:]
