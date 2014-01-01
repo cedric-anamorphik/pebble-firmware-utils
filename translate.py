@@ -106,6 +106,10 @@ def parse_args():
                         "of range. For example, -R 48656C6C6F 3031323334 0x243 will select range of 0x243 bytes "+
                         "starting with 'Hello' and ending with '12345'. "+
                         "You must always specify range size for checking.")
+    parser.add_argument("-e", "--end", action="append_const", const="append", dest="ranges",
+                        help="Use space between end of firmware and 0x08080000 (which seems to be the last address "+
+                        "allowed) to store strings. Note that this will change size of firmware binary "+
+                        "which may possible interfere with iOS Pebble app.")
     return parser.parse_args()
 
 def read_strings(f):
