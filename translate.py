@@ -240,29 +240,22 @@ if __name__ == "__main__":
             continue
         print " == found %d ptrs; appending or inserting string and updating them" % len(ps)
         r = None # range to use
-        if args.ranges: # have some ranges
-            for rx in args.ranges:
-                if rx[1]-rx[0] >= len(val)+1: # have enough space
-                    r = rx
-                    break # break inner loop (on ranges)
-        if len(datar) + len(val) + 1 <= 0x70000: # have some more space at the end of firmware
-            print " -- appending to the end of file"
-            newp = len(datar) + 0x08010000
-            newps = pack('I', newp)
-            datar = datar + val + '\0'
-        else:
-            if not r: # no more ranges
-                print "** Fatal: no more space available in firmware, and no (more) ranges. Saving and stopping."
-                break # main loop
-            print " -- using range 0x%X-0x%X" % (r[0],r[1])
-            newp = r[0]
-            oldlen = len(datar)
-            datar = datar[0:newp] + val + '\0' + datar[newp+len(val)+1:]
-            if len(datar) != oldlen:
-                raise AssertionError("Length mismatch")
-            r[0] += len(val) + 1 # remove used space from that range
-            newp += 0x08010000 # convert from offset to pointer
-            newps = pack('I', newp)
+        for rx in args.ranges:
+            if rx[1]-rx[0] >= len(val)+1: # this range have enough space
+                r = rx
+                break # break inner loop (on ranges)
+        if not r: # suitable range not found
+            print "** Notice: no (more) ranges available for this phrase. Will skip it."
+            continue # main loop
+        print " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
+        newp = r[0]
+        oldlen = len(datar)
+        datar = datar[0:newp] + val + '\0' + datar[newp+len(val)+1:]
+        if len(datar) != oldlen and r[1] != 0x70000: #70000 is "range" at the end of file
+            raise AssertionError("Length mismatch")
+        r[0] += len(val) + 1 # remove used space from that range
+        newp += 0x08010000 # convert from offset to pointer
+        newps = pack('I', newp)
         for p in ps: # now update pointers
             oldlen = len(datar)
             datar = datar[0:p] + newps + datar[p+4:]
