@@ -169,9 +169,20 @@ if __name__ == "__main__":
                 print "-Warning: length mismatch for range %s..%s, expected %d, found %d; ignoring this range" %\
                     (repr(r[0]), repr(r[1]), r[2], length)
             args.ranges[args.ranges.index(r)] = [start, end] # replace this range spec with offsets
-    for r in args.ranges: # remove bad ranges
+    for r in args.ranges: # remove bad ranges, and process "append" range
         if len(r) == 3:
             args.ranges.remove(r)
+        elif r == "append":
+            start = len(data)
+            end = 0x70000
+            if start < end:
+                args.ranges[args.ranges.index(r)] = [start, end]
+            else:
+                args.ranges.remove(r)
+                print "Warning: cannot append to end of file because its size is >= 0x70000 (max fw size)"
+
+    if len(args.ranges) == 0:
+        print "WARNING: no usable ranges!"
 
     if args.print_only:
         print "Scanning tintin_fw..."
