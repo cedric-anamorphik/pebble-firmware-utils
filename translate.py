@@ -160,7 +160,7 @@ if __name__ == "__main__":
             if start < 0:
                 print "-Warning: starting mask %s not found, ignoring this range" % repr(r[0])
                 continue
-            end = data.find(r[1])
+            end = start+data[start:].find(r[1])
             if end < 0:
                 print "-Warning: ending mask %s not found, ignoring this range" % repr(r[1])
                 continue
