@@ -162,12 +162,12 @@ if __name__ == "__main__":
                 continue
             end = start+data[start:].find(r[1])
             if end < 0:
-                print "-Warning: ending mask %s not found, ignoring this range" % repr(r[1])
+                print "-Warning: start at 0x%X, ending mask %s not found, ignoring this range" % (start, repr(r[1]))
                 continue
             length = end + len(r[1]) - start
             if length != r[2]:
-                print "-Warning: length mismatch for range %s..%s, expected %d, found %d; ignoring this range" %\
-                    (repr(r[0]), repr(r[1]), r[2], length)
+                print "-Warning: length mismatch for range %s..%s (0x%X..0x%X), expected %d, found %d; ignoring this range" %\
+                    (repr(r[0]), repr(r[1]), start, end, r[2], length)
             args.ranges[args.ranges.index(r)] = [start, end] # replace this range spec with offsets
     for r in args.ranges: # remove bad ranges, and process "append" range
         if len(r) == 3:
