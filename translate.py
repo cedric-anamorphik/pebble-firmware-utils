@@ -155,6 +155,16 @@ if __name__ == "__main__":
     def addrange(start, end):
         """ Check range for clashes and then add """
         for r in goodranges:
+            if start > r[0] and end < r[1]: # fully inside; ignore
+                print "### Range clash!! This must be an error! Range %x-%x fits within %x-%x; ignoring" % (
+                    start, end, r[0], r[1])
+                return
+            if start < r[0] and end > r[1]: # fully outside; replace
+                print "### Range clash!! This must be an error! Range %x-%x contained in %x-%x; replacing" % (
+                    start, end, r[0], r[1])
+                r[0] = start
+                r[1] = end
+                return
             if start < r[0] and end > r[0]: # clash with beginning; truncate
                 print "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
                     start, end, r[0], r[1])
