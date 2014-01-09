@@ -152,6 +152,18 @@ if __name__ == "__main__":
     datar = data
 
     goodranges = []
+    def addrange(start, end):
+        """ Check range for clashes and then add """
+        for r in goodranges:
+            if start < r[0] and end > r[0]: # clash with beginning; truncate
+                print "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
+                    start, end, r[0], r[1])
+                end = r[0]
+            if start < r[1] and end > r[1]: # clash with end; truncate
+                print "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
+                    start, end, r[0], r[1])
+                start = r[1]
+        goodranges.append([start, end])
     for r in args.ranges:
         if len(r) == 3: # signature-specified range - convert it to offsets
             if type(r[0]) != str or type(r[1]) != str or type(r[2]) != int:
@@ -169,14 +181,14 @@ if __name__ == "__main__":
             if length != r[2]:
                 print "-Warning: length mismatch for range %s..%s (0x%X..0x%X), expected %d, found %d; ignoring this range" %\
                     (repr(r[0]), repr(r[1]), start, end, r[2], length)
-            goodranges.append([start, end])
+            addrange(start, end)
         elif len(r) == 2:
-            goodranges.append(r)
+            addrange(r[0], r[1])
         elif r == "append":
             start = len(data)
             end = 0x70000
             if start < end:
-                goodranges.append([start, end])
+                addrange(start, end)
             else:
                 args.ranges.remove(r)
                 print "Warning: cannot append to end of file because its size is >= 0x70000 (max fw size)"
