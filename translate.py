@@ -153,7 +153,7 @@ def read_strings_po(f):
         line = line[kwlen :].strip() # remove 'msgid' and spaces
         if line[0] == '"':
             if line[-1] != '"':
-                print "Warning! Expected '\"' not found in line %d" % line
+                print >>log, "Warning! Expected '\"' not found in line %d" % line
             line = line[1 :-1] # remove quotes
         line = line.replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\') # unescape - TODO: test
         return line
@@ -177,7 +177,7 @@ def read_strings_po(f):
                     if inplace:
                         inplaces.append(left)
                 else: # only left provided -> line untranslated, ignoring
-                    print "Ignoring untranslated line %d" % left
+                    print >>log, "Ignoring untranslated line %s" % left
             # now clear scratchpad
             left = ""
             right = ""
@@ -195,9 +195,9 @@ def read_strings_po(f):
             right = parsevalline(line, 6)
         elif line.startswith("msgctxt"):
             # context = parsevalline(line, 7)
-            print "Warning: string context is not supported yet"
+            print >>log, "Warning: string context is not supported yet"
         else:
-            print "Warning: unexpected line in input: %s" % line
+            print >>log, "Warning: unexpected line in input: %s" % line
     return strings, keys, inplaces
 
 def translate_fw(args):
@@ -289,7 +289,7 @@ def translate_fw(args):
         strings, keys, inplace = read_strings_po(args.strings)
     print >>log, "Got %d valid strings to translate" % len(strings)
     if not strings:
-        print "NOTICE: No strings, nothing to do! Will just duplicate fw"
+        print >>log, "NOTICE: No strings, nothing to do! Will just duplicate fw"
 
     for key in keys:
         val = strings[key]
