@@ -176,7 +176,7 @@ if __name__ == "__main__":
                 print "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
                     start, end, r[0], r[1])
                 start = r[1]
-        goodranges.append((start, end))
+        goodranges.append([start, end])
     for r in args.ranges:
         if len(r) == 3: # signature-specified range - convert it to offsets
             if type(r[0]) != str or type(r[1]) != str or type(r[2]) != int:
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     if args.ranges:
         print "Using following ranges:"
         for r in args.ranges:
-            print " * 0x%X..0x%X" % r
+            print " * 0x%X..0x%X" % tuple(r)
     elif len(args.ranges == 0):
         print "WARNING: no usable ranges!"
 
