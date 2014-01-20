@@ -213,7 +213,7 @@ if __name__ == "__main__":
         print "Using following ranges:"
         for r in args.ranges:
             print " * 0x%X..0x%X" % tuple(r)
-    elif len(args.ranges == 0):
+    elif len(args.ranges) == 0:
         print "WARNING: no usable ranges!"
 
     if args.print_only:
