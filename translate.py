@@ -192,8 +192,9 @@ if __name__ == "__main__":
                 continue
             length = end + len(r[1]) - start
             if length != r[2]:
-                print "-Warning: length mismatch for range %s..%s (0x%X..0x%X), expected %d, found %d; ignoring this range" %\
-                    (repr(r[0]), repr(r[1]), start, end, r[2], length)
+                print ("-Warning: length mismatch for range %s..%s (0x%X..0x%X), expected %d, found %d; "+
+                        "ignoring this range") % (repr(r[0]), repr(r[1]), start, end, r[2], length)
+                continue
             addrange(start, end)
         elif len(r) == 2:
             addrange(r[0], r[1])
