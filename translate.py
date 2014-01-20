@@ -197,7 +197,7 @@ def read_strings_po(f):
             # context = parsevalline(line, 7)
             print "Warning: string context is not supported yet"
         else:
-            print "Warning: unexpected line in input: %d" % line
+            print "Warning: unexpected line in input: %s" % line
     return strings, keys, inplaces
 
 def translate_fw(args):
