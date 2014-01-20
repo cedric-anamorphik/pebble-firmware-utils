@@ -172,10 +172,13 @@ def read_strings_po(f):
         if len(line) == 0 : # end of record
             if left: # else, if left is empty -> ignoring
                 if right: # both left and right are provided
-                    keys.append(left)
-                    strings[left] = right
-                    if inplace:
-                        inplaces.append(left)
+                    if left in keys:
+                        print "Warning: ignoring duplicate line %s" % left
+                    else:
+                        keys.append(left)
+                        strings[left] = right
+                        if inplace:
+                            inplaces.append(left)
                 else: # only left provided -> line untranslated, ignoring
                     print >>log, "Ignoring untranslated line %s" % left
             # now clear scratchpad
@@ -195,7 +198,7 @@ def read_strings_po(f):
             right = parsevalline(line, 6)
         elif line.startswith("msgctxt"):
             # context = parsevalline(line, 7)
-            print >>log, "Warning: string context is not supported yet"
+            print >>log, "Warning: string ctxt is not supported yet; ignoring"
         else:
             print >>log, "Warning: unexpected line in input: %s" % line
     return strings, keys, inplaces
