@@ -91,6 +91,11 @@ def parse_args():
                         help="Output file, defaults to stdout")
     parser.add_argument("-s", "--strings", default=sys.stdin, type=argparse.FileType("r"),
                         help="File with strings to translate, by default will read from stdin")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-t", "--txt", dest="old_format", action="store_true",
+                       help="Use old (custom, text-based) format for strings")
+    group.add_argument("-g", "--gettext", "--po", dest="old_format", action="store_false",
+                       help="Use gettext's PO format for strings (default)")
     parser.add_argument("-p", "--print-only", action="store_true",
                         help="Don't translate anything, just print out all referenced strings from input file")
     parser.add_argument("-f", "--force", action="store_true",
@@ -278,7 +283,10 @@ def translate_fw(args):
         args.output.close()
         sys.exit(0)
 
-    strings, keys, inplace = read_strings_txt(args.strings)
+    if args.old_format:
+        strings, keys, inplace = read_strings_txt(args.strings)
+    else:
+        strings, keys, inplace = read_strings_po(args.strings)
 
     for key in keys:
         val = strings[key]
