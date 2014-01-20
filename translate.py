@@ -142,8 +142,7 @@ def read_strings(f):
         keys.append(left)
     return strings, keys, inplace
 
-if __name__ == "__main__":
-    args = parse_args()
+def translate_fw(args):
     if args.output == sys.stdout:
         sys.stdout = sys.stderr # if writing new tintin to sdout, print all messages to stderr to avoid cluttering
 
@@ -297,3 +296,7 @@ if __name__ == "__main__":
     args.output.write(datar)
     args.output.close()
     print "Done."
+
+if __name__ == "__main__":
+    args = parse_args()
+    translate_fw(args)
