@@ -91,6 +91,11 @@ def parse_args():
                         help="Output file, defaults to stdout")
     parser.add_argument("-s", "--strings", default=sys.stdin, type=argparse.FileType("r"),
                         help="File with strings to translate, by default will read from stdin")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-t", "--txt", dest="old_format", action="store_true",
+                       help="Use old (custom, text-based) format for strings")
+    group.add_argument("-g", "--gettext", "--po", dest="old_format", action="store_false",
+                       help="Use gettext's PO format for strings (default)")
     parser.add_argument("-p", "--print-only", action="store_true",
                         help="Don't translate anything, just print out all referenced strings from input file")
     parser.add_argument("-f", "--force", action="store_true",
@@ -112,7 +117,7 @@ def parse_args():
                         "which may possible interfere with iOS Pebble app.")
     return parser.parse_args()
 
-def read_strings(f):
+def read_strings_txt(f):
     strings = {}
     keys = []
     inplace = []
@@ -142,8 +147,64 @@ def read_strings(f):
         keys.append(left)
     return strings, keys, inplace
 
-def translate_fw(args, log):
-    global data, datar
+def read_strings_po(f):
+    # TODO : multiline strings w/o \n
+    def parsevalline(line, kwlen): # kwlen is keyword length
+        line = line[kwlen :].strip() # remove 'msgid' and spaces
+        if line[0] == '"':
+            if line[-1] != '"':
+                print >>log, "Warning! Expected '\"' not found in line %d" % line
+            line = line[1 :-1] # remove quotes
+        line = line.replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\') # unescape - TODO: test
+        return line
+
+    strings = {}
+    keys = []
+    inplaces = []
+
+    # our scratchpad
+    left = ""
+    right = ""
+    inplace = False
+
+    for line in f:
+        line = line[:-1] # remove tralining \n
+        if len(line) == 0 : # end of record
+            if left: # else, if left is empty -> ignoring
+                if right: # both left and right are provided
+                    if left in keys:
+                        print "Warning: ignoring duplicate line %s" % left
+                    else:
+                        keys.append(left)
+                        strings[left] = right
+                        if inplace:
+                            inplaces.append(left)
+                else: # only left provided -> line untranslated, ignoring
+                    print >>log, "Ignoring untranslated line %s" % left
+            # now clear scratchpad
+            left = ""
+            right = ""
+            inplace = False
+        elif line.startswith("#,"): # flags
+            flags = [x.strip() for x in line[2 :].split(",")] # parse flags, removing leading "#,"
+            if "fuzzy" in flags:
+                inplace = True
+            # ignore all other flags, if any
+        elif line.startswith("#"): # comment, etc
+            pass # ignore
+        elif line.startswith("msgid"):
+            left = parsevalline(line, 5)
+        elif line.startswith("msgstr"):
+            right = parsevalline(line, 6)
+        elif line.startswith("msgctxt"):
+            # context = parsevalline(line, 7)
+            print >>log, "Warning: string ctxt is not supported yet; ignoring"
+        else:
+            print >>log, "Warning: unexpected line in input: %s" % line
+    return strings, keys, inplaces
+
+def translate_fw(args):
+    global data, datar, log
     if args.output == log == sys.stdout:
         log = sys.stderr # if writing new tintin to sdout, print >>log, all messages to stderr to avoid cluttering
 
@@ -225,7 +286,13 @@ def translate_fw(args, log):
         args.output.close()
         sys.exit(0)
 
-    strings, keys, inplace = read_strings(args.strings)
+    if args.old_format:
+        strings, keys, inplace = read_strings_txt(args.strings)
+    else:
+        strings, keys, inplace = read_strings_po(args.strings)
+    print >>log, "Got %d valid strings to translate" % len(strings)
+    if not strings:
+        print >>log, "NOTICE: No strings, nothing to do! Will just duplicate fw"
 
     for key in keys:
         val = strings[key]
