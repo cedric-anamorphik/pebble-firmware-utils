@@ -9,9 +9,6 @@ data = ""
 # datar is data to return
 datar = ""
 
-# strings is dictionary of strings to replace
-#strings = {}
-
 def is_valid_pointer(n):
     """ Checks if a number looks like a valid pointer """
     return n >= 0x08010000 and n < (0x08010000+len(data))
@@ -143,6 +140,7 @@ def read_strings(f):
     return strings, keys, inplace
 
 def translate_fw(args):
+    global data, datar
     if args.output == sys.stdout:
         sys.stdout = sys.stderr # if writing new tintin to sdout, print all messages to stderr to avoid cluttering
 
