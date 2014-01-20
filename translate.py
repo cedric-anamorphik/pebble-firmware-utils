@@ -9,6 +9,9 @@ data = ""
 # datar is data to return
 datar = ""
 
+# where to write logs
+log = sys.stdout
+
 def is_valid_pointer(n):
     """ Checks if a number looks like a valid pointer """
     return n >= 0x08010000 and n < (0x08010000+len(data))
@@ -42,7 +45,7 @@ def find_all_strings():
         n = unpack("I", data[i:i+4])[0]
         s = is_string_pointer(n)
         if s:
-            #print i,n,s
+            #print >>log, i,n,s
             pointers.append((i, n, s))
     return pointers
 
@@ -119,21 +122,21 @@ def read_strings_txt(f):
             continue
         line = line.replace('\\n', '\n').replace('\\#', '#').replace('\\\\', '\\') # unescape
         if not ':=' in line:
-            print "Warning: bad line in strings:", line
+            print >>log, "Warning: bad line in strings:", line
             continue
         left, right = line.split(':=', 1)
         if not right: # empty
-            print "Warning: translation is empty; ignoring:", line
+            print >>log, "Warning: translation is empty; ignoring:", line
             continue
         if ':=' in right:
-            print "Warning: ambigous line in strings:", line
+            print >>log, "Warning: ambigous line in strings:", line
             continue
         if left.startswith('!'): # inplace translating
             left = left[1:]
             inplace.append(left)
         if left in strings:
-            print "Warning: duplicate string, ignoring:", line
-            print "Original: "+strings[left]
+            print >>log, "Warning: duplicate string, ignoring:", line
+            print >>log, "Original: "+strings[left]
             continue
         strings[left] = right
         keys.append(left)
@@ -194,8 +197,8 @@ def read_strings_po(f):
 
 def translate_fw(args):
     global data, datar
-    if args.output == sys.stdout:
-        sys.stdout = sys.stderr # if writing new tintin to sdout, print all messages to stderr to avoid cluttering
+    if args.output == log == sys.stdout:
+        log = sys.stderr # if writing new tintin to sdout, print >>log, all messages to stderr to avoid cluttering
 
     # load source fw:
     data = args.tintin.read()
@@ -206,43 +209,43 @@ def translate_fw(args):
         """ Check range for clashes and then add """
         for r in goodranges:
             if start == r[0] and end == r[1]: # duplicate
-                print "### Duplicate range %x-%x, skipping." % (start, end)
+                print >>log, "### Duplicate range %x-%x, skipping." % (start, end)
                 return
             if start >= r[0] and end <= r[1]: # fully inside; ignore
-                print "### Range clash!! This must be an error! Range %x-%x fits within %x-%x; ignoring" % (
+                print >>log, "### Range clash!! This must be an error! Range %x-%x fits within %x-%x; ignoring" % (
                     start, end, r[0], r[1])
                 return
             if start <= r[0] and end >= r[1]: # fully outside; replace
-                print "### Range clash!! This must be an error! Range %x-%x contained in %x-%x; replacing" % (
+                print >>log, "### Range clash!! This must be an error! Range %x-%x contained in %x-%x; replacing" % (
                     start, end, r[0], r[1])
                 r[0] = start
                 r[1] = end
                 return
             if start <= r[0] and end >= r[0]: # clash with beginning; truncate
-                print "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
+                print >>log, "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
                     start, end, r[0], r[1])
                 end = r[0]
             if start <= r[1] and end >= r[1]: # clash with end; truncate
-                print "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
+                print >>log, "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
                     start, end, r[0], r[1])
                 start = r[1]
         goodranges.append([start, end])
     for r in args.ranges:
         if len(r) == 3: # signature-specified range - convert it to offsets
             if type(r[0]) != str or type(r[1]) != str or type(r[2]) != int:
-                print "-Warning: invalid range mask specification %s; ignoring" % repr(r)
+                print >>log, "-Warning: invalid range mask specification %s; ignoring" % repr(r)
                 continue
             start = data.find(r[0])
             if start < 0:
-                print "-Warning: starting mask %s not found, ignoring this range" % repr(r[0])
+                print >>log, "-Warning: starting mask %s not found, ignoring this range" % repr(r[0])
                 continue
             end = start+data[start:].find(r[1])
             if end < 0:
-                print "-Warning: start at 0x%X, ending mask %s not found, ignoring this range" % (start, repr(r[1]))
+                print >>log, "-Warning: start at 0x%X, ending mask %s not found, ignoring this range" % (start, repr(r[1]))
                 continue
             length = end + len(r[1]) - start
             if length != r[2]:
-                print ("-Warning: length mismatch for range %s..%s (0x%X..0x%X), expected %d, found %d; "+
+                print >>log, ("-Warning: length mismatch for range %s..%s (0x%X..0x%X), expected %d, found %d; "+
                         "ignoring this range") % (repr(r[0]), repr(r[1]), start, end, r[2], length)
                 continue
             addrange(start, end)
@@ -255,21 +258,21 @@ def translate_fw(args):
                 addrange(start, end)
             else:
                 args.ranges.remove(r)
-                print "Warning: cannot append to end of file because its size is >= 0x70000 (max fw size)"
+                print >>log, "Warning: cannot append to end of file because its size is >= 0x70000 (max fw size)"
         else:
-            print "?!? confused: unexpected range", r
+            print >>log, "?!? confused: unexpected range", r
     args.ranges = goodranges
     if args.ranges:
-        print "Using following ranges:"
+        print >>log, "Using following ranges:"
         for r in args.ranges:
-            print " * 0x%X..0x%X (%d bytes)" % (r[0], r[1], r[1]-r[0])
+            print >>log, " * 0x%X..0x%X (%d bytes)" % (r[0], r[1], r[1]-r[0])
     elif len(args.ranges) == 0:
-        print "WARNING: no usable ranges!"
+        print >>log, "WARNING: no usable ranges!"
 
     if args.print_only:
-        print "Scanning tintin_fw..."
+        print >>log, "Scanning tintin_fw..."
         ptrs = find_all_strings()
-        print "Found %d referenced strings" % len(ptrs)
+        print >>log, "Found %d referenced strings" % len(ptrs)
         for p in ptrs:
             args.output.write(p[2]+'\n')
         args.output.close()
@@ -279,22 +282,22 @@ def translate_fw(args):
 
     for key in keys:
         val = strings[key]
-        print "Processing", key
+        print >>log, "Processing", key
         os = find_string_offsets(key)
         if not os: # no such string
-            print " -- not found, ignoring"
+            print >>log, " -- not found, ignoring"
             continue
         mustrepoint=[] # list of "inplace" key occurances which cannot be replaced inplace
         if len(val) <= len(key) or key in inplace: # can just replace
-            print " -- found %d occurance(s), replacing" % len(os)
+            print >>log, " -- found %d occurance(s), replacing" % len(os)
             for o in os:
                 doreplace = True
-                print " -- 0x%X:" % o,
+                print >>log, " -- 0x%X:" % o,
                 if key in inplace and len(val) > len(key) and not args.force: # check that "rest" has only \0's
                     rest = datar[o+len(key):o+32]
                     for i in range(len(rest)):
                         if rest[i] != '\0':
-                            print " ** SKIPPING because overwriting is unsafe here; use -f to override. Will try to rewrite pointers"
+                            print >>log, " ** SKIPPING because overwriting is unsafe here; use -f to override. Will try to rewrite pointers"
                             mustrepoint.append(o)
                             doreplace = False # don't replace this occurance
                             break # break inner loop
@@ -304,32 +307,32 @@ def translate_fw(args):
                 datar = datar[0:o] + val + '\0' + datar[o+len(val)+1:]
                 if len(datar) != oldlen:
                     raise AssertionError("Length mismatch")
-                print "OK" # this occurance replaced successfully
+                print >>log, "OK" # this occurance replaced successfully
             if not mustrepoint:
                 continue # everything replaced fine for that key
         # we are here means that new string is longer than old (and not an
         # inplace one - or at least has one non-inplace-possible occurance)
         # so will add it to end of tintin file or to ranges
-        print " -- %s %d occurance(s), looking for pointers" % ("still have" if mustrepoint else "found", len(mustrepoint or os))
+        print >>log, " -- %s %d occurance(s), looking for pointers" % ("still have" if mustrepoint else "found", len(mustrepoint or os))
         ps = []
         for o in mustrepoint or os: # use mustrepoint if it is not empty
             newps = find_pointers_to_offset(o)
             ps.extend(newps)
             if not newps:
-                print " !? String at 0x%X is unreferenced, will ignore!" % o
+                print >>log, " !? String at 0x%X is unreferenced, will ignore!" % o
         if not ps:
-            print " !! No pointers to that string, cannot translate!"
+            print >>log, " !! No pointers to that string, cannot translate!"
             continue
-        print " == found %d ptrs; appending or inserting string and updating them" % len(ps)
+        print >>log, " == found %d ptrs; appending or inserting string and updating them" % len(ps)
         r = None # range to use
         for rx in args.ranges:
             if rx[1]-rx[0] >= len(val)+1: # this range have enough space
                 r = rx
                 break # break inner loop (on ranges)
         if not r: # suitable range not found
-            print "** Notice: no (more) ranges available for this phrase. Will skip it."
+            print >>log, "** Notice: no (more) ranges available for this phrase. Will skip it."
             continue # main loop
-        print " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
+        print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
         newp = r[0]
         oldlen = len(datar)
         datar = datar[0:newp] + val + '\0' + datar[newp+len(val)+1:]
@@ -343,10 +346,10 @@ def translate_fw(args):
             datar = datar[0:p] + newps + datar[p+4:]
             if len(datar) != oldlen:
                 raise AssertionError("Length mismatch")
-    print "Saving..."
+    print >>log, "Saving..."
     args.output.write(datar)
     args.output.close()
-    print "Done."
+    print >>log, "Done."
 
 if __name__ == "__main__":
     args = parse_args()
