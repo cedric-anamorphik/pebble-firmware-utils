@@ -287,6 +287,9 @@ def translate_fw(args):
         strings, keys, inplace = read_strings_txt(args.strings)
     else:
         strings, keys, inplace = read_strings_po(args.strings)
+    print >>log, "Got %d valid strings to translate" % len(strings)
+    if not strings:
+        print "NOTICE: No strings, nothing to do! Will just duplicate fw"
 
     for key in keys:
         val = strings[key]
