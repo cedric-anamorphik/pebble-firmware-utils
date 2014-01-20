@@ -201,7 +201,7 @@ def read_strings_po(f):
     return strings, keys, inplaces
 
 def translate_fw(args):
-    global data, datar
+    global data, datar, log
     if args.output == log == sys.stdout:
         log = sys.stderr # if writing new tintin to sdout, print >>log, all messages to stderr to avoid cluttering
 
