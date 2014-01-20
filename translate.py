@@ -211,7 +211,7 @@ def translate_fw(args):
     if args.ranges:
         print "Using following ranges:"
         for r in args.ranges:
-            print " * 0x%X..0x%X" % tuple(r)
+            print " * 0x%X..0x%X (%d bytes)" % (r[0], r[1], r[1]-r[0])
     elif len(args.ranges) == 0:
         print "WARNING: no usable ranges!"
 
