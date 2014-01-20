@@ -109,7 +109,7 @@ def parse_args():
                         "which may possible interfere with iOS Pebble app.")
     return parser.parse_args()
 
-def read_strings(f):
+def read_strings_txt(f):
     strings = {}
     keys = []
     inplace = []
@@ -138,6 +138,59 @@ def read_strings(f):
         strings[left] = right
         keys.append(left)
     return strings, keys, inplace
+
+def read_strings_po(f):
+    # TODO : multiline strings w/o \n
+    def parsevalline(line, kwlen): # kwlen is keyword length
+        line = line[kwlen :].strip() # remove 'msgid' and spaces
+        if line[0] == '"':
+            if line[-1] != '"':
+                print "Warning! Expected '\"' not found in line %d" % line
+            line = line[1 :-1] # remove quotes
+        line = line.replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\') # unescape - TODO: test
+        return line
+
+    strings = {}
+    keys = []
+    inplaces = []
+
+    # our scratchpad
+    left = ""
+    right = ""
+    inplace = False
+
+    for line in f:
+        line = line[:-1] # remove tralining \n
+        if len(line) == 0 : # end of record
+            if left: # else, if left is empty -> ignoring
+                if right: # both left and right are provided
+                    keys.append(left)
+                    strings[left] = right
+                    if inplace:
+                        inplaces.append(left)
+                else: # only left provided -> line untranslated, ignoring
+                    print "Ignoring untranslated line %d" % left
+            # now clear scratchpad
+            left = ""
+            right = ""
+            inplace = False
+        elif line.startswith("#,"): # flags
+            flags = [x.strip() for x in line[2 :].split(",")] # parse flags, removing leading "#,"
+            if "fuzzy" in flags:
+                inplace = True
+            # ignore all other flags, if any
+        elif line.startswith("#"): # comment, etc
+            pass # ignore
+        elif line.startswith("msgid"):
+            left = parsevalline(line, 5)
+        elif line.startswith("msgstr"):
+            right = parsevalline(line, 6)
+        elif line.startswith("msgctxt"):
+            # context = parsevalline(line, 7)
+            print "Warning: string context is not supported yet"
+        else:
+            print "Warning: unexpected line in input: %d" % line
+    return strings, keys, inplaces
 
 def translate_fw(args):
     global data, datar
@@ -222,7 +275,7 @@ def translate_fw(args):
         args.output.close()
         sys.exit(0)
 
-    strings, keys, inplace = read_strings(args.strings)
+    strings, keys, inplace = read_strings_txt(args.strings)
 
     for key in keys:
         val = strings[key]
