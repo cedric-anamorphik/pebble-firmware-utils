@@ -212,10 +212,10 @@ def translate_fw(args):
     data = args.tintin.read()
     datar = data
 
-    goodranges = []
+    ranges = []
     def addrange(start, end):
-        """ Check range for clashes and then add """
-        for r in goodranges:
+        """ Check range for clashes and then add it to ranges list """
+        for r in ranges:
             if start == r[0] and end == r[1]: # duplicate
                 print >>log, "### Duplicate range %x-%x, skipping." % (start, end)
                 return
@@ -223,7 +223,7 @@ def translate_fw(args):
                 print >>log, "### Range clash!! This must be an error! Range %x-%x fits within %x-%x; ignoring" % (
                     start, end, r[0], r[1])
                 return
-            if start <= r[0] and end >= r[1]: # fully outside; replace
+            if start <= r[0] and end >= r[1]: # fully outside; replace. FIXME : this might introduce clashes with other ranges
                 print >>log, "### Range clash!! This must be an error! Range %x-%x contained in %x-%x; replacing" % (
                     start, end, r[0], r[1])
                 r[0] = start
@@ -237,7 +237,18 @@ def translate_fw(args):
                 print >>log, "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
                     start, end, r[0], r[1])
                 start = r[1]
-        goodranges.append([start, end])
+        for r in ranges: # another loop for neighbours - now when we surely have no clashes
+            if r[1] == start:
+                print >>log, " #  Range neighbourhood, merging %x-%x to %x-%x" % (
+                    start, end, r[0], r[1])
+                r[1] = end
+                return
+            if end == r[0]:
+                print >>log, " #  Range neighbourhood, merging %x-%x to %x-%x" % (
+                    start, end, r[0], r[1])
+                r[0] = start
+                return
+        ranges.append([start, end])
     for r in args.ranges:
         if len(r) == 3: # signature-specified range - convert it to offsets
             if type(r[0]) != str or type(r[1]) != str or type(r[2]) != int:
@@ -265,16 +276,14 @@ def translate_fw(args):
             if start < end:
                 addrange(start, end)
             else:
-                args.ranges.remove(r)
                 print >>log, "Warning: cannot append to end of file because its size is >= 0x70000 (max fw size)"
         else:
             print >>log, "?!? confused: unexpected range", r
-    args.ranges = goodranges
-    if args.ranges:
+    if ranges:
         print >>log, "Using following ranges:"
-        for r in args.ranges:
+        for r in ranges:
             print >>log, " * 0x%X..0x%X (%d bytes)" % (r[0], r[1], r[1]-r[0])
-    elif len(args.ranges) == 0:
+    elif len(ranges) == 0:
         print >>log, "WARNING: no usable ranges!"
 
     if args.print_only:
@@ -339,7 +348,7 @@ def translate_fw(args):
             continue
         print >>log, " == found %d ptrs; appending or inserting string and updating them" % len(ps)
         r = None # range to use
-        for rx in args.ranges:
+        for rx in ranges:
             if rx[1]-rx[0] >= len(val)+1: # this range have enough space
                 r = rx
                 break # break inner loop (on ranges)
