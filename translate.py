@@ -114,6 +114,9 @@ def parse_args():
                         help="Use space between end of firmware and 0x08080000 (which seems to be the last address "+
                         "allowed) to store strings. Note that this will change size of firmware binary "+
                         "which may possible interfere with iOS Pebble app.")
+    parser.add_argument("-u", "--reuse-ranges", action="store_true",
+                        help="Reuse freed (fully moved on translation) strings as ranges for next strings. "+
+                        "This may slow process as every character needs to be checked for possible pointers.")
     return parser.parse_args()
 
 def read_strings_txt(f):
@@ -398,4 +401,5 @@ def translate_fw(args):
 
 if __name__ == "__main__":
     args = parse_args()
+    print args
     translate_fw(args)
