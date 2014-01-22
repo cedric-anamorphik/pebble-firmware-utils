@@ -55,13 +55,8 @@ def find_pointers_to_offset(offset):
     """
     Finds all pointers to given offset; returns offsets to them
     """
-    ret = []
     ptr = offset + 0x08010000
-    for i in range(0, len(data)-3, 4):
-        n = unpack("I", data[i:i+4])[0]
-        if n == ptr:
-            ret.append(i)
-    return ret
+    return [i*4 for i,v in enumerate(datap) if v == ptr]
 
 def find_string_offsets(s):
     """ Returns list of offsets to given string """
