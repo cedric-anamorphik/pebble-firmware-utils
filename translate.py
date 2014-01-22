@@ -114,6 +114,9 @@ def parse_args():
                         help="Use space between end of firmware and 0x08080000 (which seems to be the last address "+
                         "allowed) to store strings. Note that this will change size of firmware binary "+
                         "which may possible interfere with iOS Pebble app.")
+    parser.add_argument("-u", "--reuse-ranges", action="store_true",
+                        help="Reuse freed (fully moved on translation) strings as ranges for next strings. "+
+                        "This may slow process as every character needs to be checked for possible pointers.")
     return parser.parse_args()
 
 def read_strings_txt(f):
@@ -251,11 +254,11 @@ def translate_fw(args):
                 r[0] = start
                 r[1] = end
                 return
-            if start <= r[0] and end >= r[0]: # clash with beginning; truncate
+            if start <= r[0] and end > r[0]: # clash with beginning; truncate
                 print >>log, "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
                     start, end, r[0], r[1])
                 end = r[0]
-            if start <= r[1] and end >= r[1]: # clash with end; truncate
+            if start < r[1] and end >= r[1]: # clash with end; truncate
                 print >>log, "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
                     start, end, r[0], r[1])
                 start = r[1]
@@ -366,6 +369,11 @@ def translate_fw(args):
             ps.extend(newps)
             if not newps:
                 print >>log, " !? String at 0x%X is unreferenced, will ignore!" % o
+                # and remove it from list (needed for reuse_ranges)
+                if mustrepoint:
+                    mustrepoint.remove(o)
+                else:
+                    os.remove(o)
         if not ps:
             print >>log, " !! No pointers to that string, cannot translate!"
             continue
@@ -393,6 +401,19 @@ def translate_fw(args):
             datar = datar[0:p] + newps + datar[p+4:]
             if len(datar) != oldlen:
                 raise AssertionError("Length mismatch")
+        # now that string is translated, we may reuse its place as ranges
+        if args.reuse_ranges:
+            for o in mustrepoint or os:
+                i = o+1
+                while i < len(data):
+                    if find_pointers_to_offset(i): # string is overused starting from this point
+                        break
+                    if data[i] == '\0' : # last byte
+                        i += 1 # include it too
+                        break
+                    i += 1
+                addrange(o, i)
+                print >>log, " ++ Reclaimed %d bytes from this string" % (i-o)
     print >>log, "Saving..."
     args.output.write(datar)
     args.output.close()
