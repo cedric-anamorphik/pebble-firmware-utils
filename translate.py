@@ -184,19 +184,20 @@ def read_strings_po(f, exclude=[]):
                     if left == right:
                         print >>log, "Translation = original, ignoring line %s" % left
                     elif left in keys:
-                        if context:
-                            if type(strings[left]) is list:
-                                if len(strings[left]) < context:
-                                    strings[left] += [None] * (len(strings[left])-context)
-                                    strings[left].append(right)
-                                else: # have such item already
-                                    if strings[left][context]:
-                                        print "Warning: duplicate contexted line %s @ %d" % (left, context)
-                                    else:
-                                        strings[left][context] = right
-                            else:
-                                print >>log, "Warning: ignoring contexted line %s because there is already not-contexted one"\
-                                        % left
+                        if context or type(strings[left]) is list: # this or previous is contexted
+                            if type(strings[left]) is not list:
+                                strings[left] = [strings[left]] # convert to list
+                                # because POEditor omits lines with msgctxt=0
+                            if context == None:
+                                context = 0 # for the same reason as above
+                            if len(strings[left]) < context:
+                                strings[left] += [None] * (len(strings[left])-context)
+                                strings[left].append(right)
+                            else: # have such item already
+                                if strings[left][context]:
+                                    print "Warning: duplicate contexted line %s @ %d" % (left, context)
+                                else:
+                                    strings[left][context] = right
                         else:
                             print >>log, "Warning: ignoring duplicate line %s" % left
                     else:
