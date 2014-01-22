@@ -292,6 +292,7 @@ def translate_fw(args):
                 print >>log, ("-Warning: length mismatch for range %s..%s (0x%X..0x%X), expected %d, found %d; "+
                         "ignoring this range") % (repr(r[0]), repr(r[1]), start, end, r[2], length)
                 continue
+            end += len(r[1]) # append ending mask size
             addrange(start, end)
         elif len(r) == 2:
             addrange(r[0], r[1])
