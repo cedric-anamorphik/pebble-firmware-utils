@@ -96,6 +96,9 @@ def parse_args():
                        help="Use old (custom, text-based) format for strings")
     group.add_argument("-g", "--gettext", "--po", dest="old_format", action="store_false",
                        help="Use gettext's PO format for strings (default)")
+    parser.add_argument("-x", "--exclude", "--exclude-strings", action="append", metavar="REF", default=[],
+                        help="Don't translate strings with given reference ID (only for PO files). "+
+                        "This option may be passed several times.")
     parser.add_argument("-p", "--print-only", action="store_true",
                         help="Don't translate anything, just print out all referenced strings from input file")
     parser.add_argument("-f", "--force", action="store_true",
@@ -147,7 +150,7 @@ def read_strings_txt(f):
         keys.append(left)
     return strings, keys, inplace
 
-def read_strings_po(f):
+def read_strings_po(f, exclude=[]):
     # TODO : multiline strings w/o \n
     def parsevalline(line, kwlen): # kwlen is keyword length
         line = line[kwlen :].strip() # remove 'msgid' and spaces
@@ -166,11 +169,16 @@ def read_strings_po(f):
     left = None
     right = None
     inplace = False
+    ref = None
 
+    skipnum = 0 # number of excluded lines
     for line in f:
         line = line[:-1] # remove tralining \n
         if len(line) == 0 : # end of record
-            if left: # else, if left is empty -> ignoring
+            if ref in exclude:
+                #print >>log, "Line %s has ref <%s> which is requested to be excluded; skipping" % (repr(left), ref)
+                skipnum += 1
+            elif left: # or else, if left is empty -> ignoring
                 if right: # both left and right are provided
                     if left == right:
                         print >>log, "Translation = original, ignoring line %s" % left
@@ -187,11 +195,14 @@ def read_strings_po(f):
             left = None
             right = None
             inplace = False
+            ref = None
         elif line.startswith("#,"): # flags
             flags = [x.strip() for x in line[2 :].split(",")] # parse flags, removing leading "#,"
             if "fuzzy" in flags:
                 inplace = True
             # ignore all other flags, if any
+        elif line.startswith("#:"): # reference
+            ref = line[2 :].strip()
         elif line.startswith("#"): # comment, etc
             pass # ignore
         elif line.startswith("msgid"):
@@ -210,6 +221,8 @@ def read_strings_po(f):
                 print >>log, "Warning: unexpected continuation line: %s" % line
         else:
             print >>log, "Warning: unexpected line in input: %s" % line
+    if skipnum:
+        print >>log, "Excluded %d lines as requested" % skipnum
     return strings, keys, inplaces
 
 def translate_fw(args):
@@ -307,7 +320,7 @@ def translate_fw(args):
     if args.old_format:
         strings, keys, inplace = read_strings_txt(args.strings)
     else:
-        strings, keys, inplace = read_strings_po(args.strings)
+        strings, keys, inplace = read_strings_po(args.strings, args.exclude)
     print >>log, "Got %d valid strings to translate" % len(strings)
     if not strings:
         print >>log, "NOTICE: No strings, nothing to do! Will just duplicate fw"
