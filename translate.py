@@ -254,11 +254,11 @@ def translate_fw(args):
                 r[0] = start
                 r[1] = end
                 return
-            if start <= r[0] and end >= r[0]: # clash with beginning; truncate
+            if start <= r[0] and end > r[0]: # clash with beginning; truncate
                 print >>log, "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
                     start, end, r[0], r[1])
                 end = r[0]
-            if start <= r[1] and end >= r[1]: # clash with end; truncate
+            if start < r[1] and end >= r[1]: # clash with end; truncate
                 print >>log, "### Range clash!! This must be an error! Range %x-%x clashes with %x-%x; truncating" % (
                     start, end, r[0], r[1])
                 start = r[1]
