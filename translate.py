@@ -357,6 +357,7 @@ def translate_fw(args):
                     raise AssertionError("Length mismatch")
                 print >>log, "OK" # this occurance replaced successfully
             if not mustrepoint:
+                keys.remove(key) # this string is translated
                 continue # everything replaced fine for that key
         # we are here means that new string is longer than old (and not an
         # inplace one - or at least has one non-inplace-possible occurance)
@@ -399,6 +400,7 @@ def translate_fw(args):
             datar = datar[0:p] + newps + datar[p+4:]
             if len(datar) != oldlen:
                 raise AssertionError("Length mismatch")
+        keys.remove(key) # as it is translated now
         # now that string is translated, we may reuse its place as ranges
         if args.reuse_ranges:
             for o in mustrepoint or os:
