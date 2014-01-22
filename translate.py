@@ -189,15 +189,16 @@ def read_strings_po(f, exclude=[]):
                                 strings[left] = [strings[left]] # convert to list
                                 # because POEditor omits lines with msgctxt=0
                             if context == None:
-                                context = 0 # for the same reason as above
-                            if len(strings[left]) <= context:
-                                strings[left] += [None] * (len(strings[left])-context)
-                                strings[left].append(right)
-                            else: # have such item already
-                                if strings[left][context]:
-                                    print "Warning: duplicate contexted line %s @ %d" % (left, context)
-                                else:
-                                    strings[left][context] = right
+                                context = [0] # for the same reason as above
+                            for c in context:
+                                if len(strings[left]) <= c:
+                                    strings[left] += [None] * (len(strings[left])-c)
+                                    strings[left].append(right)
+                                else: # have such item already
+                                    if strings[left][c]:
+                                        print "Warning: duplicate contexted line %s @ %d" % (left, c)
+                                    else:
+                                        strings[left][c] = right
                         else:
                             print >>log, "Warning: ignoring duplicate line %s" % left
                     else:
@@ -233,9 +234,9 @@ def read_strings_po(f, exclude=[]):
             right = parsevalline(line, 6)
         elif line.startswith("msgctxt"):
             try:
-                context = int(parsevalline(line, 7))
+                context = [int(x) for x in parsevalline(line, 7).split(',')]
             except ValueError:
-                print "*** ERROR: %s is not an integer" % line
+                print "*** ERROR: %s is not an integer or comma-separated list of integers" % line
         elif line.startswith('"'): # continuation?
             if right is not None:
                 right += parsevalline(line, 0)
