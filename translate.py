@@ -96,6 +96,9 @@ def parse_args():
                        help="Use old (custom, text-based) format for strings")
     group.add_argument("-g", "--gettext", "--po", dest="old_format", action="store_false",
                        help="Use gettext's PO format for strings (default)")
+    parser.add_argument("-x", "--exclude", "--exclude-strings", action="append", nargs=1, metavar="REF",
+                        help="Don't translate strings with given reference ID (only for PO files). "+
+                        "This option may be passed several times.")
     parser.add_argument("-p", "--print-only", action="store_true",
                         help="Don't translate anything, just print out all referenced strings from input file")
     parser.add_argument("-f", "--force", action="store_true",
