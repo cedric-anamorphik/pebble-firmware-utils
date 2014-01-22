@@ -453,8 +453,11 @@ def translate_fw(args):
                     datar = datar[0:p] + newps + datar[p+4:]
                     if len(datar) != oldlen:
                         raise AssertionError("Length mismatch")
-                keys.remove(key) # as it is translated now
-                translated += 1
+                if key in keys:
+                    keys.remove(key) # as it is translated now
+                    # okay, if it is contexted we may remove something while other
+                    # contexts are still not translated... FIXME
+                    translated += 1
                 # now that string is translated, we may reuse its place as ranges
                 if args.reuse_ranges:
                     for o in mustrepoint or os:
