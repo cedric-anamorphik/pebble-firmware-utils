@@ -487,7 +487,7 @@ def translate_fw(args):
         sizes = [r[1]-r[0] for r in ranges]
         print >>log, "Remaining space at this point: %d bytes scattered in %d ranges, max range size is %d bytes" % \
                 (sum(sizes), len(ranges), max(sizes))
-        print
+        print >>log
         if not args.reuse_ranges: # new ranges definitely could not appear
             break
         if len(keys) == 0:
@@ -502,7 +502,8 @@ def translate_fw(args):
         print >>log, "Translated %d strings in this pass; let's try to translate %d remaining" % (translated, untranslated)
         untranslated = 0 # restart counter as we will retry all these strings
     print >>log, "Saving..."
-    datar += data[-48:]
+    if len(datar) != len(data): # something appended
+        datar += data[-48:] # add ending bytes - needed for iOS app
     args.output.write(datar)
     args.output.close()
     print >>log, "Done."
