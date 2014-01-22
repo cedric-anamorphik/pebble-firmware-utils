@@ -257,7 +257,9 @@ def translate_fw(args):
 
     # load source fw:
     data = args.tintin.read()
-    datar = data # start from just copy, later will change it
+    datar = data[:-48] # start from just copy, later will change it
+                       # last 48 bytes must be kept intact in for iOS app to
+                       # work
     # convert to pointers:
     for i in range(0, len(data)-3, 4): # each 4-aligned int; -3 to avoid last (partial) value
         n = unpack("I", data[i:i+4])[0]
@@ -323,8 +325,8 @@ def translate_fw(args):
         elif len(r) == 2:
             addrange(r[0], r[1])
         elif r == "append":
-            start = len(data)
-            end = 0x70000
+            start = len(datar)
+            end = 0x70000-48
             if start < end:
                 addrange(start, end)
             else:
@@ -496,6 +498,7 @@ def translate_fw(args):
         print >>log, "Translated %d strings in this pass; let's try to translate %d remaining" % (translated, untranslated)
         untranslated = 0 # restart counter as we will retry all these strings
     print >>log, "Saving..."
+    datar += data[-48:]
     args.output.write(datar)
     args.output.close()
     print >>log, "Done."
