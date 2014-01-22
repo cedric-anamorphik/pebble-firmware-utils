@@ -328,6 +328,7 @@ def translate_fw(args):
     if not strings:
         print >>log, "NOTICE: No strings, nothing to do! Will just duplicate fw"
 
+    untranslated = 0 # number of strings we could not translate because of range lack
     for key in keys:
         val = strings[key]
         print >>log, "Processing", repr(key)
@@ -368,7 +369,7 @@ def translate_fw(args):
             newps = find_pointers_to_offset(o)
             ps.extend(newps)
             if not newps:
-                print >>log, " !? String at 0x%X is unreferenced, will ignore!" % o
+                print >>log, " !? String at 0x%X is unreferenced, will ignore! (must be partial or something)" % o
                 # and remove it from list (needed for reuse_ranges)
                 if mustrepoint:
                     mustrepoint.remove(o)
@@ -384,7 +385,8 @@ def translate_fw(args):
                 r = rx
                 break # break inner loop (on ranges)
         if not r: # suitable range not found
-            print >>log, "** Notice: no (more) ranges available for this phrase. Will skip it."
+            print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
+            untranslated += 1
             continue # main loop
         print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
         newp = r[0]
@@ -418,6 +420,11 @@ def translate_fw(args):
     args.output.write(datar)
     args.output.close()
     print >>log, "Done."
+    if untranslated:
+        print >>log, "WARNING: Couldn't translate %d strings because of ranges lack." % untranslated
+    else:
+        print >>log, "I think that all the strings were translated successfully :-)"
+    print >>log, "Remaining space: %d bytes in %d ranges" % (sum([r[1]-r[0] for r in ranges]), len(ranges))
 
 if __name__ == "__main__":
     args = parse_args()
