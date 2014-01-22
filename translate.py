@@ -259,9 +259,7 @@ def translate_fw(args):
 
     # load source fw:
     data = args.tintin.read()
-    datar = data[:-48] # start from just copy, later will change it
-                       # last 48 bytes must be kept intact in for iOS app to
-                       # work
+    datar = data # start from just copy, later will change it
     # convert to pointers:
     for i in range(0, len(data)-3, 4): # each 4-aligned int; -3 to avoid last (partial) value
         n = unpack("I", data[i:i+4])[0]
