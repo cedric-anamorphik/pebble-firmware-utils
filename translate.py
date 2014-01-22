@@ -356,16 +356,22 @@ def translate_fw(args):
         untranslated = 0 # number of strings we could not translate because of range lack
         translated = 0 # number of strings translated in this pass
         for key in list(keys): # use clone to avoid breaking on removal
-            val = strings[key]
+            val = strings[key] # string or list
             print >>log, "Processing", repr(key)
             os = find_string_offsets(key)
             if not os: # no such string
                 print >>log, " -- not found, ignoring"
                 continue
+            if type(val) is list: # contexted
+                if len(os) < len(val):
+                    print >>log, " ** Warning: too many contexts given for %s" % key
+                elif len(os) > len(val):
+                    print >>log, " ** Warning: too few contexts given for %s" % key
+                    val += [None] * len(os) - len(val) # pad it with Nones to avoid Index out of bounds
             mustrepoint=[] # list of "inplace" key occurances which cannot be replaced inplace
             if len(val) <= len(key) or key in inplace: # can just replace
                 print >>log, " -- found %d occurance(s), replacing" % len(os)
-                for o in os:
+                for idx, o in enumerate(os):
                     doreplace = True
                     print >>log, " -- 0x%X:" % o,
                     if key in inplace and len(val) > len(key) and not args.force: # check that "rest" has only \0's
@@ -378,8 +384,12 @@ def translate_fw(args):
                                 break # break inner loop
                     if not doreplace:
                         continue # skip to next occurance, this will be handled later
+                    rval = val if type(val) is list else val[idx]
+                    if rval == None:
+                        print >>log, " -- skipping occurance because of absent translation for this context"
+                        continue # skip to next occurance, forget about this one
                     oldlen = len(datar)
-                    datar = datar[0:o] + val + '\0' + datar[o+len(val)+1:]
+                    datar = datar[0:o] + rval + '\0' + datar[o+len(rval)+1:]
                     if len(datar) != oldlen:
                         raise AssertionError("Length mismatch")
                     print >>log, "OK" # this occurance replaced successfully
