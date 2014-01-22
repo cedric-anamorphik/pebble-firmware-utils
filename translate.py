@@ -173,7 +173,7 @@ def read_strings_po(f):
             if left: # else, if left is empty -> ignoring
                 if right: # both left and right are provided
                     if left in keys:
-                        print "Warning: ignoring duplicate line %s" % left
+                        print >>log, "Warning: ignoring duplicate line %s" % left
                     else:
                         keys.append(left)
                         strings[left] = right
