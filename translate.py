@@ -6,6 +6,8 @@ from struct import pack, unpack
 
 # data is a loaded tintin_fw file contents
 data = ""
+# datap is an original file converted to list of integers (pointers)
+datap = []
 # datar is data to return
 datar = ""
 
@@ -41,8 +43,7 @@ def find_all_strings():
     Returns array of tuples: (offset, value, string)
     """
     pointers = [] # tuples: offset to pointer, offset to its string, the string itself
-    for i in range(0, len(data)-3, 4): # each 4-aligned int; -3 to avoid last (partial) value
-        n = unpack("I", data[i:i+4])[0]
+    for i, n in enumerate(datap):
         s = is_string_pointer(n)
         if s:
             #print >>log, i,n,s
@@ -53,13 +54,8 @@ def find_pointers_to_offset(offset):
     """
     Finds all pointers to given offset; returns offsets to them
     """
-    ret = []
     ptr = offset + 0x08010000
-    for i in range(0, len(data)-3, 4):
-        n = unpack("I", data[i:i+4])[0]
-        if n == ptr:
-            ret.append(i)
-    return ret
+    return [i*4 for i,v in enumerate(datap) if v == ptr]
 
 def find_string_offsets(s):
     """ Returns list of offsets to given string """
@@ -226,13 +222,17 @@ def read_strings_po(f, exclude=[]):
     return strings, keys, inplaces
 
 def translate_fw(args):
-    global data, datar, log
+    global data, datap, datar, log
     if args.output == log == sys.stdout:
         log = sys.stderr # if writing new tintin to sdout, print >>log, all messages to stderr to avoid cluttering
 
     # load source fw:
     data = args.tintin.read()
-    datar = data
+    datar = data # start from just copy, later will change it
+    # convert to pointers:
+    for i in range(0, len(data)-3, 4): # each 4-aligned int; -3 to avoid last (partial) value
+        n = unpack("I", data[i:i+4])[0]
+        datap.append(n)
 
     ranges = []
     def addrange(start, end):
