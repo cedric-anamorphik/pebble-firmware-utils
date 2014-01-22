@@ -325,6 +325,7 @@ def translate_fw(args):
     if not strings:
         print >>log, "NOTICE: No strings, nothing to do! Will just duplicate fw"
 
+    untranslated = 0 # number of strings we could not translate because of range lack
     for key in keys:
         val = strings[key]
         print >>log, "Processing", repr(key)
@@ -376,6 +377,7 @@ def translate_fw(args):
                 break # break inner loop (on ranges)
         if not r: # suitable range not found
             print >>log, "** Notice: no (more) ranges available for this phrase. Will skip it."
+            untranslated += 1
             continue # main loop
         print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
         newp = r[0]
@@ -395,6 +397,8 @@ def translate_fw(args):
     args.output.write(datar)
     args.output.close()
     print >>log, "Done."
+    if untranslated:
+        print >>log, "WARNING: Couldn't translate %d strings because of ranges lack." % untranslated
 
 if __name__ == "__main__":
     args = parse_args()
