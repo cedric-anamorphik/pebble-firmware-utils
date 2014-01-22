@@ -150,7 +150,7 @@ def read_strings_txt(f):
         keys.append(left)
     return strings, keys, inplace
 
-def read_strings_po(f):
+def read_strings_po(f, exclude=[]):
     # TODO : multiline strings w/o \n
     def parsevalline(line, kwlen): # kwlen is keyword length
         line = line[kwlen :].strip() # remove 'msgid' and spaces
@@ -169,11 +169,14 @@ def read_strings_po(f):
     left = None
     right = None
     inplace = False
+    ref = None
 
     for line in f:
         line = line[:-1] # remove tralining \n
         if len(line) == 0 : # end of record
-            if left: # else, if left is empty -> ignoring
+            if ref in exclude:
+                print "Line %s has ref <%s> which is requested to be excluded; skipping" % (repr(left), ref)
+            elif left: # or else, if left is empty -> ignoring
                 if right: # both left and right are provided
                     if left == right:
                         print >>log, "Translation = original, ignoring line %s" % left
@@ -190,11 +193,14 @@ def read_strings_po(f):
             left = None
             right = None
             inplace = False
+            ref = None
         elif line.startswith("#,"): # flags
             flags = [x.strip() for x in line[2 :].split(",")] # parse flags, removing leading "#,"
             if "fuzzy" in flags:
                 inplace = True
             # ignore all other flags, if any
+        elif line.startswith("#:"): # reference
+            ref = line[2 :].strip()
         elif line.startswith("#"): # comment, etc
             pass # ignore
         elif line.startswith("msgid"):
