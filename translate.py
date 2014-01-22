@@ -433,6 +433,9 @@ def translate_fw(args):
         if len(keys) == 0:
             print >>log, "All strings are translated. Enjoy!"
             break
+        if untranslated == 0:
+            print >>log, "No more exceeding strings. Nice."
+            break
         if translated == 0:
             print >>log, "Nothing changed in this pass; giving up."
             break
