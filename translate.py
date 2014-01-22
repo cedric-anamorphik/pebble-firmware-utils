@@ -357,6 +357,7 @@ def translate_fw(args):
         translated = 0 # number of strings translated in this pass
         for key in list(keys): # use clone to avoid breaking on removal
             val = strings[key] # string or list
+            vals = val if type(val) is list else [val]
             print >>log, "Processing", repr(key)
             os = find_string_offsets(key)
             if not os: # no such string
@@ -401,59 +402,66 @@ def translate_fw(args):
             # inplace one - or at least has one non-inplace-possible occurance)
             # so will add it to end of tintin file or to ranges
             print >>log, " -- %s %d occurance(s), looking for pointers" % ("still have" if mustrepoint else "found", len(mustrepoint or os))
-            ps = []
-            for o in list(mustrepoint) or list(os): # use mustrepoint if it is not empty
-                newps = find_pointers_to_offset(o)
-                ps.extend(newps)
-                if not newps:
-                    print >>log, " !? String at 0x%X is unreferenced, will ignore! (must be partial or something)" % o
-                    # and remove it from list (needed for reuse_ranges)
-                    if mustrepoint:
-                        mustrepoint.remove(o)
-                    else:
-                        os.remove(o)
-            if not ps:
-                print >>log, " !! No pointers to that string, cannot translate!"
-                continue
-            print >>log, " == found %d ptrs; appending or inserting string and updating them" % len(ps)
-            r = None # range to use
-            for rx in ranges:
-                if rx[1]-rx[0] >= len(val)+1: # this range have enough space
-                    r = rx
-                    break # break inner loop (on ranges)
-            if not r: # suitable range not found
-                print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
-                untranslated += 1
-                continue # main loop
-            print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
-            newp = r[0]
-            oldlen = len(datar)
-            datar = datar[0:newp] + val + '\0' + datar[newp+len(val)+1:]
-            if len(datar) != oldlen and r[1] != 0x70000: #70000 is "range" at the end of file
-                raise AssertionError("Length mismatch")
-            r[0] += len(val) + 1 # remove used space from that range
-            newp += 0x08010000 # convert from offset to pointer
-            newps = pack('I', newp)
-            for p in ps: # now update pointers
+            for idx, v in enumerate(vals): # for each contexted value (or for the only value)
+                if v == None:
+                    continue; # skip empty ones
+
+                ps = []
+                for o in list(mustrepoint) or list(os): # use mustrepoint if it is not empty
+                    if len(vals) > 1 and os.index(o) != idx: # if contexted and not current
+                        continue # don't add pointers for it
+                    newps = find_pointers_to_offset(o)
+                    ps.extend(newps)
+                    if not newps:
+                        print >>log, " !? String at 0x%X is unreferenced, will ignore! (must be partial or something)" % o
+                        # and remove it from list (needed for reuse_ranges)
+                        if mustrepoint:
+                            mustrepoint.remove(o)
+                        else:
+                            os.remove(o)
+                if not ps:
+                    print >>log, " !! No pointers to that string, cannot translate!"
+                    continue
+                print >>log, " == found %d ptrs; appending or inserting string and updating them" % len(ps)
+
+                r = None # range to use
+                for rx in ranges:
+                    if rx[1]-rx[0] >= len(v)+1: # this range have enough space
+                        r = rx
+                        break # break inner loop (on ranges)
+                if not r: # suitable range not found
+                    print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
+                    untranslated += 1
+                    continue # to next value variant
+                print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
+                newp = r[0]
                 oldlen = len(datar)
-                datar = datar[0:p] + newps + datar[p+4:]
-                if len(datar) != oldlen:
+                datar = datar[0:newp] + v + '\0' + datar[newp+len(v)+1:]
+                if len(datar) != oldlen and r[1] != 0x70000: #70000 is "range" at the end of file
                     raise AssertionError("Length mismatch")
-            keys.remove(key) # as it is translated now
-            translated += 1
-            # now that string is translated, we may reuse its place as ranges
-            if args.reuse_ranges:
-                for o in mustrepoint or os:
-                    i = o+1
-                    while i < len(data):
-                        if find_pointers_to_offset(i): # string is overused starting from this point
-                            break
-                        if data[i] == '\0' : # last byte
-                            i += 1 # include it too
-                            break
-                        i += 1
-                    addrange(o, i)
-                    print >>log, " ++ Reclaimed %d bytes from this string" % (i-o)
+                r[0] += len(v) + 1 # remove used space from that range
+                newp += 0x08010000 # convert from offset to pointer
+                newps = pack('I', newp)
+                for p in ps: # now update pointers
+                    oldlen = len(datar)
+                    datar = datar[0:p] + newps + datar[p+4:]
+                    if len(datar) != oldlen:
+                        raise AssertionError("Length mismatch")
+                keys.remove(key) # as it is translated now
+                translated += 1
+                # now that string is translated, we may reuse its place as ranges
+                if args.reuse_ranges:
+                    for o in mustrepoint or os:
+                        i = o+1
+                        while i < len(data):
+                            if find_pointers_to_offset(i): # string is overused starting from this point
+                                break
+                            if data[i] == '\0' : # last byte
+                                i += 1 # include it too
+                                break
+                            i += 1
+                        addrange(o, i)
+                        print >>log, " ++ Reclaimed %d bytes from this string" % (i-o)
         npass += 1
         print >>log, "Pass %d completed." % npass
         sizes = [r[1]-r[0] for r in ranges]
