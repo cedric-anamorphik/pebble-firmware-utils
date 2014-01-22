@@ -171,11 +171,13 @@ def read_strings_po(f, exclude=[]):
     inplace = False
     ref = None
 
+    skipnum = 0 # number of excluded lines
     for line in f:
         line = line[:-1] # remove tralining \n
         if len(line) == 0 : # end of record
             if ref in exclude:
-                print "Line %s has ref <%s> which is requested to be excluded; skipping" % (repr(left), ref)
+                #print >>log, "Line %s has ref <%s> which is requested to be excluded; skipping" % (repr(left), ref)
+                skipnum += 1
             elif left: # or else, if left is empty -> ignoring
                 if right: # both left and right are provided
                     if left == right:
@@ -219,6 +221,8 @@ def read_strings_po(f, exclude=[]):
                 print >>log, "Warning: unexpected continuation line: %s" % line
         else:
             print >>log, "Warning: unexpected line in input: %s" % line
+    if skipnum:
+        print >>log, "Excluded %d lines as requested" % skipnum
     return strings, keys, inplaces
 
 def translate_fw(args):
