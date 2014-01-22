@@ -6,6 +6,8 @@ from struct import pack, unpack
 
 # data is a loaded tintin_fw file contents
 data = ""
+# datap is an original file converted to list of integers (pointers)
+datap = []
 # datar is data to return
 datar = ""
 
@@ -226,13 +228,17 @@ def read_strings_po(f, exclude=[]):
     return strings, keys, inplaces
 
 def translate_fw(args):
-    global data, datar, log
+    global data, datap, datar, log
     if args.output == log == sys.stdout:
         log = sys.stderr # if writing new tintin to sdout, print >>log, all messages to stderr to avoid cluttering
 
     # load source fw:
     data = args.tintin.read()
-    datar = data
+    datar = data # start from just copy, later will change it
+    # convert to pointers:
+    for i in range(0, len(data)-3, 4):
+        n = unpack("I", data[i:i+4])[0]
+        datap.append(n)
 
     ranges = []
     def addrange(start, end):
