@@ -169,6 +169,7 @@ def read_strings_po(f, exclude=[]):
     right = None
     inplace = False
     ref = None
+    context = None
 
     skipnum = 0 # number of excluded lines
     for line in f:
@@ -179,13 +180,35 @@ def read_strings_po(f, exclude=[]):
                 skipnum += 1
             elif left: # or else, if left is empty -> ignoring
                 if right: # both left and right are provided
+                    # FIXME: support inplace for contexted lines? do we need this at all?
                     if left == right:
                         print >>log, "Translation = original, ignoring line %s" % left
                     elif left in keys:
-                        print >>log, "Warning: ignoring duplicate line %s" % left
+                        if context or type(strings[left]) is list: # this or previous is contexted
+                            if type(strings[left]) is not list:
+                                strings[left] = [strings[left]] # convert to list
+                                # because POEditor omits lines with msgctxt=0
+                            if context == None:
+                                context = [0] # for the same reason as above
+                            for c in context:
+                                if len(strings[left]) <= c:
+                                    strings[left] += [None] * (len(strings[left])-c)
+                                    strings[left].append(right)
+                                else: # have such item already
+                                    if strings[left][c]:
+                                        print "Warning: duplicate contexted line %s @ %d" % (left, c)
+                                    else:
+                                        strings[left][c] = right
+                        else:
+                            print >>log, "Warning: ignoring duplicate line %s" % left
                     else:
                         keys.append(left)
-                        strings[left] = right
+                        if context != None:
+                            r = [None] * context
+                            r[context] = right
+                            strings[left] = r
+                        else:
+                            strings[left] = right
                         if inplace:
                             inplaces.append(left)
                 else: # only left provided -> line untranslated, ignoring
@@ -195,6 +218,7 @@ def read_strings_po(f, exclude=[]):
             right = None
             inplace = False
             ref = None
+            context = None
         elif line.startswith("#,"): # flags
             flags = [x.strip() for x in line[2 :].split(",")] # parse flags, removing leading "#,"
             if "fuzzy" in flags:
@@ -209,8 +233,10 @@ def read_strings_po(f, exclude=[]):
         elif line.startswith("msgstr"):
             right = parsevalline(line, 6)
         elif line.startswith("msgctxt"):
-            # context = parsevalline(line, 7)
-            print >>log, "Warning: string ctxt is not supported yet; ignoring"
+            try:
+                context = [int(x) for x in parsevalline(line, 7).split(',')]
+            except ValueError:
+                print "*** ERROR: %s is not an integer or comma-separated list of integers" % line
         elif line.startswith('"'): # continuation?
             if right is not None:
                 right += parsevalline(line, 0)
@@ -334,16 +360,24 @@ def translate_fw(args):
         untranslated = 0 # number of strings we could not translate because of range lack
         translated = 0 # number of strings translated in this pass
         for key in list(keys): # use clone to avoid breaking on removal
-            val = strings[key]
+            val = strings[key] # string or list
+            vals = val if type(val) is list else [val]
             print >>log, "Processing", repr(key)
             os = find_string_offsets(key)
             if not os: # no such string
                 print >>log, " -- not found, ignoring"
                 continue
+            if type(val) is list: # contexted
+                if len(os) < len(val):
+                    print >>log, " ** Warning: too many contexts given for %s" % key
+                elif len(os) > len(val):
+                    print >>log, " ** Warning: too few contexts given for %s" % key
+                    val += [None] * len(os) - len(val) # pad it with Nones to avoid Index out of bounds
             mustrepoint=[] # list of "inplace" key occurances which cannot be replaced inplace
-            if len(val) <= len(key) or key in inplace: # can just replace
+            if type(val) is not list and (len(val) <= len(key) or key in inplace): # can just replace
+                # but will not replace contexted vals
                 print >>log, " -- found %d occurance(s), replacing" % len(os)
-                for o in os:
+                for idx, o in enumerate(os):
                     doreplace = True
                     print >>log, " -- 0x%X:" % o,
                     if key in inplace and len(val) > len(key) and not args.force: # check that "rest" has only \0's
@@ -384,31 +418,51 @@ def translate_fw(args):
                 print >>log, " !! No pointers to that string, cannot translate!"
                 continue
             print >>log, " == found %d ptrs; appending or inserting string and updating them" % len(ps)
-            r = None # range to use
-            for rx in ranges:
-                if rx[1]-rx[0] >= len(val)+1: # this range have enough space
-                    r = rx
-                    break # break inner loop (on ranges)
-            if not r: # suitable range not found
-                print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
-                untranslated += 1
-                continue # main loop
-            print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
-            newp = r[0]
-            oldlen = len(datar)
-            datar = datar[0:newp] + val + '\0' + datar[newp+len(val)+1:]
-            if len(datar) != oldlen and r[1] != 0x70000: #70000 is "range" at the end of file
-                raise AssertionError("Length mismatch")
-            r[0] += len(val) + 1 # remove used space from that range
-            newp += 0x08010000 # convert from offset to pointer
-            newps = pack('I', newp)
-            for p in ps: # now update pointers
-                oldlen = len(datar)
-                datar = datar[0:p] + newps + datar[p+4:]
-                if len(datar) != oldlen:
-                    raise AssertionError("Length mismatch")
-            keys.remove(key) # as it is translated now
-            translated += 1
+
+            stored = {}
+            for idx, v in enumerate(vals): # for each contexted value (or for the only value)
+                if v == None:
+                    continue # skip empty ones
+                if idx >= len(ps):
+                    print " *! Warning: no pointers for given context %d" % idx
+                    continue
+
+                if v in stored: # such string was already stored
+                    newps = stored[v]
+                    print >>log, " -- using stored ptr"
+                else:
+                    r = None # range to use
+                    for rx in ranges:
+                        if rx[1]-rx[0] >= len(v)+1: # this range have enough space
+                            r = rx
+                            break # break inner loop (on ranges)
+                    if not r: # suitable range not found
+                        print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
+                        untranslated += 1
+                        continue # to next value variant
+                    print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
+                    newp = r[0]
+                    oldlen = len(datar)
+                    datar = datar[0:newp] + v + '\0' + datar[newp+len(v)+1:]
+                    if len(datar) != oldlen and r[1] != 0x70000: #70000 is "range" at the end of file
+                        raise AssertionError("Length mismatch")
+                    r[0] += len(v) + 1 # remove used space from that range
+                    newp += 0x08010000 # convert from offset to pointer
+                    newps = pack('I', newp)
+                    stored[v] = newps
+                for pidx, p in enumerate(ps): # now update pointers
+                    if len(vals) > 1: # if contexted
+                        if pidx >= len(vals):
+                            print " *! Warning: exceeding pointer %d for context %d" % (pidx, idx)
+                        if idx != pidx:
+                            continue # skip irrelevant pointers
+                    oldlen = len(datar)
+                    datar = datar[0:p] + newps + datar[p+4:]
+                    if len(datar) != oldlen:
+                        raise AssertionError("Length mismatch")
+            if key in keys:
+                keys.remove(key) # as it is translated now
+                translated += 1
             # now that string is translated, we may reuse its place as ranges
             if args.reuse_ranges:
                 for o in mustrepoint or os:
