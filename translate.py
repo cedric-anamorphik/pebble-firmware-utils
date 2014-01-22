@@ -199,6 +199,13 @@ def read_strings_po(f):
         elif line.startswith("msgctxt"):
             # context = parsevalline(line, 7)
             print >>log, "Warning: string ctxt is not supported yet; ignoring"
+        elif line.startswith('"'): # continuation?
+            if right:
+                right += parsevalline(line, 0)
+            elif left:
+                left += parsevalline(line, 0)
+            else:
+                print >>log, "Warning: unexpected continuation line: %s" % line
         else:
             print >>log, "Warning: unexpected line in input: %s" % line
     return strings, keys, inplaces
