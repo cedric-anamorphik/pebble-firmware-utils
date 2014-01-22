@@ -454,24 +454,22 @@ def translate_fw(args):
                     datar = datar[0:p] + newps + datar[p+4:]
                     if len(datar) != oldlen:
                         raise AssertionError("Length mismatch")
-                if key in keys:
-                    keys.remove(key) # as it is translated now
-                    # okay, if it is contexted we may remove something while other
-                    # contexts are still not translated... FIXME
-                    translated += 1
-                # now that string is translated, we may reuse its place as ranges
-                if args.reuse_ranges:
-                    for o in mustrepoint or os:
-                        i = o+1
-                        while i < len(data):
-                            if find_pointers_to_offset(i): # string is overused starting from this point
-                                break
-                            if data[i] == '\0' : # last byte
-                                i += 1 # include it too
-                                break
-                            i += 1
-                        addrange(o, i)
-                        print >>log, " ++ Reclaimed %d bytes from this string" % (i-o)
+            if key in keys:
+                keys.remove(key) # as it is translated now
+                translated += 1
+            # now that string is translated, we may reuse its place as ranges
+            if args.reuse_ranges:
+                for o in mustrepoint or os:
+                    i = o+1
+                    while i < len(data):
+                        if find_pointers_to_offset(i): # string is overused starting from this point
+                            break
+                        if data[i] == '\0' : # last byte
+                            i += 1 # include it too
+                            break
+                        i += 1
+                    addrange(o, i)
+                    print >>log, " ++ Reclaimed %d bytes from this string" % (i-o)
         npass += 1
         print >>log, "Pass %d completed." % npass
         sizes = [r[1]-r[0] for r in ranges]
