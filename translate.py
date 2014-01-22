@@ -329,6 +329,7 @@ def translate_fw(args):
         print >>log, "NOTICE: No strings, nothing to do! Will just duplicate fw"
 
     untranslated = 0 # number of strings we could not translate because of range lack
+    translated = 0 # number of strings translated in this pass
     for key in keys:
         val = strings[key]
         print >>log, "Processing", repr(key)
@@ -359,6 +360,7 @@ def translate_fw(args):
                 print >>log, "OK" # this occurance replaced successfully
             if not mustrepoint:
                 keys.remove(key) # this string is translated
+                translated += 1
                 continue # everything replaced fine for that key
         # we are here means that new string is longer than old (and not an
         # inplace one - or at least has one non-inplace-possible occurance)
@@ -403,6 +405,7 @@ def translate_fw(args):
             if len(datar) != oldlen:
                 raise AssertionError("Length mismatch")
         keys.remove(key) # as it is translated now
+        translated += 1
         # now that string is translated, we may reuse its place as ranges
         if args.reuse_ranges:
             for o in mustrepoint or os:
