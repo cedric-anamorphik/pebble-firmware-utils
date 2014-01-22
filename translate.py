@@ -384,7 +384,7 @@ def translate_fw(args):
                 r = rx
                 break # break inner loop (on ranges)
         if not r: # suitable range not found
-            print >>log, "** Notice: no (more) ranges available for this phrase. Will skip it."
+            print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
             untranslated += 1
             continue # main loop
         print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
