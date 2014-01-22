@@ -43,8 +43,7 @@ def find_all_strings():
     Returns array of tuples: (offset, value, string)
     """
     pointers = [] # tuples: offset to pointer, offset to its string, the string itself
-    for i in range(0, len(data)-3, 4): # each 4-aligned int; -3 to avoid last (partial) value
-        n = unpack("I", data[i:i+4])[0]
+    for i, n in enumerate(datap):
         s = is_string_pointer(n)
         if s:
             #print >>log, i,n,s
@@ -231,7 +230,7 @@ def translate_fw(args):
     data = args.tintin.read()
     datar = data # start from just copy, later will change it
     # convert to pointers:
-    for i in range(0, len(data)-3, 4):
+    for i in range(0, len(data)-3, 4): # each 4-aligned int; -3 to avoid last (partial) value
         n = unpack("I", data[i:i+4])[0]
         datap.append(n)
 
