@@ -185,11 +185,15 @@ def read_strings_po(f, exclude=[]):
                         print >>log, "Translation = original, ignoring line %s" % left
                     elif left in keys:
                         if context:
-                            if strings[left] is list:
-                                if context in strings[left]:
-                                    print "Warning: duplicate contexted line %s @ %d" % (left, context)
-                                else:
-                                    strings[left][context] = right
+                            if type(strings[left]) is list:
+                                if len(strings[left]) < context:
+                                    strings[left] += [None] * (len(strings[left])-context)
+                                    strings[left].append(right)
+                                else: # have such item already
+                                    if strings[left][context]:
+                                        print "Warning: duplicate contexted line %s @ %d" % (left, context)
+                                    else:
+                                        strings[left][context] = right
                             else:
                                 print >>log, "Warning: ignoring contexted line %s because there is already not-contexted one"\
                                         % left
@@ -197,9 +201,10 @@ def read_strings_po(f, exclude=[]):
                             print >>log, "Warning: ignoring duplicate line %s" % left
                     else:
                         keys.append(left)
-                        if context:
-                            strings[left] = []
-                            strings[left][context] = right
+                        if context != None:
+                            r = [None] * context
+                            r[context] = right
+                            strings[left] = r
                         else:
                             strings[left] = right
                         if inplace:
