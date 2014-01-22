@@ -284,7 +284,7 @@ def translate_fw(args):
                 print >>log, "-Warning: starting mask %s not found, ignoring this range" % repr(r[0])
                 continue
             end = start+data[start:].find(r[1])
-            if end < 0:
+            if end < start:
                 print >>log, "-Warning: start at 0x%X, ending mask %s not found, ignoring this range" % (start, repr(r[1]))
                 continue
             length = end + len(r[1]) - start
