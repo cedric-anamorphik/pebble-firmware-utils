@@ -11,6 +11,8 @@ datap = []
 # datar is data to return
 datar = ""
 
+EOF = 0x70000 - 48
+
 # where to write logs
 log = sys.stdout
 
@@ -326,7 +328,7 @@ def translate_fw(args):
             addrange(r[0], r[1])
         elif r == "append":
             start = len(datar)
-            end = 0x70000-48
+            end = EOF
             if start < end:
                 addrange(start, end)
             else:
@@ -442,11 +444,11 @@ def translate_fw(args):
                         print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
                         untranslated += 1
                         continue # to next value variant
-                    print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
+                    print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == EOF else "")
                     newp = r[0]
                     oldlen = len(datar)
                     datar = datar[0:newp] + v + '\0' + datar[newp+len(v)+1:]
-                    if len(datar) != oldlen and r[1] != 0x70000: #70000 is "range" at the end of file
+                    if len(datar) != oldlen and r[1] != EOF: #70000 is "range" at the end of file
                         raise AssertionError("Length mismatch")
                     r[0] += len(v) + 1 # remove used space from that range
                     newp += 0x08010000 # convert from offset to pointer
