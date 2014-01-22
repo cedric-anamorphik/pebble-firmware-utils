@@ -190,7 +190,7 @@ def read_strings_po(f, exclude=[]):
                                 # because POEditor omits lines with msgctxt=0
                             if context == None:
                                 context = 0 # for the same reason as above
-                            if len(strings[left]) < context:
+                            if len(strings[left]) <= context:
                                 strings[left] += [None] * (len(strings[left])-context)
                                 strings[left].append(right)
                             else: # have such item already
