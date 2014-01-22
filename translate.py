@@ -428,27 +428,28 @@ def translate_fw(args):
                     continue
 
                 if v in stored: # such string was already stored
-                    r = stored[v]
+                    newps = stored[v]
+                    print >>log, " -- using stored ptr"
                 else:
                     r = None # range to use
                     for rx in ranges:
                         if rx[1]-rx[0] >= len(v)+1: # this range have enough space
                             r = rx
                             break # break inner loop (on ranges)
-                    stored[v] = r
-                if not r: # suitable range not found
-                    print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
-                    untranslated += 1
-                    continue # to next value variant
-                print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
-                newp = r[0]
-                oldlen = len(datar)
-                datar = datar[0:newp] + v + '\0' + datar[newp+len(v)+1:]
-                if len(datar) != oldlen and r[1] != 0x70000: #70000 is "range" at the end of file
-                    raise AssertionError("Length mismatch")
-                r[0] += len(v) + 1 # remove used space from that range
-                newp += 0x08010000 # convert from offset to pointer
-                newps = pack('I', newp)
+                    if not r: # suitable range not found
+                        print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
+                        untranslated += 1
+                        continue # to next value variant
+                    print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == 0x70000 else "")
+                    newp = r[0]
+                    oldlen = len(datar)
+                    datar = datar[0:newp] + v + '\0' + datar[newp+len(v)+1:]
+                    if len(datar) != oldlen and r[1] != 0x70000: #70000 is "range" at the end of file
+                        raise AssertionError("Length mismatch")
+                    r[0] += len(v) + 1 # remove used space from that range
+                    newp += 0x08010000 # convert from offset to pointer
+                    newps = pack('I', newp)
+                    stored[v] = newps
                 for pidx, p in enumerate(ps): # now update pointers
                     if len(vals) > 1: # if contexted
                         if pidx >= len(vals):
