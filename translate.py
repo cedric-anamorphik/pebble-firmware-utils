@@ -270,7 +270,10 @@ def translate_fw(args):
     ranges = []
     def addrange(start, end):
         """ Check range for clashes and then add it to ranges list """
-        for r in ranges:
+        for r in list(ranges):
+            if r[0] == r[1]: # singular range
+                ranges.remove(r) # remove as it is unneeded
+                continue # to next range
             if start == r[0] and end == r[1]: # duplicate
                 print >>log, "### Duplicate range %x-%x, skipping." % (start, end)
                 return
@@ -278,7 +281,8 @@ def translate_fw(args):
                 print >>log, "### Range clash!! This must be an error! Range %x-%x fits within %x-%x; ignoring" % (
                     start, end, r[0], r[1])
                 return
-            if start <= r[0] and end >= r[1]: # fully outside; replace. FIXME : this might introduce clashes with other ranges
+            if start <= r[0] and end >= r[1]:
+                # fully outside; replace. FIXME : this might introduce clashes with other ranges
                 print >>log, "### Range clash!! This must be an error! Range %x-%x contained in %x-%x; replacing" % (
                     start, end, r[0], r[1])
                 r[0] = start
