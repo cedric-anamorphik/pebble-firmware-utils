@@ -231,8 +231,10 @@ def read_strings_po(f, exclude=[]):
         elif line.startswith("msgstr"):
             right = parsevalline(line, 6)
         elif line.startswith("msgctxt"):
-            context = int(parsevalline(line, 7))
-            # FIXME: test for exceptions
+            try:
+                context = int(parsevalline(line, 7))
+            except ValueError:
+                print "*** ERROR: %s is not an integer" % line
         elif line.startswith('"'): # continuation?
             if right is not None:
                 right += parsevalline(line, 0)
@@ -402,27 +404,28 @@ def translate_fw(args):
             # inplace one - or at least has one non-inplace-possible occurance)
             # so will add it to end of tintin file or to ranges
             print >>log, " -- %s %d occurance(s), looking for pointers" % ("still have" if mustrepoint else "found", len(mustrepoint or os))
+            ps = []
+            for o in list(mustrepoint) or list(os): # use mustrepoint if it is not empty
+                newps = find_pointers_to_offset(o)
+                ps.extend(newps)
+                if not newps:
+                    print >>log, " !? String at 0x%X is unreferenced, will ignore! (must be partial or something)" % o
+                    # and remove it from list (needed for reuse_ranges)
+                    if mustrepoint:
+                        mustrepoint.remove(o)
+                    else:
+                        os.remove(o)
+            if not ps:
+                print >>log, " !! No pointers to that string, cannot translate!"
+                continue
+            print >>log, " == found %d ptrs; appending or inserting string and updating them" % len(ps)
+
             for idx, v in enumerate(vals): # for each contexted value (or for the only value)
                 if v == None:
-                    continue; # skip empty ones
-
-                ps = []
-                for o in list(mustrepoint) or list(os): # use mustrepoint if it is not empty
-                    if len(vals) > 1 and os.index(o) != idx: # if contexted and not current
-                        continue # don't add pointers for it
-                    newps = find_pointers_to_offset(o)
-                    ps.extend(newps)
-                    if not newps:
-                        print >>log, " !? String at 0x%X is unreferenced, will ignore! (must be partial or something)" % o
-                        # and remove it from list (needed for reuse_ranges)
-                        if mustrepoint:
-                            mustrepoint.remove(o)
-                        else:
-                            os.remove(o)
-                if not ps:
-                    print >>log, " !! No pointers to that string, cannot translate!"
+                    continue # skip empty ones
+                if idx >= len(ps):
+                    print " *! Warning: no pointers for given context %d" % idx
                     continue
-                print >>log, " == found %d ptrs; appending or inserting string and updating them" % len(ps)
 
                 r = None # range to use
                 for rx in ranges:
@@ -442,7 +445,12 @@ def translate_fw(args):
                 r[0] += len(v) + 1 # remove used space from that range
                 newp += 0x08010000 # convert from offset to pointer
                 newps = pack('I', newp)
-                for p in ps: # now update pointers
+                for pidx, p in enumerate(ps): # now update pointers
+                    if len(vals) > 1: # if contexted
+                        if pidx >= len(vals):
+                            print " *! Warning: exceeding pointer %d for context %d" % (pidx, idx)
+                        if idx != pidx:
+                            continue # skip irrelevant pointers
                     oldlen = len(datar)
                     datar = datar[0:p] + newps + datar[p+4:]
                     if len(datar) != oldlen:
