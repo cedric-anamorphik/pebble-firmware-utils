@@ -196,7 +196,7 @@ def read_strings_po(f, exclude=[]):
                                     strings[left].append(right)
                                 else: # have such item already
                                     if strings[left][c]:
-                                        print "Warning: duplicate contexted line %s @ %d" % (left, c)
+                                        print >>log, "Warning: duplicate contexted line %s @ %d" % (left, c)
                                     else:
                                         strings[left][c] = right
                         else:
@@ -236,7 +236,7 @@ def read_strings_po(f, exclude=[]):
             try:
                 context = [int(x) for x in parsevalline(line, 7).split(',')]
             except ValueError:
-                print "*** ERROR: %s is not an integer or comma-separated list of integers" % line
+                print >>log, "*** ERROR: %s is not an integer or comma-separated list of integers" % line
         elif line.startswith('"'): # continuation?
             if right is not None:
                 right += parsevalline(line, 0)
@@ -424,7 +424,7 @@ def translate_fw(args):
                 if v == None:
                     continue # skip empty ones
                 if idx >= len(ps):
-                    print " *! Warning: no pointers for given context %d" % idx
+                    print >>log, " *! Warning: no pointers for given context %d" % idx
                     continue
 
                 if v in stored: # such string was already stored
@@ -453,7 +453,7 @@ def translate_fw(args):
                 for pidx, p in enumerate(ps): # now update pointers
                     if len(vals) > 1: # if contexted
                         if pidx >= len(vals):
-                            print " *! Warning: exceeding pointer %d for context %d" % (pidx, idx)
+                            print >>log, " *! Warning: exceeding pointer %d for context %d" % (pidx, idx)
                         if idx != pidx:
                             continue # skip irrelevant pointers
                     oldlen = len(datar)
