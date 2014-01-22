@@ -373,7 +373,8 @@ def translate_fw(args):
                     print >>log, " ** Warning: too few contexts given for %s" % key
                     val += [None] * len(os) - len(val) # pad it with Nones to avoid Index out of bounds
             mustrepoint=[] # list of "inplace" key occurances which cannot be replaced inplace
-            if len(val) <= len(key) or key in inplace: # can just replace
+            if type(val) is not list and (len(val) <= len(key) or key in inplace): # can just replace
+                # but will not replace contexted vals
                 print >>log, " -- found %d occurance(s), replacing" % len(os)
                 for idx, o in enumerate(os):
                     doreplace = True
@@ -388,12 +389,8 @@ def translate_fw(args):
                                 break # break inner loop
                     if not doreplace:
                         continue # skip to next occurance, this will be handled later
-                    rval = val[idx] if type(val) is list else val
-                    if rval == None:
-                        print >>log, " -- skipping occurance because of absent translation for this context"
-                        continue # skip to next occurance, forget about this one
                     oldlen = len(datar)
-                    datar = datar[0:o] + rval + '\0' + datar[o+len(rval)+1:]
+                    datar = datar[0:o] + val + '\0' + datar[o+len(val)+1:]
                     if len(datar) != oldlen:
                         raise AssertionError("Length mismatch")
                     print >>log, "OK" # this occurance replaced successfully
