@@ -274,7 +274,7 @@ def translate_fw(args):
                 r[0] = start
                 return
         ranges.append([start, end])
-    for r in args.ranges:
+    for r in args.ranges or []:
         if len(r) == 3: # signature-specified range - convert it to offsets
             if type(r[0]) != str or type(r[1]) != str or type(r[2]) != int:
                 print >>log, "-Warning: invalid range mask specification %s; ignoring" % repr(r)
