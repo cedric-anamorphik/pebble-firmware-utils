@@ -420,16 +420,19 @@ def translate_fw(args):
                         i += 1
                     addrange(o, i)
                     print >>log, " ++ Reclaimed %d bytes from this string" % (i-o)
+        print >>log, "Pass completed."
+        print >>log, "Remaining space at this point: %d bytes scattered in %d ranges" % \
+                (sum([r[1]-r[0] for r in ranges]), len(ranges))
         print
         if not args.reuse_ranges: # new ranges definitely could not appear
             break
         if len(keys) == 0:
-            print "All strings are translated. Enjoy!"
+            print >>log, "All strings are translated. Enjoy!"
             break
         if translated == 0:
-            print "Nothing changed in this pass; giving up."
+            print >>log, "Nothing changed in this pass; giving up."
             break
-        print "Translated %d strings in this pass; let's try to translate %d remaining" % (translated, untranslated)
+        print >>log, "Translated %d strings in this pass; let's try to translate %d remaining" % (translated, untranslated)
         untranslated = 0 # restart counter as we will retry all these strings
     print >>log, "Saving..."
     args.output.write(datar)
@@ -439,7 +442,6 @@ def translate_fw(args):
         print >>log, "WARNING: Couldn't translate %d strings because of ranges lack." % untranslated
     else:
         print >>log, "I think that all the strings were translated successfully :-)"
-    print >>log, "Remaining space: %d bytes in %d ranges" % (sum([r[1]-r[0] for r in ranges]), len(ranges))
 
 if __name__ == "__main__":
     args = parse_args()
