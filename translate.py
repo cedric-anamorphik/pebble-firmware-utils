@@ -368,7 +368,7 @@ def translate_fw(args):
             newps = find_pointers_to_offset(o)
             ps.extend(newps)
             if not newps:
-                print >>log, " !? String at 0x%X is unreferenced, will ignore!" % o
+                print >>log, " !? String at 0x%X is unreferenced, will ignore! (must be partial or something)" % o
                 # and remove it from list (needed for reuse_ranges)
                 if mustrepoint:
                     mustrepoint.remove(o)
@@ -420,6 +420,9 @@ def translate_fw(args):
     print >>log, "Done."
     if untranslated:
         print >>log, "WARNING: Couldn't translate %d strings because of ranges lack." % untranslated
+    else:
+        print >>log, "I think that all the strings were translated successfully :-)"
+    print >>log, "Remaining space: %d bytes in %d ranges" % (sum([r[1]-r[0] for r in ranges]), len(ranges))
 
 if __name__ == "__main__":
     args = parse_args()
