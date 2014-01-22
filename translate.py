@@ -328,6 +328,7 @@ def translate_fw(args):
     if not strings:
         print >>log, "NOTICE: No strings, nothing to do! Will just duplicate fw"
 
+    npass = 0
     while True:
         untranslated = 0 # number of strings we could not translate because of range lack
         translated = 0 # number of strings translated in this pass
@@ -420,7 +421,8 @@ def translate_fw(args):
                         i += 1
                     addrange(o, i)
                     print >>log, " ++ Reclaimed %d bytes from this string" % (i-o)
-        print >>log, "Pass completed."
+        npass += 1
+        print >>log, "Pass %d completed." % npass
         print >>log, "Remaining space at this point: %d bytes scattered in %d ranges" % \
                 (sum([r[1]-r[0] for r in ranges]), len(ranges))
         print
