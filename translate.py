@@ -368,6 +368,11 @@ def translate_fw(args):
             ps.extend(newps)
             if not newps:
                 print >>log, " !? String at 0x%X is unreferenced, will ignore!" % o
+                # and remove it from list (needed for reuse_ranges)
+                if mustrepoint:
+                    mustrepoint.remove(o)
+                else:
+                    os.remove(o)
         if not ps:
             print >>log, " !! No pointers to that string, cannot translate!"
             continue
@@ -394,6 +399,19 @@ def translate_fw(args):
             datar = datar[0:p] + newps + datar[p+4:]
             if len(datar) != oldlen:
                 raise AssertionError("Length mismatch")
+        # now that string is translated, we may reuse its place as ranges
+        if args.reuse_ranges:
+            for o in mustrepoint or os:
+                i = o+1
+                while i < len(data):
+                    if find_pointers_to_offset(i): # string is overused starting from this point
+                        break
+                    if data[i] == '\0' : # last byte
+                        i += 1 # include it too
+                        break
+                    i += 1
+                addrange(o, i)
+                print >>log, " ++ Reclaimed %d bytes from this string" % (i-o)
     print >>log, "Saving..."
     args.output.write(datar)
     args.output.close()
@@ -401,5 +419,4 @@ def translate_fw(args):
 
 if __name__ == "__main__":
     args = parse_args()
-    print args
     translate_fw(args)
