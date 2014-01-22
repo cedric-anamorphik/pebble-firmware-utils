@@ -172,7 +172,9 @@ def read_strings_po(f):
         if len(line) == 0 : # end of record
             if left: # else, if left is empty -> ignoring
                 if right: # both left and right are provided
-                    if left in keys:
+                    if left == right:
+                        print >>log, "Translation = original, ignoring line %s" % left
+                    elif left in keys:
                         print >>log, "Warning: ignoring duplicate line %s" % left
                     else:
                         keys.append(left)
