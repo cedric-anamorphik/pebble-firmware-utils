@@ -388,7 +388,7 @@ def translate_fw(args):
                                 break # break inner loop
                     if not doreplace:
                         continue # skip to next occurance, this will be handled later
-                    rval = val if type(val) is list else val[idx]
+                    rval = val[idx] if type(val) is list else val
                     if rval == None:
                         print >>log, " -- skipping occurance because of absent translation for this context"
                         continue # skip to next occurance, forget about this one
