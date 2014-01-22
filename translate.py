@@ -419,6 +419,7 @@ def translate_fw(args):
                 continue
             print >>log, " == found %d ptrs; appending or inserting string and updating them" % len(ps)
 
+            stored = {}
             for idx, v in enumerate(vals): # for each contexted value (or for the only value)
                 if v == None:
                     continue # skip empty ones
@@ -426,11 +427,15 @@ def translate_fw(args):
                     print " *! Warning: no pointers for given context %d" % idx
                     continue
 
-                r = None # range to use
-                for rx in ranges:
-                    if rx[1]-rx[0] >= len(v)+1: # this range have enough space
-                        r = rx
-                        break # break inner loop (on ranges)
+                if v in stored: # such string was already stored
+                    r = stored[v]
+                else:
+                    r = None # range to use
+                    for rx in ranges:
+                        if rx[1]-rx[0] >= len(v)+1: # this range have enough space
+                            r = rx
+                            break # break inner loop (on ranges)
+                    stored[v] = r
                 if not r: # suitable range not found
                     print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
                     untranslated += 1
