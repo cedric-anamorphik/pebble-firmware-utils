@@ -331,7 +331,7 @@ def translate_fw(args):
     while True:
         untranslated = 0 # number of strings we could not translate because of range lack
         translated = 0 # number of strings translated in this pass
-        for key in keys:
+        for key in list(keys): # use clone to avoid breaking on removal
             val = strings[key]
             print >>log, "Processing", repr(key)
             os = find_string_offsets(key)
@@ -368,7 +368,7 @@ def translate_fw(args):
             # so will add it to end of tintin file or to ranges
             print >>log, " -- %s %d occurance(s), looking for pointers" % ("still have" if mustrepoint else "found", len(mustrepoint or os))
             ps = []
-            for o in mustrepoint or os: # use mustrepoint if it is not empty
+            for o in list(mustrepoint) or list(os): # use mustrepoint if it is not empty
                 newps = find_pointers_to_offset(o)
                 ps.extend(newps)
                 if not newps:
