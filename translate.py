@@ -432,7 +432,7 @@ def translate_fw(args):
                     print >>log, " -- using stored ptr"
                 else:
                     r = None # range to use
-                    for rx in ranges:
+                    for rx in sorted(ranges, key=lambda r: r[1]-r[0]):
                         if rx[1]-rx[0] >= len(v)+1: # this range have enough space
                             r = rx
                             break # break inner loop (on ranges)
