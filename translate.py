@@ -163,8 +163,8 @@ def read_strings_po(f):
     inplaces = []
 
     # our scratchpad
-    left = ""
-    right = ""
+    left = None
+    right = None
     inplace = False
 
     for line in f:
@@ -182,8 +182,8 @@ def read_strings_po(f):
                 else: # only left provided -> line untranslated, ignoring
                     print >>log, "Ignoring untranslated line %s" % left
             # now clear scratchpad
-            left = ""
-            right = ""
+            left = None
+            right = None
             inplace = False
         elif line.startswith("#,"): # flags
             flags = [x.strip() for x in line[2 :].split(",")] # parse flags, removing leading "#,"
@@ -200,9 +200,9 @@ def read_strings_po(f):
             # context = parsevalline(line, 7)
             print >>log, "Warning: string ctxt is not supported yet; ignoring"
         elif line.startswith('"'): # continuation?
-            if right:
+            if right is not None:
                 right += parsevalline(line, 0)
-            elif left:
+            elif left is not None:
                 left += parsevalline(line, 0)
             else:
                 print >>log, "Warning: unexpected continuation line: %s" % line
@@ -312,7 +312,7 @@ def translate_fw(args):
 
     for key in keys:
         val = strings[key]
-        print >>log, "Processing", key
+        print >>log, "Processing", repr(key)
         os = find_string_offsets(key)
         if not os: # no such string
             print >>log, " -- not found, ignoring"
