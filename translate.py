@@ -169,6 +169,7 @@ def read_strings_po(f, exclude=[]):
     right = None
     inplace = False
     ref = None
+    context = None
 
     skipnum = 0 # number of excluded lines
     for line in f:
@@ -179,13 +180,28 @@ def read_strings_po(f, exclude=[]):
                 skipnum += 1
             elif left: # or else, if left is empty -> ignoring
                 if right: # both left and right are provided
+                    # FIXME: support inplace for contexted lines? do we need this at all?
                     if left == right:
                         print >>log, "Translation = original, ignoring line %s" % left
                     elif left in keys:
-                        print >>log, "Warning: ignoring duplicate line %s" % left
+                        if context:
+                            if strings[left] is list:
+                                if context in strings[left]:
+                                    print "Warning: duplicate contexted line %s @ %d" % (left, context)
+                                else:
+                                    strings[left][context] = right
+                            else:
+                                print >>log, "Warning: ignoring contexted line %s because there is already not-contexted one"\
+                                        % left
+                        else:
+                            print >>log, "Warning: ignoring duplicate line %s" % left
                     else:
                         keys.append(left)
-                        strings[left] = right
+                        if context:
+                            strings[left] = []
+                            strings[left][context] = right
+                        else:
+                            strings[left] = right
                         if inplace:
                             inplaces.append(left)
                 else: # only left provided -> line untranslated, ignoring
@@ -195,6 +211,7 @@ def read_strings_po(f, exclude=[]):
             right = None
             inplace = False
             ref = None
+            context = None
         elif line.startswith("#,"): # flags
             flags = [x.strip() for x in line[2 :].split(",")] # parse flags, removing leading "#,"
             if "fuzzy" in flags:
@@ -209,8 +226,8 @@ def read_strings_po(f, exclude=[]):
         elif line.startswith("msgstr"):
             right = parsevalline(line, 6)
         elif line.startswith("msgctxt"):
-            # context = parsevalline(line, 7)
-            print >>log, "Warning: string ctxt is not supported yet; ignoring"
+            context = int(parsevalline(line, 7))
+            # FIXME: test for exceptions
         elif line.startswith('"'): # continuation?
             if right is not None:
                 right += parsevalline(line, 0)
