@@ -233,7 +233,7 @@ def patch_fw(args):
         if len(matches) > 1:
             print "Multiple match - ambiguous, so failing"
             return False
-        return matches[0] + offset
+        return matches[0] + offset + 0x08010000
 
     blocks = [] # list of all our blocks
     procs = {} # all known procedure names -> addr
@@ -308,9 +308,12 @@ def patch_fw(args):
         print "WARNING: unterminated block detected, will ignore it"
 
     # now apply patches
+    print "Applying patches..."
     datar = data
-    for block in blocks:
+    for bnum, block in enumerate(blocks):
+        print "Block %d:" % (bnum+1)
         if len(block) == 0:
+            print "Skipping (nothing to patch)"
             continue # skip empty blocks as they need not to be patched
         context = procs.copy()
         for i in block: # for every instruction check label
@@ -321,7 +324,10 @@ def patch_fw(args):
         for i in block:
             i.setContext(context)
             code += i.getCode()
+        blen = len(datar)
         datar = datar[:start] + code + datar[start+len(code):]
+        if len(datar) != blen:
+            raise Exception("Length mismatch - was %d, now %d" % (blen, len(datar)))
     print "Saving..."
     args.output.write(datar)
     args.output.close()
