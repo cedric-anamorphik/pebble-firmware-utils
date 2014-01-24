@@ -233,6 +233,7 @@ def patch_fw(args):
         if len(matches) > 1:
             print "Multiple match - ambiguous, so failing"
             return False
+        #print "Mask found at %X" % (matches[0] + offset + 0x08010000)
         return matches[0] + offset + 0x08010000
 
     blocks = [] # list of all our blocks
@@ -240,6 +241,7 @@ def patch_fw(args):
     procs = {} # all known procedure names -> addr
 
     # scratchpad:
+    baddr = None # block beginning
     addr = None # current instruction starting address, or block beginning
     block = None # current block
     label = None # label saved for further use
@@ -255,15 +257,16 @@ def patch_fw(args):
         if block == None: # outside of block
             myassert(tokens[-1] == '{', "String outside of block is not a block start")
             del tokens[-1]
-            addr = search_addr(tokens)
+            addr = baddr = search_addr(tokens)
             myassert(addr != False, "Mask not found. Failing.")
             block = []
         else: # inside block
             if len(tokens) == 1 and tokens[0] == '}': # end of block
                 blocks.append(block)
                 blocknames.append(blockname)
-                procs[blockname] = addr # save this block's address for future use
+                procs[blockname] = baddr # save this block's address for future use
                 addr = None
+                baddr = None
                 block = None
                 blockname = None
                 continue
@@ -322,6 +325,7 @@ def patch_fw(args):
             print "skipping (nothing to patch)"
             continue # skip empty blocks as they need not to be patched
         context = procs.copy()
+        #print context
         for i in block: # for every instruction check label
             if i.getLabel():
                 context[i.getLabel()] = i.getPosition()
