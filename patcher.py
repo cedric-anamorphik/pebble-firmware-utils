@@ -236,12 +236,14 @@ def patch_fw(args):
         return matches[0] + offset + 0x08010000
 
     blocks = [] # list of all our blocks
+    blocknames = []
     procs = {} # all known procedure names -> addr
 
     # scratchpad:
     addr = None # current instruction starting address, or block beginning
     block = None # current block
     label = None # label saved for further use
+    blockname = None # proc
 
     for lnum, line in enumerate(args.patch):
         line = line[:-1].strip() # remove \n and leading/trailing whitespaces
@@ -259,12 +261,15 @@ def patch_fw(args):
         else: # inside block
             if len(tokens) == 1 and tokens[0] == '}': # end of block
                 blocks.append(block)
+                blocknames.append(blockname)
+                procs[blockname] = addr # save this block's address for future use
                 addr = None
                 block = None
+                blockname = None
                 continue
             if tokens[0] == "proc": # this block has name!
                 myassert(len(tokens) == 2, "proc keyword requires one argument")
-                procs[tokens[1]] = addr # save this block's address for future use
+                blockname = tokens[1]
                 continue
             if tokens[0].endswith(':'): # label
                 label = tokens[0][:-1]
@@ -311,9 +316,10 @@ def patch_fw(args):
     print "Applying patches..."
     datar = data
     for bnum, block in enumerate(blocks):
-        print "Block %d:" % (bnum+1)
+        print "Block %d: %s" % (bnum+1, blocknames[bnum] or "(no name)")
+        print " ",
         if len(block) == 0:
-            print "Skipping (nothing to patch)"
+            print "skipping (nothing to patch)"
             continue # skip empty blocks as they need not to be patched
         context = procs.copy()
         for i in block: # for every instruction check label
@@ -328,6 +334,7 @@ def patch_fw(args):
         datar = datar[:start] + code + datar[start+len(code):]
         if len(datar) != blen:
             raise Exception("Length mismatch - was %d, now %d" % (blen, len(datar)))
+        print "%d bytes patched" % len(code)
     print "Saving..."
     args.output.write(datar)
     args.output.close()
