@@ -90,7 +90,7 @@ class Jump(Instruction):
                    (offset)
         return pack('<H', code)
 class LongJump(Instruction):
-    """ B.W instruction (4-bytes) """
+    """ B.W or BL instruction (4-bytes) """
     def __init__(self, dest, bl):
         """
         dest is a destination label
@@ -121,13 +121,6 @@ class BL(LongJump):
     def __init__(self, dest):
         LongJump.__init__(self, dest, True)
 
-class Signature:
-    def __init__(self, bytes):
-        """
-        bytes: list of strings (as occured in input file, but without '{'
-        """
-        self.items
-
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser(
@@ -144,15 +137,18 @@ def patch_fw(args):
     global data,datap,datar
 
     def myassert(cond, msg):
+        """ Raise descriptive SyntaxError if not cond """
         if not cond:
             raise SyntaxError("%d: %s (%s)" % (lnum+1, msg, line))
     def tryc(action, msg):
+        """ Try execute passed lambda function, and raise correct SyntaxError on ValueError """
         try:
             return action()
         except ValueError as e:
             raise SyntaxError("%d: %s - %s (%s)" % (lnum+1, msg, e, line))
 
     def parse_hex(vals):
+        """ Convert list of hexadecimal bytes to string (byte array) """
         ret = ''
         for v in vals:
             myassert(len(v) == 2, "Malformed hex string at %s" % v)
@@ -163,9 +159,11 @@ def patch_fw(args):
 
     def search_addr(sig):
         """
-        sig is list of bytes, "?[n]" or "@"
-        bytes must match, ? is any byte, "?n" is n bytes,
-        @ is required position (default position is at start)
+        This function tries to match signature to data,
+        and returns a memory address of found match only if it is an only one.
+        sig is list of bytes (in hex), "?[n]" or "@"
+        bytes must match, ? means any byte, "?n" means any n bytes,
+        @ is required position (default position is at start of mask)
         """
         def is_hex(n):
             return n.isdigit() or n.lower() in 'abcdef'
@@ -205,7 +203,7 @@ def patch_fw(args):
                 myassert(False, "Illegal value: %s" % s)
         if string:
             mask.append(string)
-        # now mask is full
+        # now mask is fully parsed
         gpos = None
         matches = []
         while gpos < len(data): # None < n works
