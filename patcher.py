@@ -80,12 +80,12 @@ class Jump(Instruction):
             raise ValueError("Offset %X exceeds maximum of %X!" %
                              (offset, 1<<11))
         if usereg:
-            code = (0b1101 << 12) +\
+            code = (0b1011 << 12) +\
                    (self.cond << 8) +\
                    (offset << 3) +\
                    (self.reg)
         else:
-            code = (0b1011 << 12) +\
+            code = (0b1101 << 12) +\
                    (self.cond << 8) +\
                    (offset)
         return pack('<H', code)
