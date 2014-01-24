@@ -334,7 +334,7 @@ def patch_fw(args):
         datar = datar[:start] + code + datar[start+len(code):]
         if len(datar) != blen:
             raise Exception("Length mismatch - was %d, now %d" % (blen, len(datar)))
-        print "%d bytes patched" % len(code)
+        print "%d bytes patched at %X" % (len(code), start)
     print "Saving..."
     args.output.write(datar)
     args.output.close()
