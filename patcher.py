@@ -9,13 +9,14 @@ datar = ""
 
 class Instruction:
     """ Abstract, don't instantiate! """
-    def __init__(self):
-        self.label = None # will it work? TODO
     def setLabel(self, label):
         """ Sets name for this instruction to be discovered later """
         self.label = label
     def getLabel(self):
-        return self.label
+        try:
+            return self.label
+        except AttributeError:
+            return None # if we have not this property set
     def setContext(self, context):
         """
         Sets context (dictionary label->address)
@@ -30,7 +31,7 @@ class Instruction:
         try:
             return self.context[label]
         except KeyError:
-            raise Exception("No such address: %d" % label)
+            raise Exception("No such address: %s (for %s)" % (label, self))
     def setPosition(self, pos):
         """
         Sets address where this instruction will be placed
@@ -58,13 +59,13 @@ class I(Instruction):
         return self.code
 class Jump(Instruction):
     """ Any of two-byte B** or CB* """
-    def __init__(self, label, cond, reg=None):
+    def __init__(self, dest, cond, reg=None):
         """
         label: jump destination
         cond: condition (number, max 4 bits)
         reg: number of register to use (if CB*) or None (if B**)
         """
-        self.label = label
+        self.dest = dest
         if cond < 0 or cond > 0b1111:
             raise ValueError("Bad condition value %x!" % cond)
         self.cond = cond
@@ -72,21 +73,21 @@ class Jump(Instruction):
             raise ValueError("Bad register value %x!" % reg)
         self.reg = reg
     def getCode(self):
-        offset = self._getAddr(self.label) - (self.pos+4)
+        offset = self._getAddr(self.dest) - (self.pos+4)
         offset = offset >> 1
         usereg = self.reg != None
         if abs(offset) >= 1<<(5 if usereg else 8):
             raise ValueError("Offset %X exceeds maximum of %X!" %
                              (offset, 1<<11))
         if usereg:
-            code = (0b1011 << 12) +\
-                   (self.cond << 8) +\
-                   (offset)
-        else:
             code = (0b1101 << 12) +\
                    (self.cond << 8) +\
                    (offset << 3) +\
                    (self.reg)
+        else:
+            code = (0b1011 << 12) +\
+                   (self.cond << 8) +\
+                   (offset)
         return pack('<H', code)
 class LongJump(Instruction):
     """ B.W instruction (4-bytes) """
@@ -155,7 +156,7 @@ def patch_fw(args):
         ret = ''
         for v in vals:
             myassert(len(v) == 2, "Malformed hex string at %s" % v)
-            ret += pack('B', tryc(lambda: int(v, 16), "Malformed hex string at %s: %s" % v))
+            ret += pack('B', tryc(lambda: int(v, 16), "Malformed hex string at %s" % v))
         return ret
 
     data = args.tintin.read()
@@ -177,18 +178,19 @@ def patch_fw(args):
                     b += m
                 else:
                     raise ValueError(m) # must never happen
+            return b
         offset = 0 # for @
         mask = [] # form: str, int(offset), str...
         string = '' # current string
         for s in sig:
             if len(s) == 2 and is_hex(s[0]) and is_hex(s[1]): # byte
                 b = int(s, 16) # must work as we checked already
-                string += b
+                string += chr(b)
             elif s == '@':
                 myassert(offset == 0, "Multiple '@'s (or starting with skip) - it is not good! Where am I?")
                 offset = masklen() + len(string)
             elif s[0] == '?':
-                del s[0]
+                s = s[1:]
                 if len(s) == 0:
                     val = 1
                 else:
@@ -205,7 +207,6 @@ def patch_fw(args):
             mask.append(string)
         # now mask is full
         gpos = None
-        found = False
         matches = []
         while gpos < len(data): # None < n works
             gpos = data.find(mask[0], gpos) # current proposed pos of mask start
@@ -224,7 +225,7 @@ def patch_fw(args):
                 else: # this must never happen
                     raise ValueError(m)
             if not mismatch: # mask matched
-                matches.add(gpos)
+                matches.append(gpos)
             gpos += 1 # to skip this occurance next time
         if len(matches) == 0:
             print "Mask not found"
@@ -285,9 +286,9 @@ def patch_fw(args):
                 cond = None
                 for t in tokens:
                     if len(t) == 2 and t[0] == 'R': # register
-                        reg = t
+                        reg = int(t[1])
                     elif t[0].isalpha() or t[0] == '_': # identifier (label)
-                        dest = t[0]
+                        dest = t
                     else: # must be number
                         cond = tryc(lambda: int(t), "Malformed argument for Jump: %s" % t)
                 myassert(cond != None and dest, "Illegal Jump call")
@@ -314,7 +315,7 @@ def patch_fw(args):
         context = procs.copy()
         for i in block: # for every instruction check label
             if i.getLabel():
-                context[i.getLabel()] = i
+                context[i.getLabel()] = i.getPosition()
         start = block[0].getPosition() - 0x08010000 # convert address to offset
         code = ''
         for i in block:
