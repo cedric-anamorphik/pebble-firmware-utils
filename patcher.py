@@ -255,6 +255,8 @@ def patch_fw(args):
                 else:
                     raise ValueError(m) # must never happen
             return b
+        if not sig:
+            raise ValueError("Cannot search for empty mask")
         offset = 0 # for @
         mask = [] # form: str, int(offset), str...
         string = '' # current string
@@ -335,10 +337,10 @@ def patch_fw(args):
             excess = [] # tokens after '{'
             for t in tokens:
                 if t == '{': # end of mask, start of block
-                    addr = baddr = search_addr(tokens)
+                    addr = baddr = search_addr(mask)
                     myassert(addr != False, "Mask not found. Failing.")
                     block = [] # now in block
-                elif block == []: # another part of mask, block not started yet
+                elif block == None: # another part of mask, block not started yet
                     mask.append(t)
                 else:
                     excess.append(t) # pass these to the following code
