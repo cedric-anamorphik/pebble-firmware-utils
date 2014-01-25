@@ -308,10 +308,13 @@ def patch_fw(args):
                     continue # line contains only label; will use it in next pass
                 # else go below: all following items can have label
             instr = None # this will be current instruction
-            if tokens[0] == "db": # define byte - most common instruction
+            if tokens[0] in ["db", "DCB"]: # define byte - most common instruction
                 myassert(len(tokens) >= 2, "Error - 'db' without value?")
                 del tokens[0]
                 instr = I(parse_hex(tokens))
+            elif tokens[0] in ["DCD", "DCW"]:
+                myassert(len(tokens) == 2, "Bad value count for DCx")
+                instr = DCx(2 if tokens[0]=="DCW" else 4, tokens[1])
             elif tokens[0] == "jump":
                 myassert(len(tokens) >= 3, "Too few arguments for Jump")
                 myassert(len(tokens) <= 4, "Too many arguments for Jump")
