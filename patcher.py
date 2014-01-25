@@ -7,6 +7,35 @@ from struct import pack #,unpack
 data = ""
 datar = ""
 
+# Helper functions for syntax checking
+def parseTokens(tokens):
+    """ Convert tokens from form ['Arg1,', 'Arg2', ',', 'Arg3'] to ['Arg1','Arg2','Arg3'] """
+    return [x.strip() for x in ' '.join(tokens).split(',')]
+def isReg(token):
+    if len(token) == 2:
+        return token[0] == 'R' and token[1].isdigit()
+    elif len(token) == 3:
+        return token[0] == 'R' and token[1] == '1' and token[2].isdigit()
+    else:
+        return False
+def parseReg(token):
+    """ Convert 'Rn' to n """
+    if token[0] != 'R' or len(token) not in [2,3]:
+        raise ValueError("Not a register: %s" % token)
+    token = token[1:]
+    return int(token) # or raise ValueError
+def isNumber(token):
+    try:
+        int(token,0)
+        return True
+    except:
+        return False
+def parseNumber(token):
+    return int(token, 0)
+def isLabel(token):
+    return len(token) > 0 and (token[0].isalpha() or token[0] == '_')
+
+# Classes for instructions
 class Instruction:
     """ Abstract, don't instantiate! """
     def setLabel(self, label):
@@ -142,6 +171,15 @@ class BL(LongJump):
     def __init__(self, dest):
         LongJump.__init__(self, dest, True)
 
+class CMP(Instruction):
+    """ either Rx,Rx or Rx,N """
+    def __init__(self, args):
+        args = ' '.join(args).split(',')
+        if len(args) != 2:
+            raise ValueError("Invalid args: %s" % repr(args))
+        self.args = args
+    def getCode(self):
+        pass
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser(
