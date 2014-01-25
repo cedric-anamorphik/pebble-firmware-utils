@@ -57,6 +57,27 @@ class I(Instruction):
         self.code = code
     def getCode(self):
         return self.code
+class DCx(Instruction):
+    """ DCW or DCD. For DCB see class I (command db) """
+    def __init__(self, size, val):
+        """ val is either number (dec/0xhex/0oct/0bbin) or label/address """
+        if size not in [2,4]:
+            raise ValueError("Unsupported size %d, it must be either 2 or 4" % size)
+        self.size = size
+        if type(val) is not str or len(val) < 1:
+            raise ValueError("Bad value: %s" % repr(val))
+        if size != 4 and not val[0].isdigit(): # address must be 4bytes!
+            raise ValueError("addrs are only valid for DCD, not DCW")
+        self.val = val
+    def getSize(self):
+        return self.size
+    def getCode(self):
+        if self.val[0].isdigit():
+            val = int(self.val, 0)
+        else:
+            val = self._getAddr(val)
+        fmt = '<H' if self.size==2 else '<I'
+        return pack(fmt, val)
 class Jump(Instruction):
     """ Any of two-byte B** or CB* """
     def __init__(self, dest, cond, reg=None):
