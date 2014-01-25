@@ -26,14 +26,18 @@ def parseReg(token, low = False):
     r = int(token) # or raise ValueError
     if r < 0 or r >= (8 if low else 16):
         raise ValueError("Bad register: %s" % token)
-def isNumber(token):
+    return r
+def isNumber(token, bytes):
     try:
-        int(token,0)
+        parseNumber(token, bytes)
         return True
     except:
         return False
-def parseNumber(token):
-    return int(token, 0)
+def parseNumber(token, bytes):
+    r = int(token, 0)
+    if r >= (0xFF, 0xFFFF, 0, 0xFFFFFFFF)[bytes]:
+        raise ValueError("Number too large: %s" % token)
+    return r
 def isLabel(token):
     return len(token) > 0 and (token[0].isalpha() or token[0] == '_')
 
@@ -172,17 +176,30 @@ class BW(LongJump):
 class BL(LongJump):
     def __init__(self, dest):
         LongJump.__init__(self, dest, True)
-
 class CMP(Instruction):
     """ either Rx,Rx or Rx,N """
     def __init__(self, args):
-        args = ' '.join(args).split(',')
-        if len(args) != 2:
+        args = parseArgs(args)
+        if not (len(args) == 2 and
+                ((isReg(args[0], True) and isNumber(args[1], 1)) or
+                 (isReg(args[0]) and isReg(args[1])))):
             raise ValueError("Invalid args: %s" % repr(args))
         self.args = args
     def getCode(self):
-        pass
+        a0 = parseReg(self.args[0])
+        imm = isNumber(self.args[1], 1)
+        a1 = parseNumber(self.args[1], 1) if imm else parseReg(self.args[1])
+
+        if imm and a0 < 8:
+            return (((0b00101 << 3) + a0) << 8) + imm
+        h0 = a0 >> 3
+        h1 = a1 >> 3
+        if not h0 and not h1:
+            raise ValueError("Illegal modification: CMP lo,lo")
+        return (0b01000101 << 8) + (h1 << 7) + (h0 << 6) + (a0 << 3) + (a1 << 0)
+
 def parse_args():
+    """ Not to be confused with parseArgs :) """
     import argparse
     parser = argparse.ArgumentParser(
         description="Pebble firmware patcher")
@@ -355,6 +372,9 @@ def patch_fw(args):
             elif tokens[0] in ["DCD", "DCW"]:
                 myassert(len(tokens) == 2, "Bad value count for DCx")
                 instr = DCx(2 if tokens[0]=="DCW" else 4, tokens[1])
+            elif tokens[0] in ["CMP"]:
+                del tokens[0]
+                instr = CMP(tokens)
             elif tokens[0] == "jump":
                 myassert(len(tokens) >= 3, "Too few arguments for Jump")
                 myassert(len(tokens) <= 4, "Too many arguments for Jump")
