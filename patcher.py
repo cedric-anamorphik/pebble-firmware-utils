@@ -79,6 +79,9 @@ class Instruction:
         Returns binary code for this instruction
         sitting on given position
         """
+        return pack("<H", self._getCodeN())
+    def _getCodeN(self):
+        """ Override this to return numeric code """
         raise NotImplementedError("Don't instantiate this class!")
     def getSize(self):
         """ returns size of this instruction in bytes """
@@ -185,20 +188,19 @@ class CMP(Instruction):
                  (isReg(args[0]) and isReg(args[1])))):
             raise ValueError("Invalid args: %s" % repr(args))
         self.args = args
-    def getCode(self):
+    def _getCodeN(self):
         a0 = parseReg(self.args[0])
         imm = isNumber(self.args[1], 1)
         a1 = parseNumber(self.args[1], 1) if imm else parseReg(self.args[1])
 
         if imm and a0 < 8:
-            code = (((0b00101 << 3) + a0) << 8) + a1
+            return (((0b00101 << 3) + a0) << 8) + a1
         else:
             h0 = a0 >> 3
             h1 = a1 >> 3
             if not h0 and not h1:
                 raise ValueError("Illegal modification: CMP lo,lo")
-            code = (0b01000101 << 8) + (h1 << 7) + (h0 << 6) + (a0 << 3) + (a1 << 0)
-        return pack("<H", code)
+            return (0b01000101 << 8) + (h1 << 7) + (h0 << 6) + (a0 << 3) + (a1 << 0)
 
 def parse_args():
     """ Not to be confused with parseArgs :) """
