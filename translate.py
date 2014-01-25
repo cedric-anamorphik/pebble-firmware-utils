@@ -206,8 +206,9 @@ def read_strings_po(f, exclude=[]):
                     else:
                         keys.append(left)
                         if context != None:
-                            r = [None] * context
-                            r[context] = right
+                            r = [None] * (max(context)+1)
+                            for c in context:
+                                r[c] = right
                             strings[left] = r
                         else:
                             strings[left] = right
