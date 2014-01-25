@@ -191,12 +191,14 @@ class CMP(Instruction):
         a1 = parseNumber(self.args[1], 1) if imm else parseReg(self.args[1])
 
         if imm and a0 < 8:
-            return (((0b00101 << 3) + a0) << 8) + imm
-        h0 = a0 >> 3
-        h1 = a1 >> 3
-        if not h0 and not h1:
-            raise ValueError("Illegal modification: CMP lo,lo")
-        return (0b01000101 << 8) + (h1 << 7) + (h0 << 6) + (a0 << 3) + (a1 << 0)
+            code = (((0b00101 << 3) + a0) << 8) + a1
+        else:
+            h0 = a0 >> 3
+            h1 = a1 >> 3
+            if not h0 and not h1:
+                raise ValueError("Illegal modification: CMP lo,lo")
+            code = (0b01000101 << 8) + (h1 << 7) + (h0 << 6) + (a0 << 3) + (a1 << 0)
+        return pack("<H", code)
 
 def parse_args():
     """ Not to be confused with parseArgs :) """
