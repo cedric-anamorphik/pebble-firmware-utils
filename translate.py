@@ -380,7 +380,8 @@ def translate_fw(args):
                     print >>log, " ** Warning: too few contexts given for %s" % key
                     val += [None] * len(os) - len(val) # pad it with Nones to avoid Index out of bounds
             mustrepoint=[] # list of "inplace" key occurances which cannot be replaced inplace
-            if type(val) is not list and (len(val) <= len(key) or key in inplace): # can just replace
+            if (type(val) is not list # val is not contexted
+                and (len(val) <= len(key) or key in inplace)): # can just replace
                 # but will not replace contexted vals
                 print >>log, " -- found %d occurance(s), replacing" % len(os)
                 for idx, o in enumerate(os):
@@ -390,10 +391,27 @@ def translate_fw(args):
                         rest = datar[o+len(key):o+32]
                         for i in range(len(rest)):
                             if rest[i] != '\0':
-                                print >>log, " ** SKIPPING because overwriting is unsafe here; use -f to override. Will try to rewrite pointers"
+                                print >>log, " ** SKIPPING because overwriting is unsafe here; use -f to override. "+\
+                                        "Will try to rewrite pointers."
                                 mustrepoint.append(o)
                                 doreplace = False # don't replace this occurance
                                 break # break inner loop
+                    # Now check for optimized links:
+                    # Hello_World\0
+                    # ^p1   ^p2
+                    # - here we cannot just translate inplace "Hello_World" to
+                    # "Bonjour" as it world result in the following:
+                    # Bonjour\0ld\0
+                    # ^p1   ^p2
+                    for i in range(o+1, # there definitely is a pointer to o
+                                   o+min(len(key)+1,len(val)+1)): # use min because we don't need to worry about the rest
+                        if find_pointers_to_offset(i):
+                            print >>log, " ** SKIPPING "+\
+                                    "because there are links to the rest of the string due to optimization; "+\
+                                    "will try to rewrite pointers."
+                            mustrepoint.append(o)
+                            doreplace = False
+                            break
                     if not doreplace:
                         continue # skip to next occurance, this will be handled later
                     oldlen = len(datar)
