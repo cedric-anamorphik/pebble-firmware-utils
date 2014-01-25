@@ -378,8 +378,9 @@ def translate_fw(args):
                 if len(os) < len(val):
                     print >>log, " ** Warning: too many contexts given for %s" % key
                 elif len(os) > len(val):
-                    print >>log, " ** Warning: too few contexts given for %s" % key
-                    val += [None] * len(os) - len(val) # pad it with Nones to avoid Index out of bounds
+                    #print >>log, " ** Warning: too few contexts given for %s" % key
+                    # not all contexts may need to be translated
+                    val += [None] * (len(os) - len(val)) # pad it with Nones to avoid Index out of bounds
             mustrepoint=[] # list of "inplace" key occurances which cannot be replaced inplace
             if (type(val) is not list # val is not contexted
                 and (len(val) <= len(key) or key in inplace)): # can just replace
@@ -454,7 +455,7 @@ def translate_fw(args):
 
                 if v in stored: # such string was already stored
                     newps = stored[v]
-                    print >>log, " -- using stored ptr"
+                    print >>log, " -- using stored ptr 0x%X" % newps
                 else:
                     r = None # range to use
                     for rx in sorted(ranges, key=lambda r: r[1]-r[0]):
