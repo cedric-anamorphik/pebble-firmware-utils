@@ -504,7 +504,7 @@ def translate_fw(args):
         print >>log, "Pass %d completed." % npass
         sizes = [r[1]-r[0] for r in ranges]
         print >>log, "Remaining space at this point: %d bytes scattered in %d ranges, max range size is %d bytes" % \
-                (sum(sizes), len(ranges), max(sizes))
+                (sum(sizes), len(ranges), max(sizes or [0]))
         print >>log
         if not args.reuse_ranges: # new ranges definitely could not appear
             break
