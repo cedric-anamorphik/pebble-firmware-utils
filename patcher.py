@@ -11,9 +11,17 @@ datar = ""
 def parseArgs(tokens):
     """ Convert tokens from form ['Arg1,', 'Arg2', ',', 'Arg3'] to ['Arg1','Arg2','Arg3'] """
     return [x.strip() for x in ' '.join(tokens).split(',')]
+# register names and their numerical values
+_regs = {
+    'R0': 0, 'R1': 1, 'R2': 2, 'R3': 3,
+    'R4': 4, 'R5': 5, 'R6': 6, 'R7': 7, 'WR': 7,
+    'R8': 8, 'R9': 9, 'SB': 9,
+    'R10': 10, 'SL': 10, 'R11': 11, 'FP': 11,
+    'R12': 12, 'IP': 12, 'R13': 13, 'SP': 13,
+    'R14': 14, 'LR': 14, 'R15': 15, 'PC': 15,
+}
 def isReg(token, low = False):
     """ low: only lower registers are valid """
-    # TODO: allow LR, PC and other high reg nicknames
     try:
         parseReg(token, low)
         return True
@@ -21,12 +29,12 @@ def isReg(token, low = False):
         return False
 def parseReg(token, low = False):
     """ Convert 'Rn' to n """
-    if token[0] != 'R' or len(token) not in [2,3]:
-        raise ValueError("Not a register: %s" % token)
-    token = token[1:]
-    r = int(token) # or raise ValueError
-    if r < 0 or r >= (8 if low else 16):
-        raise ValueError("Bad register: %s" % token)
+    token = token.upper()
+    if not token in _regs:
+        raise ValueError("Not a valid register name: %s" % token)
+    r = _regs[token]
+    if low and r >= 8:
+        raise ValueError("Bad register for this context: %s" % token)
     return r
 def isNumber(token, bytes):
     try:
