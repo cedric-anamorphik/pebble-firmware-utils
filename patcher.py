@@ -8,22 +8,24 @@ data = ""
 datar = ""
 
 # Helper functions for syntax checking
-def parseTokens(tokens):
+def parseArgs(tokens):
     """ Convert tokens from form ['Arg1,', 'Arg2', ',', 'Arg3'] to ['Arg1','Arg2','Arg3'] """
     return [x.strip() for x in ' '.join(tokens).split(',')]
-def isReg(token):
-    if len(token) == 2:
-        return token[0] == 'R' and token[1].isdigit()
-    elif len(token) == 3:
-        return token[0] == 'R' and token[1] == '1' and token[2].isdigit()
-    else:
+def isReg(token, low = False):
+    """ low: only lower registers are valid """
+    try:
+        parseReg(token, low)
+        return True
+    except:
         return False
-def parseReg(token):
+def parseReg(token, low = False):
     """ Convert 'Rn' to n """
     if token[0] != 'R' or len(token) not in [2,3]:
         raise ValueError("Not a register: %s" % token)
     token = token[1:]
-    return int(token) # or raise ValueError
+    r = int(token) # or raise ValueError
+    if r < 0 or r >= (8 if low else 16):
+        raise ValueError("Bad register: %s" % token)
 def isNumber(token):
     try:
         int(token,0)
