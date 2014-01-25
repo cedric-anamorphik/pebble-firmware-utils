@@ -519,6 +519,11 @@ def translate_fw(args):
             break
         print >>log, "Translated %d strings in this pass; let's try to translate %d remaining" % (translated, untranslated)
         untranslated = 0 # restart counter as we will retry all these strings
+    if keys:
+        print >>log, "Strings still not translated:"
+        print >>log, '\n'.join(["* "+k for k in keys])
+    else:
+        print >>log, "Everything translated. Hooray!"
     print >>log, "Saving..."
     if len(datar) != len(data): # something appended
         datar += data[-48:] # add ending bytes - needed for iOS app
