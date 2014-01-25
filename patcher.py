@@ -239,9 +239,10 @@ def patch_fw(args):
     procs = {} # all known procedure names -> addr
 
     # scratchpad:
+    mask = [] # mask for determining baddr
     baddr = None # block beginning
     addr = None # current instruction starting address, or block beginning
-    block = None # current block
+    block = None # current block - list of instructions
     label = None # label saved for further use
     blockname = None # proc
 
@@ -253,18 +254,25 @@ def patch_fw(args):
         if len(tokens) == 0:
             continue # empty line, or only comments/whitespaces
         if block == None: # outside of block
-            myassert(tokens[-1] == '{', "String outside of block is not a block start")
-            del tokens[-1]
-            addr = baddr = search_addr(tokens)
-            myassert(addr != False, "Mask not found. Failing.")
-            block = []
-        else: # inside block
+            excess = [] # tokens after '{'
+            for t in tokens:
+                if t == '{': # end of mask, start of block
+                    addr = baddr = search_addr(tokens)
+                    myassert(addr != False, "Mask not found. Failing.")
+                    block = [] # now in block
+                elif block == []: # another part of mask, block not started yet
+                    mask.append(t)
+                else:
+                    excess.append(t) # pass these to the following code
+            tokens = excess # pass any excess tokens to below
+        if len(tokens) > 0: # normal line inside block, or remainder from after '{'
             if len(tokens) == 1 and tokens[0] == '}': # end of block
                 blocks.append(block)
                 blocknames.append(blockname)
                 procs[blockname] = baddr # save this block's address for future use
-                addr = None
+                mask = []
                 baddr = None
+                addr = None
                 block = None
                 blockname = None
                 continue
