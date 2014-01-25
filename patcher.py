@@ -48,8 +48,8 @@ class Instruction:
     def getSize(self):
         """ returns size of this instruction in bytes """
         return 2
-class I(Instruction):
-    """ Just an ordinary two-byte instruction """
+class DCB(Instruction):
+    """ DCB with any number of bytes """
     def __init__(self, code):
         """
         code is a ready instruction code, like '\\x00\\xBF'
@@ -311,7 +311,7 @@ def patch_fw(args):
             if tokens[0] in ["db", "DCB"]: # define byte - most common instruction
                 myassert(len(tokens) >= 2, "Error - 'db' without value?")
                 del tokens[0]
-                instr = I(parse_hex(tokens))
+                instr = DCB(parse_hex(tokens))
             elif tokens[0] in ["DCD", "DCW"]:
                 myassert(len(tokens) == 2, "Bad value count for DCx")
                 instr = DCx(2 if tokens[0]=="DCW" else 4, tokens[1])
