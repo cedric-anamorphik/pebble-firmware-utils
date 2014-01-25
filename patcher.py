@@ -56,6 +56,12 @@ def isLabel(token):
 # Classes for instructions
 class Instruction:
     """ Abstract, don't instantiate! """
+    def match(tokens):
+        """
+        Tests if this instruction matches given set of tokens.
+        If yes, returns new instance of that instruction [and removes used tokens??]
+        """
+        raise NotImplementedError
     def setLabel(self, label):
         """ Sets name for this instruction to be discovered later """
         self.label = label
