@@ -19,6 +19,9 @@ _regs = {
     'R10': 10, 'SL': 10, 'R11': 11, 'FP': 11,
     'R12': 12, 'IP': 12, 'R13': 13, 'SP': 13,
     'R14': 14, 'LR': 14, 'R15': 15, 'PC': 15,
+    'A1':0,'A2':1,'A3':2,'A4':3,
+    'V1':4,'V2':5,'V3':6,'V4':7,
+    'V5':8,'V6':9,'V7':10,'V8':11,
 }
 def isReg(token, low = False):
     """ low: only lower registers are valid """
