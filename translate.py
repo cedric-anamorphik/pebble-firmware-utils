@@ -455,7 +455,7 @@ def translate_fw(args):
 
                 if v in stored: # such string was already stored
                     newps = stored[v]
-                    print >>log, " -- using stored ptr 0x%X" % newps
+                    print >>log, " -- using stored ptr"
                 else:
                     r = None # range to use
                     for rx in sorted(ranges, key=lambda r: r[1]-r[0]):
