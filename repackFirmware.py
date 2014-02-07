@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import zipfile, zlib
-import os, os.path, sys, io
+import zipfile
+import os, os.path
 import json
 from libpebble.stm32_crc import crc32
 from struct import pack, unpack
@@ -46,7 +46,8 @@ def parse_args():
 		open(f, 'rb').close()
 		return f
 	import argparse
-	parser = argparse.ArgumentParser(description="Update checksums and pack firmware package with modified resource pbpack file")
+	parser = argparse.ArgumentParser(description="Update checksums and pack firmware package "
+                                  "with modified resource pack or tintin_fw binary")
 	parser.add_argument("outfile",
 			help="Output file, e.g. Pebble-1.10-ev2_4.pbz")
 	group = parser.add_mutually_exclusive_group(required=False)
