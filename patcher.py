@@ -319,12 +319,24 @@ def patch_fw(args):
             raise SyntaxError("%d: %s - %s (%s)" % (lnum+1, msg, e, line))
 
     def parse_hex(vals):
-        """ Convert list of hexadecimal bytes to string (byte array) """
+        """
+        Convert list of hexadecimal bytes to string (byte array)
+        Also supports "strings\r" as elements
+        """
         ret = ''
         for v in vals:
-            myassert(len(v) == 2, "Malformed hex string at %s" % v)
-            ret += pack('B', tryc(lambda: int(v, 16), "Malformed hex string at %s" % v))
+            if v.startswith('"') and v.endswith('"'):
+                ret += parse_str(v)
+            else:
+                myassert(len(v) == 2, "Malformed hex string at %s" % v)
+                ret += pack('B', tryc(lambda: int(v, 16), "Malformed hex string at %s" % v))
         return ret
+    def parse_str(s):
+        """ Unescape \", \r and \n in string; also remove enclosing ""-s """
+        if not (s.startswith('"') and s.endswith('"')):
+            raise ValueError("Not a valid string")
+        s = s[1:-1]
+        return s.replace('\\n','\n').replace('\\r','\r').replace('\\"', '"')
 
     data = args.tintin.read()
 
