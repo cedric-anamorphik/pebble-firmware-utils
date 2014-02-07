@@ -226,6 +226,12 @@ class SimpleInstruction(Instruction):
             h0 = a0 >> 3
             h1 = a1 >> 3
             return (0x11 << 10) + (self.hireg << 8) + (h0 << 7) + (h1 << 6) + (a1 << 3) + (a0 << 0)
+class EmptyInstruction(Instruction):
+    """ Pseudo-instruction with zero size, for labels """
+    def getSize(self):
+        return 0
+    def getCode(self):
+        return '' # empty code
 
 def parse_args():
     """ Not to be confused with parseArgs :) """
@@ -376,6 +382,13 @@ def patch_fw(args):
             tokens = excess # pass any excess tokens to below
         if len(tokens) > 0: # normal line inside block, or remainder from after '{'
             if len(tokens) == 1 and tokens[0] == '}': # end of block
+                if label: # label at the end of block
+                    # append pseudo-instruction for it
+                    instr = EmptyInstruction()
+                    instr.setPosition(addr)
+                    instr.setLabel(label)
+                    label = None
+                    block.append(instr)
                 blocks.append(block)
                 blocknames.append(blockname)
                 procs[blockname] = baddr # save this block's address for future use
@@ -403,6 +416,14 @@ def patch_fw(args):
             elif tokens[0] in ["DCD", "DCW"]:
                 myassert(len(tokens) == 2, "Bad value count for DCx")
                 instr = DCx(2 if tokens[0]=="DCW" else 4, tokens[1])
+            elif tokens[0] == 'global': # global label
+                myassert(len(tokens) == 2, "Error - illegal 'global' call")
+                label = tokens[1]
+                if label.endswith(':'):
+                    label = label[:-1] # remove trailing ':', if any
+                instr = EmptyInstruction()
+                # and store address to globals
+                procs[label] = addr
             elif tokens[0] in ["CMP", "MOV", "ADD"]:
                 codes = {"CMP": (1, 1),
                          "MOV": (0, 2),
