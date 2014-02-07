@@ -253,16 +253,23 @@ class LDR(Instruction):
             if args[-1] != ']':
                 raise ValueError("Unclosed '['?")
             args = parseArgs([args[:-1]])
+            if len(args) == 1:
+                rb = args[0]
+                ro = '0'
+            elif len(args) == 2:
+                rb, ro = args
+            else:
+                raise ValueError("Illegal args count for LDR, %s" % repr(args))
         else:
             args = parseArgs(args)
             reg = args.pop(0)
-        if len(args) == 1:
-            rb = 'PC'
-            ro = args[0]
-        elif len(args) == 2:
-            rb, ro = args
-        else:
-            raise ValueError("Illegal args count for LDR, %s" % repr(args))
+            if len(args) == 1:
+                rb = 'PC'
+                ro = args[0]
+            elif len(args) == 2:
+                rb, ro = args
+            else:
+                raise ValueError("Illegal args count for LDR, %s" % repr(args))
         self.rd = reg
         self.rb = rb
         self.ro = ro
