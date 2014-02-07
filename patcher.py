@@ -228,7 +228,7 @@ class SimpleInstruction(Instruction):
         self.hireg = hireg
     def _getCodeN(self):
         a0 = parseReg(self.args[0])
-        imm = isNumber(self.args[1], 8)
+        imm = not isReg(self.args[1])
         if imm:
             if isLabel(self.args[1]): # for ADR
                 a1 = self._getAddr(self.args[1]) - (self.pos + 2) # offset to that label
@@ -283,7 +283,7 @@ class LDR(Instruction):
         # imm
         if isLabel(self.ro):
             imm = self._getAddr(self.ro) - (self.pos + 2)
-        elif rd in (_regs['PC'], _regs['SP']):
+        elif rb in (_regs['PC'], _regs['SP']):
             imm = parseNumber(self.ro, 8)
         else:
             imm = parseNumber(self.ro, 7) # limited size
@@ -291,9 +291,9 @@ class LDR(Instruction):
         if imm & 0b11: # not 4-divisible
             raise ValueError("imm 0x%X is not divisible by 4" % imm)
         imm = imm >> 2
-        if rd == _regs['PC']: # pc-relative
+        if rb == _regs['PC']: # pc-relative
             return (0x9 << 11) + (rd << 8) + imm
-        if rd == _regs['SP']: # sp-relative
+        if rb == _regs['SP']: # sp-relative
             return (0x9 << 12) + (0x1 << 11) + (rd << 8) + imm
         return (0x3 << 13) + (0x01 << 11) + (imm << 6) + (rb << 3) + rd
 class EmptyInstruction(Instruction):
@@ -308,7 +308,7 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(
         description="Pebble firmware patcher")
-    parser.add_argument("output", nargs='?', type=argparse.FileType("wb"),
+    parser.add_argument("output", type=argparse.FileType("wb"),
                         help="Output file name")
     parser.add_argument("-t", "--tintin", nargs='?', default="tintin_fw.bin", type=argparse.FileType("rb"),
                         help="Input tintin_fw file, defaults to tintin_fw.bin")
