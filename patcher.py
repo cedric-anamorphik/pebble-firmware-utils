@@ -308,12 +308,14 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(
         description="Pebble firmware patcher")
-    parser.add_argument("output", nargs='?', default=sys.stdout, type=argparse.FileType("wb"),
-                        help="Output file, defaults to stdout")
+    parser.add_argument("output", nargs='?', type=argparse.FileType("wb"),
+                        help="Output file name")
     parser.add_argument("-t", "--tintin", nargs='?', default="tintin_fw.bin", type=argparse.FileType("rb"),
                         help="Input tintin_fw file, defaults to tintin_fw.bin")
     parser.add_argument("-p", "--patch", default=sys.stdin, type=argparse.FileType("r"),
                         help="File with patch to apply, by default will read from stdin")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Print debug information while patching")
     return parser.parse_args()
 
 def patch_fw(args):
@@ -574,11 +576,9 @@ def patch_fw(args):
         code = ''
         for i in block:
             i.setContext(context)
-            try:
-                code += i.getCode()
-            except ValueError as e:
-                print >>sys.stderr, i
-                raise e
+            if args.debug:
+                print i
+            code += i.getCode()
         blen = len(datar)
         datar = datar[:start] + code + datar[start+len(code):]
         if len(datar) != blen:
