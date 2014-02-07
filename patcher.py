@@ -39,15 +39,15 @@ def parseReg(token, low = False):
     if low and r >= 8:
         raise ValueError("Bad register for this context: %s" % token)
     return r
-def isNumber(token, bytes):
+def isNumber(token, bits):
     try:
-        parseNumber(token, bytes)
+        parseNumber(token, bits)
         return True
     except:
         return False
-def parseNumber(token, bytes):
+def parseNumber(token, bits):
     r = int(token, 0)
-    if r >= (0xFF, 0xFFFF, 0, 0xFFFFFFFF)[bytes]:
+    if r >= (1<<bits):
         raise ValueError("Number too large: %s" % token)
     return r
 def isLabel(token):
@@ -207,7 +207,7 @@ class SimpleInstruction(Instruction):
         """
         args = parseArgs(args)
         if not (len(args) == 2 and
-                ((isReg(args[0], True) and isNumber(args[1], 1)) or
+                ((isReg(args[0], True) and isNumber(args[1], 8)) or
                  (isReg(args[0]) and isReg(args[1])))):
             raise ValueError("Invalid args: %s" % repr(args))
         self.args = args
@@ -217,8 +217,8 @@ class SimpleInstruction(Instruction):
         self.hireg = hireg
     def _getCodeN(self):
         a0 = parseReg(self.args[0])
-        imm = isNumber(self.args[1], 1)
-        a1 = parseNumber(self.args[1], 1) if imm else parseReg(self.args[1])
+        imm = isNumber(self.args[1], 8)
+        a1 = parseNumber(self.args[1], 8) if imm else parseReg(self.args[1])
 
         if imm and a0 < 8:
             return (0x1 << 13) + (self.mcasi << 11) + (a0 << 8) + (a1 << 0)
