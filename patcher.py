@@ -104,6 +104,11 @@ class Instruction:
     def getSize(self):
         """ returns size of this instruction in bytes """
         return 2
+    def setSrcLine(self, srcline):
+        """ Set source code line info for debugging later """
+        self.srcline = srcline
+    def __str__(self):
+        return str(self.srcline)
 class DCB(Instruction):
     """ DCB with any number of bytes """
     def __init__(self, code):
@@ -534,6 +539,7 @@ def patch_fw(args):
                     myassert(False, "Unknown instruction %s" % tokens[0])
             except ValueError as e:
                 myassert(False, "Syntax error: " + str(e))
+            instr.setSrcLine((lnum, line))
             if label: # current instruction has a label?
                 instr.setLabel(label)
                 label = None
@@ -561,7 +567,11 @@ def patch_fw(args):
         code = ''
         for i in block:
             i.setContext(context)
-            code += i.getCode()
+            try:
+                code += i.getCode()
+            except ValueError as e:
+                print >>sys.stderr, i
+                raise e
         blen = len(datar)
         datar = datar[:start] + code + datar[start+len(code):]
         if len(datar) != blen:
