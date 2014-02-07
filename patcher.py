@@ -213,7 +213,7 @@ class SimpleInstruction(Instruction):
         """
         args = parseArgs(args)
         if not (len(args) == 2 and
-                ((isReg(args[0], True) and isNumber(args[1], 8)) or
+                ((isReg(args[0], True) and (isLabel(args[1]) or isNumber(args[1], 8))) or
                  (isReg(args[0]) and isReg(args[1])))):
             raise ValueError("Invalid args: %s" % repr(args))
         self.args = args
@@ -224,7 +224,13 @@ class SimpleInstruction(Instruction):
     def _getCodeN(self):
         a0 = parseReg(self.args[0])
         imm = isNumber(self.args[1], 8)
-        a1 = parseNumber(self.args[1], 8) if imm else parseReg(self.args[1])
+        if imm:
+            if isLabel(self.args[1]): # for ADR
+                a1 = self._getAddr(self.args[1]) - (self.pos + 2) # offset to that label
+            else:
+                a1 = parseNumber(self.args[1], 8)
+        else:
+            a1 = parseReg(self.args[1])
 
         if imm and a0 < 8:
             return (0x1 << 13) + (self.mcasi << 11) + (a0 << 8) + (a1 << 0)
@@ -477,7 +483,9 @@ def patch_fw(args):
                     instr = EmptyInstruction()
                     # and store address to globals
                     procs[label] = addr
-                elif tokens[0] in ["CMP", "MOV", "ADD"]:
+                elif tokens[0] in ["CMP", "MOV", "ADD", "ADR"]:
+                    if tokens[0] == "ADR":
+                        tokens[0] = "MOV" # substitute
                     codes = {"CMP": (1, 1),
                             "MOV": (0, 2),
                             "ADD": (2, 0),
