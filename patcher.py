@@ -232,6 +232,52 @@ class SimpleInstruction(Instruction):
             h0 = a0 >> 3
             h1 = a1 >> 3
             return (0x11 << 10) + (self.hireg << 8) + (h0 << 7) + (h1 << 6) + (a1 << 3) + (a0 << 0)
+class LDR(Instruction):
+    def __init__(self, args):
+        """ args is list of tokens to be parsed """
+        argsj = ' '.join(args)
+        if '[' in argsj:
+            reg, args = argsj.split('[')
+            reg = reg.strip()
+            if args[-1] != ']':
+                raise ValueError("Unclosed '['?")
+            args = parseArgs(args[:-1])
+        else:
+            args = parseArgs(args)
+            reg = args.pop()
+        if len(args) == 1:
+            rb = 'PC'
+            ro = args[0]
+        elif len(args) == 2:
+            rb, ro = args
+        else:
+            raise ValueError("Illegal args count for LDR, %s" % repr(args))
+        self.rd = reg
+        self.rb = rb
+        self.ro = ro
+    def _getCodeN(self):
+        rd = parseReg(self.rd, True)
+        rb = parseReg(self.rb)
+        if isReg(self.ro, True):
+            rb = parseReg(self.rb, True) # must be low register too
+            ro = parseReg(self.ro, True)
+            return (0x5 << 12) + (0b100 << 9) + (ro << 6) + (rb << 3) + rd
+        # imm
+        if isLabel(self.ro):
+            imm = self._getAddr(self.ro) - (self.pos + 2)
+        elif rd[0] in (_regs['PC'], _regs['SP']):
+            imm = parseNumber(self.ro, 8)
+        else:
+            imm = parseNumber(self.ro, 7) # limited size
+
+        if imm & 0b11: # not 4-divisible
+            raise ValueError("imm 0x%X is not divisible by 4" % imm)
+        imm = imm >> 2
+        if rd == _regs['PC']: # pc-relative
+            return (0x9 << 11) + (rd << 8) + imm
+        if rd == _regs['SP']: # sp-relative
+            return (0x9 << 12) + (0x1 << 11) + (rd << 8) + imm
+        return (0x3 << 13) + (0x01 << 11) + (imm << 6) + (rb << 3) + rd
 class EmptyInstruction(Instruction):
     """ Pseudo-instruction with zero size, for labels """
     def getSize(self):
@@ -415,53 +461,59 @@ def patch_fw(args):
                     continue # line contains only label; will use it in next pass
                 # else go below: all following items can have label
             instr = None # this will be current instruction
-            if tokens[0] in ["db", "DCB"]: # define byte - most common instruction
-                myassert(len(tokens) >= 2, "Error - 'db' without value?")
-                del tokens[0]
-                instr = DCB(parse_hex(tokens))
-            elif tokens[0] in ["DCD", "DCW"]:
-                myassert(len(tokens) == 2, "Bad value count for DCx")
-                instr = DCx(2 if tokens[0]=="DCW" else 4, tokens[1])
-            elif tokens[0] == 'global': # global label
-                myassert(len(tokens) == 2, "Error - illegal 'global' call")
-                label = tokens[1]
-                if label.endswith(':'):
-                    label = label[:-1] # remove trailing ':', if any
-                instr = EmptyInstruction()
-                # and store address to globals
-                procs[label] = addr
-            elif tokens[0] in ["CMP", "MOV", "ADD"]:
-                codes = {"CMP": (1, 1),
-                         "MOV": (0, 2),
-                         "ADD": (2, 0),
-                        }
-                code = codes[tokens[0]]
-                del tokens[0]
-                instr = SimpleInstruction(tokens, code[0], code[1])
-            elif tokens[0] in ["BX"]:
-                del tokens[0]
-                instr = SimpleInstruction(['R0,', tokens[1]], -1, 3)
-            elif tokens[0] == "jump":
-                myassert(len(tokens) >= 3, "Too few arguments for Jump")
-                myassert(len(tokens) <= 4, "Too many arguments for Jump")
-                del tokens[0]
-                reg = None
-                dest = None
-                cond = None
-                for t in tokens:
-                    if len(t) == 2 and t[0] == 'R': # register
-                        reg = int(t[1])
-                    elif t[0].isalpha() or t[0] == '_': # identifier (label)
-                        dest = t
-                    else: # must be number
-                        cond = tryc(lambda: int(t), "Malformed argument for Jump: %s" % t)
-                myassert(cond != None and dest, "Illegal Jump call")
-                instr = Jump(dest, cond, reg)
-            elif tokens[0] in ["B.W", "BL"]:
-                myassert(len(tokens) == 2, "%s keyword requires one argument" % tokens[0])
-                instr = LongJump(tokens[1], tokens[0] == "BL")
-            else:
-                myassert(False, "Unknown instruction %s" % tokens[0])
+            try:
+                if tokens[0] in ["db", "DCB"]: # define byte - most common instruction
+                    myassert(len(tokens) >= 2, "Error - 'db' without value?")
+                    del tokens[0]
+                    instr = DCB(parse_hex(tokens))
+                elif tokens[0] in ["DCD", "DCW"]:
+                    myassert(len(tokens) == 2, "Bad value count for DCx")
+                    instr = DCx(2 if tokens[0]=="DCW" else 4, tokens[1])
+                elif tokens[0] == 'global': # global label
+                    myassert(len(tokens) == 2, "Error - illegal 'global' call")
+                    label = tokens[1]
+                    if label.endswith(':'):
+                        label = label[:-1] # remove trailing ':', if any
+                    instr = EmptyInstruction()
+                    # and store address to globals
+                    procs[label] = addr
+                elif tokens[0] in ["CMP", "MOV", "ADD"]:
+                    codes = {"CMP": (1, 1),
+                            "MOV": (0, 2),
+                            "ADD": (2, 0),
+                            }
+                    code = codes[tokens[0]]
+                    del tokens[0]
+                    instr = SimpleInstruction(tokens, code[0], code[1])
+                elif tokens[0] in ["LDR"]:
+                    del tokens[0]
+                    instr = LDR(tokens)
+                elif tokens[0] in ["BX"]:
+                    del tokens[0]
+                    instr = SimpleInstruction(['R0,', tokens[1]], -1, 3)
+                elif tokens[0] == "jump":
+                    myassert(len(tokens) >= 3, "Too few arguments for Jump")
+                    myassert(len(tokens) <= 4, "Too many arguments for Jump")
+                    del tokens[0]
+                    reg = None
+                    dest = None
+                    cond = None
+                    for t in tokens:
+                        if len(t) == 2 and t[0] == 'R': # register
+                            reg = int(t[1])
+                        elif t[0].isalpha() or t[0] == '_': # identifier (label)
+                            dest = t
+                        else: # must be number
+                            cond = tryc(lambda: int(t), "Malformed argument for Jump: %s" % t)
+                    myassert(cond != None and dest, "Illegal Jump call")
+                    instr = Jump(dest, cond, reg)
+                elif tokens[0] in ["B.W", "BL"]:
+                    myassert(len(tokens) == 2, "%s keyword requires one argument" % tokens[0])
+                    instr = LongJump(tokens[1], tokens[0] == "BL")
+                else:
+                    myassert(False, "Unknown instruction %s" % tokens[0])
+            except ValueError as e:
+                myassert(False, "Syntax error: " + str(e))
             if label: # current instruction has a label?
                 instr.setLabel(label)
                 label = None
