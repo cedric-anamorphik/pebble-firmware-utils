@@ -136,7 +136,7 @@ class DCx(Instruction):
         if self.val[0].isdigit():
             val = int(self.val, 0)
         else:
-            val = self._getAddr(val)
+            val = self._getAddr(self.val)
         val += self.add
         fmt = '<H' if self.size==2 else '<I'
         return pack(fmt, val)
@@ -244,13 +244,13 @@ class LDR(Instruction):
         argsj = ' '.join(args)
         if '[' in argsj:
             reg, args = argsj.split('[')
-            reg = reg.strip()
+            reg = reg.strip().strip(',')
             if args[-1] != ']':
                 raise ValueError("Unclosed '['?")
-            args = parseArgs(args[:-1])
+            args = parseArgs([args[:-1]])
         else:
             args = parseArgs(args)
-            reg = args.pop()
+            reg = args.pop(0)
         if len(args) == 1:
             rb = 'PC'
             ro = args[0]
@@ -271,7 +271,7 @@ class LDR(Instruction):
         # imm
         if isLabel(self.ro):
             imm = self._getAddr(self.ro) - (self.pos + 2)
-        elif rd[0] in (_regs['PC'], _regs['SP']):
+        elif rd in (_regs['PC'], _regs['SP']):
             imm = parseNumber(self.ro, 8)
         else:
             imm = parseNumber(self.ro, 7) # limited size
