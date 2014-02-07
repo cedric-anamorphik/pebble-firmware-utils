@@ -218,7 +218,7 @@ class SimpleInstruction(Instruction):
         """
         args = parseArgs(args)
         if not (len(args) == 2 and
-                ((isReg(args[0], True) and (isLabel(args[1]) or isNumber(args[1], 8))) or
+                ((isReg(args[0], True) and isNumber(args[1], 8)) or
                  (isReg(args[0]) and isReg(args[1])))):
             raise ValueError("Invalid args: %s" % repr(args))
         self.args = args
@@ -230,10 +230,7 @@ class SimpleInstruction(Instruction):
         a0 = parseReg(self.args[0])
         imm = not isReg(self.args[1])
         if imm:
-            if isLabel(self.args[1]): # for ADR
-                a1 = self._getAddr(self.args[1]) - (self.pos + 2) # offset to that label
-            else:
-                a1 = parseNumber(self.args[1], 8)
+            a1 = parseNumber(self.args[1], 8)
         else:
             a1 = parseReg(self.args[1])
 
@@ -243,6 +240,28 @@ class SimpleInstruction(Instruction):
             h0 = a0 >> 3
             h1 = a1 >> 3
             return (0x11 << 10) + (self.hireg << 8) + (h0 << 7) + (h1 << 6) + (a1 << 3) + (a0 << 0)
+class ADR(Instruction):
+    """
+    ADR Rx, label
+    assembles to
+    ADD Rx, PC, (offset to label)
+    """
+    def __init__(self, args):
+        args = parseArgs(args)
+        if not (len(args) == 2 and
+                (isReg(args[0], True) and isLabel(args[1]))):
+            raise ValueError("Invalid args: %s" % repr(args))
+        self.rd = args[0]
+        self.dest = args[1]
+    def _getCodeN(self):
+        rd = parseReg(self.rd, True)
+        ofs = self._getAddr(self.dest) - (self.pos + 2) # offset to that label
+        if abs(ofs) >= (1 << 10):
+            raise ValueError("Offset is too far")
+        if ofs & 0b11: # not 4-divisible
+            raise ValueError("offset 0x%X is not divisible by 4" % ofs)
+        ofs = ofs >> 2
+        return (0x14 << 11) + (rd << 8) + ofs
 class LDR(Instruction):
     def __init__(self, args):
         """ args is list of tokens to be parsed """
@@ -283,6 +302,8 @@ class LDR(Instruction):
         # imm
         if isLabel(self.ro):
             imm = self._getAddr(self.ro) - (self.pos + 2)
+            if abs(imm) >= (1 << 10):
+                raise ValueError("Offset is too far: 0x%X" % imm)
         elif rb in (_regs['PC'], _regs['SP']):
             imm = parseNumber(self.ro, 8)
         else:
@@ -509,9 +530,7 @@ def patch_fw(args):
                     instr = EmptyInstruction()
                     # and store address to globals
                     procs[label] = addr
-                elif tokens[0] in ["CMP", "MOV", "ADD", "ADR"]:
-                    if tokens[0] == "ADR":
-                        tokens[0] = "MOV" # substitute
+                elif tokens[0] in ["CMP", "MOV", "ADD"]:
                     codes = {"CMP": (1, 1),
                             "MOV": (0, 2),
                             "ADD": (2, 0),
@@ -519,6 +538,10 @@ def patch_fw(args):
                     code = codes[tokens[0]]
                     del tokens[0]
                     instr = SimpleInstruction(tokens, code[0], code[1])
+                elif tokens[0] in ["ADR"]:
+                    del tokens[0]
+                    myassert(len(tokens) == 2, "Bad arguments count for ADR")
+                    instr = ADR(tokens)
                 elif tokens[0] in ["LDR"]:
                     del tokens[0]
                     instr = LDR(tokens)
