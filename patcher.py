@@ -323,6 +323,17 @@ class EmptyInstruction(Instruction):
         return 0
     def getCode(self):
         return '' # empty code
+class ALIGN(Instruction):
+    """ Adds meaningless instructions (NOP) to align following code/data """
+    def __init__(self, bound):
+        if bound != '4':
+            raise ValueError("Bad alignment, currently only 4 supported: %s" % bound)
+        self.bound = bound
+    def getSize(self):
+        rest = self.pos % 4
+        return rest
+    def getCode(self):
+        return '\x00\xBF\x00\xBF'[:self.getSize()]
 
 def parse_args():
     """ Not to be confused with parseArgs :) """
@@ -530,6 +541,9 @@ def patch_fw(args):
                     instr = EmptyInstruction()
                     # and store address to globals
                     procs[label] = addr
+                elif tokens[0] in ["ALIGN"]:
+                    myassert(len(tokens) == 2, "Error - must specify 1 argument for ALIGN")
+                    instr = ALIGN(tokens[1])
                 elif tokens[0] in ["CMP", "MOV", "ADD"]:
                     codes = {"CMP": (1, 1),
                             "MOV": (0, 2),
