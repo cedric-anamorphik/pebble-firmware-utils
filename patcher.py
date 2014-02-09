@@ -108,7 +108,10 @@ class Instruction:
         """ Set source code line info for debugging later """
         self.srcline = srcline
     def __str__(self):
-        return str(self.srcline)
+        ret = str(self.srcline)
+        if self.pos:
+            ret += "\t@ 0x%X" % self.pos
+        return ret
 class DCB(Instruction):
     """ DCB with any number of bytes """
     def __init__(self, code):
@@ -615,7 +618,11 @@ def patch_fw(args):
             i.setContext(context)
             if args.debug:
                 print i
-            code += i.getCode()
+            icode = i.getCode()
+            if len(icode) != i.getSize():
+                raise ValueError("Instruction length mismatch: expected %d, got %d. %s" %
+                                 (len(icode), i.getSize(), str(i)))
+            code += icode
         blen = len(datar)
         datar = datar[:start] + code + datar[start+len(code):]
         if len(datar) != blen:
