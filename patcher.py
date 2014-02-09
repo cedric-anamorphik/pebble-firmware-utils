@@ -119,10 +119,12 @@ class DCB(Instruction):
         code is a ready instruction code, like '\\x00\\xBF'
         """
         self.code = code
+    def getSize(self):
+        return len(self.code)
     def getCode(self):
         return self.code
 class DCx(Instruction):
-    """ DCW or DCD. For DCB see class I (command db) """
+    """ DCW or DCD. For DCB (command db) see class DCB """
     def __init__(self, size, val):
         """ val is either number (dec/0xhex/0oct/0bbin) or label/address, or label+n """
         if size not in [2,4]:
