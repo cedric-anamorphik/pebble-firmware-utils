@@ -4,9 +4,6 @@
 import sys
 from struct import pack #,unpack
 
-data = ""
-datar = ""
-
 # Helper functions for syntax checking
 def parseArgs(tokens):
     """ Convert tokens from form ['Arg1,', 'Arg2', ',', 'Arg3'] to ['Arg1','Arg2','Arg3'] """
@@ -356,7 +353,8 @@ def parse_args():
     return parser.parse_args()
 
 def patch_fw(args):
-    global data,datap,datar
+    data = ""
+    datar = ""
 
     def myassert(cond, msg):
         """ Raise descriptive SyntaxError if not cond """
