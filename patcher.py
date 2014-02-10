@@ -284,6 +284,42 @@ class AluSimple(Instruction):
         self.op = self._ops[op]
     def _getCodeN(self):
         return (0x10 << 10) + (self.op << 6) + (self.rs << 3) + (self.rd)
+class ADDSUB(Instruction):
+    def __init__(self, is_sub, args):
+        args = parseArgs(args)
+        self.is_sub = 1 if is_sub else 0
+        if len(args) == 2:
+            self.isImm = True
+            self.rd = parseReg(args[0])
+            self.rs = None
+            if self.rd >= 8:
+                if self.rd != _regs['SP']:
+                    raise ValueError("Invalid hireg: %s" % repr(args))
+                self.imm = parseNumber(args[1], 7)
+            else:
+                self.imm = parseNumber(args[1], 8)
+        elif len(args) == 3:
+            self.rd = parseReg(args[0],True)
+            self.rs = parseReg(args[1],True)
+            if isReg(args[2]):
+                self.isImm = True
+                self.ro = parseReg(args[2],True)
+            else:
+                self.isImm = False
+                self.imm = parseNumber(args[2], 3)
+        else:
+            raise ValueError("Invalid args: %s" % repr(args))
+    def _getCodeN(self):
+        if self.isImm:
+            if self.rs == None: # 8bit imm
+                if self.rd == _regs['SP']:
+                    return (0xb0 << 8) + (self.is_sub << 7) + self.imm
+                # duplicate SimpleInstruction
+                return (1 << 13) + ((3 if self.is_sub else 2) << 11) + (self.rd << 8) + self.imm
+            else: # 3-bit offset
+                return (3 << 11) + (1 << 10) + (self.is_sub << 9) + (self.imm << 6) + (self.rs << 3) + (self.rd)
+        else:
+            return (3 << 11) + (0 << 10) + (self.is_sub << 9) + (self.ro << 6) + (self.rs << 3) + (self.rd)
 class MOVW(Instruction):
     """ This represents MOV.W insruction """
     def __init__(self, args):
@@ -333,8 +369,6 @@ class MOVW(Instruction):
 class ADR(Instruction):
     """
     ADR Rx, label
-    assembles to
-    ADD Rx, PC, (offset to label)
     """
     def __init__(self, args):
         args = parseArgs(args)
@@ -647,6 +681,8 @@ def patch_fw(args):
                     code = codes[tokens[0]]
                     del tokens[0]
                     instr = SimpleInstruction(tokens, code[0], code[1])
+                elif tokens[0] in ["SUB"]:
+                    instr = ADDSUB(True, tokens[1:])
                 elif tokens[0] in AluSimple.codes:
                     instr = AluSimple(tokens[0], tokens[1:])
                 elif tokens[0] in ["MOV.W"]:
