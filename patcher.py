@@ -352,6 +352,7 @@ class MOVW(Instruction):
                 def rol(n):
                     return (n << 1) | (n >> 31) # maybe buggy for x >= 1<<32, but we will not have such values
                 ok = False
+                val = self.val
                 for i in range(1, 32):
                     # we don't need to check for 0 shift because it is already
                     # covered above in val<=0xFF
@@ -360,7 +361,7 @@ class MOVW(Instruction):
                         ok = True
                         val = (i << 7) + (val & 0x7F)
                 if not ok:
-                    raise ValueError("Cannot use MOV.W for this value!") # val is now screwed
+                    raise ValueError("Cannot use MOV.W for value 0x%X!") % self.val
         # now we have correctly encoded value
         i = val >> 11
         imm3 = (val >> 8) & 0b111
