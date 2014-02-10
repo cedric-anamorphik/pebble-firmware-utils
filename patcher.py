@@ -82,6 +82,9 @@ class Instruction:
             return self.context[label]
         except KeyError:
             raise Exception("No such address: %s (for %s)" % (label, self))
+    def _getOffset(self, label):
+        """ Returns correct offset to getAddr """
+        return self._getAddr(label) - ((self.pos + 4) & 0xFFFFFFFC) # cut last 4 bits
     def setPosition(self, pos):
         """
         Sets address where this instruction will be placed
@@ -427,7 +430,7 @@ class LDRSTR(Instruction):
             return (0x5 << 12) + (self.l << 11) + (0b00 << 9) + (ro << 6) + (rb << 3) + rd
         # imm
         if isLabel(self.ro):
-            imm = self._getAddr(self.ro) - (self.pos + 2)
+            imm = self._getAddr(self.ro) - ((self.pos) + 2)
             if abs(imm) >= (1 << 10):
                 raise ValueError("Offset is too far: 0x%X" % imm)
         elif rb in (_regs['PC'], _regs['SP']):
