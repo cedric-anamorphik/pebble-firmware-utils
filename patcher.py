@@ -284,6 +284,52 @@ class AluSimple(Instruction):
         self.op = self._ops[op]
     def _getCodeN(self):
         return (0x10 << 10) + (self.op << 6) + (self.rs << 3) + (self.rd)
+class MOVW(Instruction):
+    """ This represents MOV.W insruction """
+    def __init__(self, args):
+        args = parseArgs(args)
+        if len(args) != 2:
+            raise ValueError("Invalid arguments for MOV.W")
+        self.rd = parseReg(args[0])
+        self.val = parseNumber(args[1], 32)
+    def getCode(self):
+        # 11110 i 0 0010 S 1111   0 imm3 rd4 imm8
+        if self.val <= 0xFF: # 1 byte
+            val = self.val
+        else:
+            b1 = self.val >> 24
+            b2 = (self.val >> 16) & 0xFF
+            b3 = (self.val >> 8) & 0xFF
+            b4 = self.val & 0xFF
+            if b1 == b2 == b3 == b4:
+                val = (0b11 << 8) + b1
+            elif b1 == 0 and b3 == 0:
+                val = (0b01 << 8) + b2
+            elif b2 == 0 and b4 == 0:
+                val = (0b10 << 8) + b1
+            else:
+                # rotating scheme
+                def rol(n):
+                    return (n << 1) | (n >> 31) # maybe buggy for x >= 1<<32, but we will not have such values
+                ok = False
+                for i in range(1, 32):
+                    # we don't need to check for 0 shift because it is already
+                    # covered above in val<=0xFF
+                    val = rol(val)
+                    if (val & 0xFF) == 0x80 + (val & 0x7F): # correct
+                        ok = True
+                        val = (i << 7) + (val & 0x7F)
+                if not ok:
+                    raise ValueError("Cannot use MOV.W for this value!") # val is now screwed
+        # now we have correctly encoded value
+        i = val >> 11
+        imm3 = (val >> 8) & 0b111
+        imm8 = val & 0xFF
+        code1 = (0b11110 << 11) + (i << 10) + (0b00010 << 5) + (self.s << 4) + 0b1111
+        code2 = (imm3 << 13) + (self.rd << 8) + imm8
+        return pack("<HH", code1, code2)
+    def getSize(self):
+        return 4
 class ADR(Instruction):
     """
     ADR Rx, label
@@ -599,6 +645,8 @@ def patch_fw(args):
                     instr = SimpleInstruction(tokens, code[0], code[1])
                 elif tokens[0] in AluSimple.codes:
                     instr = AluSimple(tokens[0], tokens[1:])
+                elif tokens[0] in ["MOV.W"]:
+                    instr = MOVW(tokens[1:])
                 elif tokens[0] in ["ADR"]:
                     del tokens[0]
                     myassert(len(tokens) == 2, "Bad arguments count for ADR")
