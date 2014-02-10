@@ -306,10 +306,10 @@ class ADDSUB(Instruction):
             self.rd = parseReg(args[0],True)
             self.rs = parseReg(args[1],True)
             if isReg(args[2]):
-                self.isImm = True
+                self.isImm = False
                 self.ro = parseReg(args[2],True)
             else:
-                self.isImm = False
+                self.isImm = True
                 self.imm = parseNumber(args[2], 3)
         else:
             raise ValueError("Invalid args: %s" % repr(args))
