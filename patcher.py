@@ -179,6 +179,20 @@ class Jump(Instruction):
                    (self.cond << 8) +\
                    (offset)
         return pack('<H', code)
+class Bxx(Jump):
+    _conds = {
+        'CC': 0x3, 'CS': 0x2, 'EQ': 0x0,
+        'GE': 0xA, 'GT': 0xC, 'HI': 0x8,
+    }
+    codes = ['B'+x for x in _conds]
+    def __init__(self, dest, cond):
+        cond = cond.upper()
+        if not cond in self._conds:
+            raise ValueError("Bxx: incorrect condition %s" % cond)
+        Jump.__init__(self, dest, self._conds[cond])
+class CBx(Jump):
+    def __init__(self, dest, is_equal, reg):
+        Jump.__init__(self, dest, 0 if is_equal else 1, reg)
 class LongJump(Instruction):
     """ B.W or BL instruction (4-bytes) """
     def __init__(self, dest, bl):
@@ -565,6 +579,12 @@ def patch_fw(args):
                 elif tokens[0] in ["BX"]:
                     del tokens[0]
                     instr = SimpleInstruction(['R0,', tokens[1]], -1, 3)
+                elif tokens[0] in Bxx.codes:
+                    myassert(len(tokens) == 2, "Bad arguments count for Bxx")
+                    instr = Bxx(tokens[1], tokens[0][1:])
+                elif tokens[0] in ["CBZ", "CBNZ"]:
+                    myassert(len(tokens) == 3, "Bad arguments count for CBx")
+                    instr = CBx(tokens[2], tokens[0] == "CBZ", tokens[1])
                 elif tokens[0] == "jump":
                     myassert(len(tokens) >= 3, "Too few arguments for Jump")
                     myassert(len(tokens) <= 4, "Too many arguments for Jump")
