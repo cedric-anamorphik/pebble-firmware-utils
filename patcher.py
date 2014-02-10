@@ -256,6 +256,29 @@ class SimpleInstruction(Instruction):
             h0 = a0 >> 3
             h1 = a1 >> 3
             return (0x11 << 10) + (self.hireg << 8) + (h0 << 7) + (h1 << 6) + (a1 << 3) + (a0 << 0)
+class AluSimple(Instruction):
+    """ This represents ADC, AND, ASR, etc """
+    _ops = {
+        "ADC": 0x5, "AND": 0x0, "ASR": 0x4, "BIC": 0xE,
+        "CMN": 0xB, #"CMP": 0xA, # this CMP will not be used - see above
+        "EOR": 0x1, "XOR": 0x1, # just an alias
+        "LSL": 0x2, "LSR": 0x3, "MUL": 0xD,
+        "MVN": 0xF, "NEG": 0x9, "ORR": 0xC, "OR": 0xC,
+        "ROR": 0x7, "SBC": 0x6, "TST": 0x8,
+    }
+    codes = _ops
+    def __init__(self, op, args):
+        args = parseArgs(args)
+        if not (op in self._ops
+                and len(args) == 2
+                and isReg(args[0], True)
+                and isReg(args[1], True)):
+            raise ValueError("Invalid args: %s" % repr(args))
+        self.rd = args[0]
+        self.rs = args[1]
+        self.op = self._ops[op]
+    def _getCodeN(self):
+        return (0x10 << 10) + (self.op << 6) + (self.rs << 3) + (self.rd)
 class ADR(Instruction):
     """
     ADR Rx, label
@@ -569,6 +592,8 @@ def patch_fw(args):
                     code = codes[tokens[0]]
                     del tokens[0]
                     instr = SimpleInstruction(tokens, code[0], code[1])
+                elif tokens[0] in AluSimple.codes:
+                    instr = AluSimple(tokens[0], tokens[1:])
                 elif tokens[0] in ["ADR"]:
                     del tokens[0]
                     myassert(len(tokens) == 2, "Bad arguments count for ADR")
