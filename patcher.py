@@ -165,6 +165,7 @@ class Jump(Instruction):
         if reg and (reg < 0 or reg > 0b111):
             raise ValueError("Bad register value %x!" % reg)
         self.reg = reg
+        print "Jump: ", dest, cond, reg
     def getCode(self):
         # don't use getOffset here as we don't need to clip last 2 bits
         offset = self._getAddr(self.dest) - (self.pos+4)
@@ -182,6 +183,7 @@ class Jump(Instruction):
             code = (0b1101 << 12) +\
                    (self.cond << 8) +\
                    (offset)
+        print hex(code)
         return pack('<H', code)
 class Bxx(Jump):
     _conds = {
@@ -196,12 +198,13 @@ class Bxx(Jump):
         Jump.__init__(self, dest, self._conds[cond])
 class CBx(Jump):
     def __init__(self, is_equal, args):
+        print "CBx:", is_equal, args
         args = parseArgs(args)
         if not (len(args) == 2
                and isReg(args[0], True)
                and isLabel(args[1])):
             raise ValueError("CBx: incorrect arguments")
-        Jump.__init__(self, args[1], 0 if is_equal else 1, parseReg(args[0]))
+        Jump.__init__(self, args[1], 1 if is_equal else 0, parseReg(args[0]))
 class LongJump(Instruction):
     """ B.W or BL instruction (4-bytes) """
     def __init__(self, dest, bl):
