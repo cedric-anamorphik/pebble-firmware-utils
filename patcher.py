@@ -283,8 +283,8 @@ class AluSimple(Instruction):
                 and isReg(args[0], True)
                 and isReg(args[1], True)):
             raise ValueError("Invalid args: %s" % repr(args))
-        self.rd = args[0]
-        self.rs = args[1]
+        self.rd = parseReg(args[0], True)
+        self.rs = parseReg(args[1], True)
         self.op = self._ops[op]
     def _getCodeN(self):
         return (0x10 << 10) + (self.op << 6) + (self.rs << 3) + (self.rd)
