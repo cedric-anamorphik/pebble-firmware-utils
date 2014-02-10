@@ -191,8 +191,13 @@ class Bxx(Jump):
             raise ValueError("Bxx: incorrect condition %s" % cond)
         Jump.__init__(self, dest, self._conds[cond])
 class CBx(Jump):
-    def __init__(self, dest, is_equal, reg):
-        Jump.__init__(self, dest, 0 if is_equal else 1, reg)
+    def __init__(self, args, is_equal):
+        args = parseArgs(args)
+        if not (len(args) == 2
+               and isReg(args[0], True)
+               and isLabel(args[1])):
+            raise ValueError("CBx: incorrect arguments")
+        Jump.__init__(self, args[1], 0 if is_equal else 1, parseReg(args[0]))
 class LongJump(Instruction):
     """ B.W or BL instruction (4-bytes) """
     def __init__(self, dest, bl):
@@ -608,8 +613,7 @@ def patch_fw(args):
                     myassert(len(tokens) == 2, "Bad arguments count for Bxx")
                     instr = Bxx(tokens[1], tokens[0][1:])
                 elif tokens[0] in ["CBZ", "CBNZ"]:
-                    myassert(len(tokens) == 3, "Bad arguments count for CBx")
-                    instr = CBx(tokens[2], tokens[0] == "CBZ", tokens[1])
+                    instr = CBx(tokens[0] == "CBZ", tokens[1:])
                 elif tokens[0] == "jump":
                     myassert(len(tokens) >= 3, "Too few arguments for Jump")
                     myassert(len(tokens) <= 4, "Too many arguments for Jump")
