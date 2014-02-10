@@ -195,7 +195,7 @@ class Bxx(Jump):
             raise ValueError("Bxx: incorrect condition %s" % cond)
         Jump.__init__(self, dest, self._conds[cond])
 class CBx(Jump):
-    def __init__(self, args, is_equal):
+    def __init__(self, is_equal, args):
         args = parseArgs(args)
         if not (len(args) == 2
                and isReg(args[0], True)
