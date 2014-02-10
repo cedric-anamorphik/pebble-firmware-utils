@@ -353,17 +353,15 @@ class MOVW(Instruction):
                 val = (0b10 << 8) + b1
             else:
                 # rotating scheme
-                def rol(n):
-                    return ((n << 1) & 0xFFFFFFFF) | (n >> 31) # maybe buggy for x >= 1<<32, but we will not have such values
+                def rol(n, ofs):
+                    return ((n << ofs) & 0xFFFFFFFF) | (n >> (32-ofs)) # maybe buggy for x >= 1<<32, but we will not have such values
                 ok = False
-                val = self.val
-                for i in range(1, 32):
-                    # we don't need to check for 0 shift because it is already
-                    # covered above in val<=0xFF
-                    val = rol(val)
+                for i in range(0b1000, 32): # lower values will cause autodetermining to fail
+                    val = rol(self.val, i)
                     if (val & 0xFF) == 0x80 + (val & 0x7F): # correct
                         ok = True
                         val = ((i << 7) & 0xFFF) + (val & 0x7F)
+                        break
                 if not ok:
                     raise ValueError("Cannot use MOV.W for value 0x%X!") % self.val
         # now we have correctly encoded value
@@ -371,7 +369,7 @@ class MOVW(Instruction):
         imm3 = (val >> 8) & 0b111
         imm8 = val & 0xFF
         code1 = (0b11110 << 11) + (i << 10) + (0b00010 << 5) + (self.s << 4) + 0b1111
-        code2 = (imm3 << 13) + (self.rd << 8) + imm8
+        code2 = (imm3 << 12) + (self.rd << 8) + imm8
         return pack("<HH", code1, code2)
     def getSize(self):
         return 4
