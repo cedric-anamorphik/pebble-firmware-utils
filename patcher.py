@@ -166,6 +166,7 @@ class Jump(Instruction):
             raise ValueError("Bad register value %x!" % reg)
         self.reg = reg
     def getCode(self):
+        # don't use getOffset here as we don't need to clip last 2 bits
         offset = self._getAddr(self.dest) - (self.pos+4)
         offset = offset >> 1
         usereg = self.reg != None
@@ -382,7 +383,7 @@ class ADR(Instruction):
         self.dest = args[1]
     def _getCodeN(self):
         rd = parseReg(self.rd, True)
-        ofs = self._getAddr(self.dest) - (self.pos + 2) # offset to that label
+        ofs = self._getOffset(self.dest) # offset to that label
         if abs(ofs) >= (1 << 10):
             raise ValueError("Offset is too far")
         if ofs & 0b11: # not 4-divisible
@@ -430,7 +431,7 @@ class LDRSTR(Instruction):
             return (0x5 << 12) + (self.l << 11) + (0b00 << 9) + (ro << 6) + (rb << 3) + rd
         # imm
         if isLabel(self.ro):
-            imm = self._getAddr(self.ro) - ((self.pos) + 2)
+            imm = self._getOffset(self.ro)
             if abs(imm) >= (1 << 10):
                 raise ValueError("Offset is too far: 0x%X" % imm)
         elif rb in (_regs['PC'], _regs['SP']):
