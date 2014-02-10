@@ -332,7 +332,7 @@ class MOVW(Instruction):
             raise ValueError("Invalid arguments for MOV.W")
         self.rd = parseReg(args[0])
         self.val = parseNumber(args[1], 32)
-        self.s = setflags
+        self.s = 1 if setflags else 0
     def getCode(self):
         # 11110 i 0 0010 S 1111   0 imm3 rd4 imm8
         if self.val <= 0xFF: # 1 byte
@@ -351,7 +351,7 @@ class MOVW(Instruction):
             else:
                 # rotating scheme
                 def rol(n):
-                    return (n << 1) | (n >> 31) # maybe buggy for x >= 1<<32, but we will not have such values
+                    return ((n << 1) & 0xFFFFFFFF) | (n >> 31) # maybe buggy for x >= 1<<32, but we will not have such values
                 ok = False
                 val = self.val
                 for i in range(1, 32):
@@ -360,7 +360,7 @@ class MOVW(Instruction):
                     val = rol(val)
                     if (val & 0xFF) == 0x80 + (val & 0x7F): # correct
                         ok = True
-                        val = (i << 7) + (val & 0x7F)
+                        val = ((i << 7) & 0xFFF) + (val & 0x7F)
                 if not ok:
                     raise ValueError("Cannot use MOV.W for value 0x%X!") % self.val
         # now we have correctly encoded value
