@@ -352,8 +352,9 @@ class ADR(Instruction):
             raise ValueError("offset 0x%X is not divisible by 4" % ofs)
         ofs = ofs >> 2
         return (0x14 << 11) + (rd << 8) + ofs
-class LDR(Instruction):
-    def __init__(self, args):
+class LDRSTR(Instruction):
+    """ LDR and STR """
+    def __init__(self, is_load, args):
         """ args is list of tokens to be parsed """
         argsj = ' '.join(args)
         if '[' in argsj:
@@ -368,7 +369,7 @@ class LDR(Instruction):
             elif len(args) == 2:
                 rb, ro = args
             else:
-                raise ValueError("Illegal args count for LDR, %s" % repr(args))
+                raise ValueError("Illegal args count for LDR/STR, %s" % repr(args))
         else:
             args = parseArgs(args)
             reg = args.pop(0)
@@ -378,17 +379,18 @@ class LDR(Instruction):
             elif len(args) == 2:
                 rb, ro = args
             else:
-                raise ValueError("Illegal args count for LDR, %s" % repr(args))
+                raise ValueError("Illegal args count for LDR/STR, %s" % repr(args))
         self.rd = reg
         self.rb = rb
         self.ro = ro
+        self.l = 1 if is_load else 0
     def _getCodeN(self):
         rd = parseReg(self.rd, True)
         rb = parseReg(self.rb)
         if isReg(self.ro, True):
             rb = parseReg(self.rb, True) # must be low register too
             ro = parseReg(self.ro, True)
-            return (0x5 << 12) + (0b100 << 9) + (ro << 6) + (rb << 3) + rd
+            return (0x5 << 12) + (self.l << 11) + (0b00 << 9) + (ro << 6) + (rb << 3) + rd
         # imm
         if isLabel(self.ro):
             imm = self._getAddr(self.ro) - (self.pos + 2)
@@ -403,10 +405,12 @@ class LDR(Instruction):
             raise ValueError("imm 0x%X is not divisible by 4" % imm)
         imm = imm >> 2
         if rb == _regs['PC']: # pc-relative
+            if not self.l:
+                raise ValueError("PC-relative STR is impossible")
             return (0x9 << 11) + (rd << 8) + imm
         if rb == _regs['SP']: # sp-relative
-            return (0x9 << 12) + (0x1 << 11) + (rd << 8) + imm
-        return (0x3 << 13) + (0x01 << 11) + (imm << 6) + (rb << 3) + rd
+            return (0x9 << 12) + (self.l << 11) + (rd << 8) + imm
+        return (0x3 << 13) + (0x0 << 12) + (self.l << 11) + (imm << 6) + (rb << 3) + rd
 class EmptyInstruction(Instruction):
     """ Pseudo-instruction with zero size, for labels """
     def getSize(self):
@@ -651,9 +655,8 @@ def patch_fw(args):
                     del tokens[0]
                     myassert(len(tokens) == 2, "Bad arguments count for ADR")
                     instr = ADR(tokens)
-                elif tokens[0] in ["LDR"]:
-                    del tokens[0]
-                    instr = LDR(tokens)
+                elif tokens[0] in ["LDR", "STR"]:
+                    instr = LDRSTR(tokens[0] == "LDR", tokens[1:])
                 elif tokens[0] in ["BX"]:
                     del tokens[0]
                     instr = SimpleInstruction(['R0,', tokens[1]], -1, 3)
