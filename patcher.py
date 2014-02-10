@@ -326,12 +326,13 @@ class ADDSUB(Instruction):
             return (3 << 11) + (0 << 10) + (self.is_sub << 9) + (self.ro << 6) + (self.rs << 3) + (self.rd)
 class MOVW(Instruction):
     """ This represents MOV.W insruction """
-    def __init__(self, args):
+    def __init__(self, args, setflags):
         args = parseArgs(args)
         if len(args) != 2:
             raise ValueError("Invalid arguments for MOV.W")
         self.rd = parseReg(args[0])
         self.val = parseNumber(args[1], 32)
+        self.s = setflags
     def getCode(self):
         # 11110 i 0 0010 S 1111   0 imm3 rd4 imm8
         if self.val <= 0xFF: # 1 byte
@@ -690,8 +691,8 @@ def patch_fw(args):
                     instr = ADDSUB(True, tokens[1:])
                 elif tokens[0] in AluSimple.codes:
                     instr = AluSimple(tokens[0], tokens[1:])
-                elif tokens[0] in ["MOV.W"]:
-                    instr = MOVW(tokens[1:])
+                elif tokens[0] in ["MOV.W", "MOVS.W"]:
+                    instr = MOVW(tokens[1:], 'S' in tokens[0])
                 elif tokens[0] in ["ADR"]:
                     del tokens[0]
                     myassert(len(tokens) == 2, "Bad arguments count for ADR")
