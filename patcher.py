@@ -431,6 +431,7 @@ class LDRSTR(Instruction):
             if rb in ['PC','SP']:
                 raise ValueError("Unsupported register for LDR/STR with datatype %s" % datatype)
         self.b = 1 if datatype == 'B' else 0
+        self.shift = {'':2,'H':1,'B':0}[datatype]
         self.rd = reg
         self.rb = rb
         self.ro = ro
@@ -452,9 +453,9 @@ class LDRSTR(Instruction):
         else:
             imm = parseNumber(self.ro, 7) # limited size
 
-        if imm & 0b11: # not 4-divisible
+        if imm & ((1<<self.shift)-1): # not 2^numbytes-divisible
             raise ValueError("imm 0x%X is not divisible by 4" % imm)
-        imm = imm >> 2
+        imm = imm >> self.shift
         if rb == _regs['PC']: # pc-relative
             if not self.l:
                 raise ValueError("PC-relative STR is impossible")
