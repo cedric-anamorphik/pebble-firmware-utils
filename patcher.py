@@ -395,8 +395,12 @@ class ADR(Instruction):
         return (0x14 << 11) + (rd << 8) + ofs
 class LDRSTR(Instruction):
     """ LDR and STR """
-    def __init__(self, is_load, args):
-        """ args is list of tokens to be parsed """
+    def __init__(self, is_load, datatype, args):
+        """
+        is_load determines LDR from STR
+        datatype is eithore None or 'B' (byte)
+        args is list of tokens to be parsed
+        """
         argsj = ' '.join(args)
         if '[' in argsj:
             reg, args = argsj.split('[')
@@ -421,6 +425,12 @@ class LDRSTR(Instruction):
                 rb, ro = args
             else:
                 raise ValueError("Illegal args count for LDR/STR, %s" % repr(args))
+        if datatype:
+            if not datatype in ['B']:
+                raise ValueError("Unsupported datatype for LDR/STR, %s" % datatype)
+            if rb in ['PC','SP']:
+                raise ValueError("Unsupported register for LDR/STR with datatype %s" % datatype)
+        self.b = 1 if datatype == 'B' else 0
         self.rd = reg
         self.rb = rb
         self.ro = ro
@@ -431,7 +441,7 @@ class LDRSTR(Instruction):
         if isReg(self.ro, True):
             rb = parseReg(self.rb, True) # must be low register too
             ro = parseReg(self.ro, True)
-            return (0x5 << 12) + (self.l << 11) + (0b00 << 9) + (ro << 6) + (rb << 3) + rd
+            return (0x5 << 12) + (self.l << 11) + (self.b << 10) + (0b0 << 9) + (ro << 6) + (rb << 3) + rd
         # imm
         if isLabel(self.ro):
             imm = self._getOffset(self.ro)
@@ -451,7 +461,7 @@ class LDRSTR(Instruction):
             return (0x9 << 11) + (rd << 8) + imm
         if rb == _regs['SP']: # sp-relative
             return (0x9 << 12) + (self.l << 11) + (rd << 8) + imm
-        return (0x3 << 13) + (0x0 << 12) + (self.l << 11) + (imm << 6) + (rb << 3) + rd
+        return (0x3 << 13) + (self.b << 12) + (self.l << 11) + (imm << 6) + (rb << 3) + rd
 class EmptyInstruction(Instruction):
     """ Pseudo-instruction with zero size, for labels """
     def getSize(self):
@@ -706,8 +716,8 @@ def patch_fw(args):
                     del tokens[0]
                     myassert(len(tokens) == 2, "Bad arguments count for ADR")
                     instr = ADR(tokens)
-                elif tokens[0] in ["LDR", "STR"]:
-                    instr = LDRSTR(tokens[0] == "LDR", tokens[1:])
+                elif tokens[0] in ["LDR", "STR", "LDRB", "STRB"]:
+                    instr = LDRSTR(tokens[0].startswith("LDR"), tokens[0][3:], tokens[1:])
                 elif tokens[0] in ["BX"]:
                     del tokens[0]
                     instr = SimpleInstruction(['R0,', tokens[1]], -1, 3)
