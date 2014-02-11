@@ -2,7 +2,7 @@
 # This scripts applies patches to firmware
 
 import sys
-from struct import pack #,unpack
+from struct import pack,unpack
 
 # Helper functions for syntax checking
 def parseArgs(tokens):
@@ -82,6 +82,9 @@ class Instruction:
             return self.context[label]
         except KeyError:
             raise Exception("No such address: %s (for %s)" % (label, self))
+    def _getOffset(self, label):
+        """ Returns correct offset to getAddr """
+        return self._getAddr(label) - ((self.pos + 4) & 0xFFFFFFFC) # cut last 4 bits
     def setPosition(self, pos):
         """
         Sets address where this instruction will be placed
@@ -163,22 +166,45 @@ class Jump(Instruction):
             raise ValueError("Bad register value %x!" % reg)
         self.reg = reg
     def getCode(self):
+        # don't use getOffset here as we don't need to clip last 2 bits
         offset = self._getAddr(self.dest) - (self.pos+4)
         offset = offset >> 1
         usereg = self.reg != None
-        if abs(offset) >= 1<<(5 if usereg else 8):
+        if abs(offset) >= 1<<(6 if usereg else 8):
             raise ValueError("Offset %X exceeds maximum of %X!" %
                              (offset, 1<<11))
         if usereg:
-            code = (0b1011 << 12) +\
-                   (self.cond << 8) +\
-                   (offset << 3) +\
-                   (self.reg)
+            code = ((0b1011 << 12)
+                    + (self.cond << 11)
+                    + (0 << 8)
+                    + ((offset >> 5) << 9)
+                    + (1 << 8)
+                    + ((offset & 0b11111) << 3)
+                    + (self.reg))
         else:
-            code = (0b1101 << 12) +\
-                   (self.cond << 8) +\
-                   (offset)
+            code = ((0b1101 << 12)
+                    + (self.cond << 8)
+                    + (offset))
         return pack('<H', code)
+class Bxx(Jump):
+    _conds = {
+        'CC': 0x3, 'CS': 0x2, 'EQ': 0x0,
+        'GE': 0xA, 'GT': 0xC, 'HI': 0x8,
+    }
+    codes = ['B'+x for x in _conds]
+    def __init__(self, dest, cond):
+        cond = cond.upper()
+        if not cond in self._conds:
+            raise ValueError("Bxx: incorrect condition %s" % cond)
+        Jump.__init__(self, dest, self._conds[cond])
+class CBx(Jump):
+    def __init__(self, is_equal, args):
+        args = parseArgs(args)
+        if not (len(args) == 2
+               and isReg(args[0], True)
+               and isLabel(args[1])):
+            raise ValueError("CBx: incorrect arguments")
+        Jump.__init__(self, args[1], 0 if is_equal else 1, parseReg(args[0]))
 class LongJump(Instruction):
     """ B.W or BL instruction (4-bytes) """
     def __init__(self, dest, bl):
@@ -242,11 +268,114 @@ class SimpleInstruction(Instruction):
             h0 = a0 >> 3
             h1 = a1 >> 3
             return (0x11 << 10) + (self.hireg << 8) + (h0 << 7) + (h1 << 6) + (a1 << 3) + (a0 << 0)
+class AluSimple(Instruction):
+    """ This represents ADC, AND, ASR, etc """
+    _ops = {
+        "ADC": 0x5, "AND": 0x0, "ASR": 0x4, "BIC": 0xE,
+        "CMN": 0xB, #"CMP": 0xA, # this CMP will not be used - see above
+        "EOR": 0x1, "XOR": 0x1, # just an alias
+        "LSL": 0x2, "LSR": 0x3, "MUL": 0xD,
+        "MVN": 0xF, "NEG": 0x9, "ORR": 0xC, "OR": 0xC,
+        "ROR": 0x7, "SBC": 0x6, "TST": 0x8,
+    }
+    codes = _ops
+    def __init__(self, op, args):
+        args = parseArgs(args)
+        if not (op in self._ops
+                and len(args) == 2
+                and isReg(args[0], True)
+                and isReg(args[1], True)):
+            raise ValueError("Invalid args: %s" % repr(args))
+        self.rd = parseReg(args[0], True)
+        self.rs = parseReg(args[1], True)
+        self.op = self._ops[op]
+    def _getCodeN(self):
+        return (0x10 << 10) + (self.op << 6) + (self.rs << 3) + (self.rd)
+class ADDSUB(Instruction):
+    def __init__(self, is_sub, args):
+        args = parseArgs(args)
+        self.is_sub = 1 if is_sub else 0
+        if len(args) == 2:
+            self.isImm = True
+            self.rd = parseReg(args[0])
+            self.rs = None
+            if self.rd >= 8:
+                if self.rd != _regs['SP']:
+                    raise ValueError("Invalid hireg: %s" % repr(args))
+                self.imm = parseNumber(args[1], 7)
+            else:
+                self.imm = parseNumber(args[1], 8)
+        elif len(args) == 3:
+            self.rd = parseReg(args[0],True)
+            self.rs = parseReg(args[1],True)
+            if isReg(args[2]):
+                self.isImm = False
+                self.ro = parseReg(args[2],True)
+            else:
+                self.isImm = True
+                self.imm = parseNumber(args[2], 3)
+        else:
+            raise ValueError("Invalid args: %s" % repr(args))
+    def _getCodeN(self):
+        if self.isImm:
+            if self.rs == None: # 8bit imm
+                if self.rd == _regs['SP']:
+                    return (0xb0 << 8) + (self.is_sub << 7) + self.imm
+                # duplicate SimpleInstruction
+                return (1 << 13) + ((3 if self.is_sub else 2) << 11) + (self.rd << 8) + self.imm
+            else: # 3-bit offset
+                return (3 << 11) + (1 << 10) + (self.is_sub << 9) + (self.imm << 6) + (self.rs << 3) + (self.rd)
+        else:
+            return (3 << 11) + (0 << 10) + (self.is_sub << 9) + (self.ro << 6) + (self.rs << 3) + (self.rd)
+class MOVW(Instruction):
+    """ This represents MOV.W insruction """
+    def __init__(self, args, setflags):
+        args = parseArgs(args)
+        if len(args) != 2:
+            raise ValueError("Invalid arguments for MOV.W")
+        self.rd = parseReg(args[0])
+        self.val = parseNumber(args[1], 32)
+        self.s = 1 if setflags else 0
+    def getCode(self):
+        # 11110 i 0 0010 S 1111   0 imm3 rd4 imm8
+        if self.val <= 0xFF: # 1 byte
+            val = self.val
+        else:
+            b1 = self.val >> 24
+            b2 = (self.val >> 16) & 0xFF
+            b3 = (self.val >> 8) & 0xFF
+            b4 = self.val & 0xFF
+            if b1 == b2 == b3 == b4:
+                val = (0b11 << 8) + b1
+            elif b1 == 0 and b3 == 0:
+                val = (0b01 << 8) + b2
+            elif b2 == 0 and b4 == 0:
+                val = (0b10 << 8) + b1
+            else:
+                # rotating scheme
+                def rol(n, ofs):
+                    return ((n << ofs) & 0xFFFFFFFF) | (n >> (32-ofs)) # maybe buggy for x >= 1<<32, but we will not have such values
+                ok = False
+                for i in range(0b1000, 32): # lower values will cause autodetermining to fail
+                    val = rol(self.val, i)
+                    if (val & 0xFF) == 0x80 + (val & 0x7F): # correct
+                        ok = True
+                        val = ((i << 7) & 0xFFF) + (val & 0x7F)
+                        break
+                if not ok:
+                    raise ValueError("Cannot use MOV.W for value 0x%X!") % self.val
+        # now we have correctly encoded value
+        i = val >> 11
+        imm3 = (val >> 8) & 0b111
+        imm8 = val & 0xFF
+        code1 = (0b11110 << 11) + (i << 10) + (0b00010 << 5) + (self.s << 4) + 0b1111
+        code2 = (imm3 << 12) + (self.rd << 8) + imm8
+        return pack("<HH", code1, code2)
+    def getSize(self):
+        return 4
 class ADR(Instruction):
     """
     ADR Rx, label
-    assembles to
-    ADD Rx, PC, (offset to label)
     """
     def __init__(self, args):
         args = parseArgs(args)
@@ -257,15 +386,16 @@ class ADR(Instruction):
         self.dest = args[1]
     def _getCodeN(self):
         rd = parseReg(self.rd, True)
-        ofs = self._getAddr(self.dest) - (self.pos + 2) # offset to that label
+        ofs = self._getOffset(self.dest) # offset to that label
         if abs(ofs) >= (1 << 10):
             raise ValueError("Offset is too far")
         if ofs & 0b11: # not 4-divisible
             raise ValueError("offset 0x%X is not divisible by 4" % ofs)
         ofs = ofs >> 2
         return (0x14 << 11) + (rd << 8) + ofs
-class LDR(Instruction):
-    def __init__(self, args):
+class LDRSTR(Instruction):
+    """ LDR and STR """
+    def __init__(self, is_load, args):
         """ args is list of tokens to be parsed """
         argsj = ' '.join(args)
         if '[' in argsj:
@@ -280,7 +410,7 @@ class LDR(Instruction):
             elif len(args) == 2:
                 rb, ro = args
             else:
-                raise ValueError("Illegal args count for LDR, %s" % repr(args))
+                raise ValueError("Illegal args count for LDR/STR, %s" % repr(args))
         else:
             args = parseArgs(args)
             reg = args.pop(0)
@@ -290,20 +420,21 @@ class LDR(Instruction):
             elif len(args) == 2:
                 rb, ro = args
             else:
-                raise ValueError("Illegal args count for LDR, %s" % repr(args))
+                raise ValueError("Illegal args count for LDR/STR, %s" % repr(args))
         self.rd = reg
         self.rb = rb
         self.ro = ro
+        self.l = 1 if is_load else 0
     def _getCodeN(self):
         rd = parseReg(self.rd, True)
         rb = parseReg(self.rb)
         if isReg(self.ro, True):
             rb = parseReg(self.rb, True) # must be low register too
             ro = parseReg(self.ro, True)
-            return (0x5 << 12) + (0b100 << 9) + (ro << 6) + (rb << 3) + rd
+            return (0x5 << 12) + (self.l << 11) + (0b00 << 9) + (ro << 6) + (rb << 3) + rd
         # imm
         if isLabel(self.ro):
-            imm = self._getAddr(self.ro) - (self.pos + 2)
+            imm = self._getOffset(self.ro)
             if abs(imm) >= (1 << 10):
                 raise ValueError("Offset is too far: 0x%X" % imm)
         elif rb in (_regs['PC'], _regs['SP']):
@@ -315,10 +446,12 @@ class LDR(Instruction):
             raise ValueError("imm 0x%X is not divisible by 4" % imm)
         imm = imm >> 2
         if rb == _regs['PC']: # pc-relative
+            if not self.l:
+                raise ValueError("PC-relative STR is impossible")
             return (0x9 << 11) + (rd << 8) + imm
         if rb == _regs['SP']: # sp-relative
-            return (0x9 << 12) + (0x1 << 11) + (rd << 8) + imm
-        return (0x3 << 13) + (0x01 << 11) + (imm << 6) + (rb << 3) + rd
+            return (0x9 << 12) + (self.l << 11) + (rd << 8) + imm
+        return (0x3 << 13) + (0x0 << 12) + (self.l << 11) + (imm << 6) + (rb << 3) + rd
 class EmptyInstruction(Instruction):
     """ Pseudo-instruction with zero size, for labels """
     def getSize(self):
@@ -392,7 +525,7 @@ def patch_fw(args):
     def search_addr(sig):
         """
         This function tries to match signature to data,
-        and returns a memory address of found match only if it is an only one.
+        and returns a memory address of found match only if it is the only one.
         sig is list of bytes (in hex), "?[n]" or "@"
         bytes must match, ? means any byte, "?n" means any n bytes,
         @ is required position (default position is at start of mask)
@@ -521,6 +654,14 @@ def patch_fw(args):
                 myassert(len(tokens) == 2, "proc keyword requires one argument")
                 blockname = tokens[1]
                 continue
+            elif tokens[0] == 'val': # read value (currently only 4-bytes)
+                myassert(len(tokens) == 2, "val keyword requires one argument (name)")
+                valname = tokens[1]
+                val = unpack('<I', data[addr-0x8010000:addr-0x8010000+4])[0]
+                print "Determined: %s = 0x%X" % (valname, val)
+                procs[valname] = val # save this value to global context
+                continue
+
             if tokens[0].endswith(':'): # label
                 label = tokens[0][:-1]
                 del tokens[0]
@@ -555,16 +696,26 @@ def patch_fw(args):
                     code = codes[tokens[0]]
                     del tokens[0]
                     instr = SimpleInstruction(tokens, code[0], code[1])
+                elif tokens[0] in ["SUB"]:
+                    instr = ADDSUB(True, tokens[1:])
+                elif tokens[0] in AluSimple.codes:
+                    instr = AluSimple(tokens[0], tokens[1:])
+                elif tokens[0] in ["MOV.W", "MOVS.W"]:
+                    instr = MOVW(tokens[1:], 'S' in tokens[0])
                 elif tokens[0] in ["ADR"]:
                     del tokens[0]
                     myassert(len(tokens) == 2, "Bad arguments count for ADR")
                     instr = ADR(tokens)
-                elif tokens[0] in ["LDR"]:
-                    del tokens[0]
-                    instr = LDR(tokens)
+                elif tokens[0] in ["LDR", "STR"]:
+                    instr = LDRSTR(tokens[0] == "LDR", tokens[1:])
                 elif tokens[0] in ["BX"]:
                     del tokens[0]
                     instr = SimpleInstruction(['R0,', tokens[1]], -1, 3)
+                elif tokens[0] in Bxx.codes:
+                    myassert(len(tokens) == 2, "Bad arguments count for Bxx")
+                    instr = Bxx(tokens[1], tokens[0][1:])
+                elif tokens[0] in ["CBZ", "CBNZ"]:
+                    instr = CBx(tokens[0] == "CBZ", tokens[1:])
                 elif tokens[0] == "jump":
                     myassert(len(tokens) >= 3, "Too few arguments for Jump")
                     myassert(len(tokens) <= 4, "Too many arguments for Jump")
