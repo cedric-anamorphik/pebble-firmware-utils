@@ -188,8 +188,10 @@ class Jump(Instruction):
         return pack('<H', code)
 class Bxx(Jump):
     _conds = {
-        'CC': 0x3, 'CS': 0x2, 'EQ': 0x0,
-        'GE': 0xA, 'GT': 0xC, 'HI': 0x8,
+        'CC': 0x3, 'CS': 0x2, 'EQ': 0x0, 'GE': 0xA,
+        'GT': 0xC, 'HI': 0x8, 'LE': 0xD, 'LS': 0x9,
+        'LT': 0xB, 'MI': 0x4, 'NE': 0x1, 'PL': 0x5,
+        'VC': 0x7, 'VS': 0x6,
     }
     codes = ['B'+x for x in _conds]
     def __init__(self, dest, cond):
