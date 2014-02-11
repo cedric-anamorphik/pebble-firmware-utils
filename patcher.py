@@ -2,7 +2,7 @@
 # This scripts applies patches to firmware
 
 import sys
-from struct import pack #,unpack
+from struct import pack,unpack
 
 # Helper functions for syntax checking
 def parseArgs(tokens):
@@ -525,7 +525,7 @@ def patch_fw(args):
     def search_addr(sig):
         """
         This function tries to match signature to data,
-        and returns a memory address of found match only if it is an only one.
+        and returns a memory address of found match only if it is the only one.
         sig is list of bytes (in hex), "?[n]" or "@"
         bytes must match, ? means any byte, "?n" means any n bytes,
         @ is required position (default position is at start of mask)
@@ -654,6 +654,14 @@ def patch_fw(args):
                 myassert(len(tokens) == 2, "proc keyword requires one argument")
                 blockname = tokens[1]
                 continue
+            elif tokens[0] == 'val': # read value (currently only 4-bytes)
+                myassert(len(tokens) == 2, "val keyword requires one argument (name)")
+                valname = tokens[1]
+                val = unpack('<I', data[addr-0x8010000:addr-0x8010000+4])[0]
+                print "Determined: %s = 0x%X" % (valname, val)
+                procs[valname] = val # save this value to global context
+                continue
+
             if tokens[0].endswith(':'): # label
                 label = tokens[0][:-1]
                 del tokens[0]
