@@ -47,7 +47,7 @@
 {
 	proc my_code
 	CMP R3, 5 ; reexecute replaced code
-	BEQ ret ; nobody likes R3!=5 :)
+	BEQ ret; we don't need button_up events
 
 	MOV R5, R0 ; save R0 as we want to use it
 
@@ -74,7 +74,7 @@
 	SUB R1, R1, R4 ; calculate diff
 	MOV.W R3, 500 ; delay in millis
 	CMP R1, R3
-	BGE cont ; if diff is too large, pass this button to original proc
+	BHI cont ; if diff is too large, pass this button to original proc
 
 	; now launch app: get its info -
 	; R0 holds button id, which we use as bank id,
