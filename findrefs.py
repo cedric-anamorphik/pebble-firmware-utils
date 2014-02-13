@@ -29,31 +29,32 @@ def genCode(pos, to, is_bl):
     code = pack('<HH', hi, lo)
     return code
 
-if len(sys.argv) < 2:
-    print "Usage: findrefs.py [tintin_fw.bin] 0xVALUE"
-    print "Examples:"
-    print "  findrefs.py 0x080412f9"
-    print "  findrefs.py tintin_fw.patched.bin 0x0801FEDC"
-    exit(1)
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print "Usage: findrefs.py [tintin_fw.bin] 0xVALUE"
+        print "Examples:"
+        print "  findrefs.py 0x080412f9"
+        print "  findrefs.py tintin_fw.patched.bin 0x0801FEDC"
+        exit(1)
 
-if len(sys.argv) == 2:
-    tintin = "tintin_fw.bin"
-    val = sys.argv[1]
-else:
-    tintin = sys.argv[1]
-    val = sys.argv[2]
+    if len(sys.argv) == 2:
+        tintin = "tintin_fw.bin"
+        val = sys.argv[1]
+    else:
+        tintin = sys.argv[1]
+        val = sys.argv[2]
 
-val = int(val, 0)
-sval = pack('I', val)
-data = open(tintin, "rb").read()
+    val = int(val, 0)
+    sval = pack('I', val)
+    data = open(tintin, "rb").read()
 
-for i in range(0, len(data)-3, 4):
-    d = data[i:i+4]
-    iadr = i + 0x08010000
-    if d == sval:
-        print "Offset 0x%X (0x%X): DCD 0x%X" % (i, iadr, val)
-    elif d == genCode(iadr, val, False):
-        print "Offset 0x%X (0x%X): B.W 0x%X" % (i, iadr, val)
-    elif d == genCode(iadr, val, True):
-        print "Offset 0x%X (0x%X): BL 0x%X" % (i, iadr, val)
-print "Done."
+    for i in range(0, len(data)-3, 4):
+        d = data[i:i+4]
+        iadr = i + 0x08010000
+        if d == sval:
+            print "Offset 0x%X (0x%X): DCD 0x%X" % (i, iadr, val)
+        if d == genCode(iadr, val, False):
+            print "Offset 0x%X (0x%X): B.W 0x%X" % (i, iadr, val)
+        if d == genCode(iadr, val, True):
+            print "Offset 0x%X (0x%X): BL 0x%X" % (i, iadr, val)
+    print "Done."
