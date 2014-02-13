@@ -577,8 +577,11 @@ def patch_fw(args):
                     mask.append(string)
                     string = ''
                     mask.append(val)
-                else: # first mask item must be string, so just use offset
+                elif not mask: # we are at first mask item, which must be string,
+                               #so just treat this skip as negative offset
                     offset = -val
+                else: # consecutive skips must be merged
+                    mask[-1] += val
             elif s[0] == '"' and s[-1] == '"': # string specified
                 string += s[1:-1]
             else:
