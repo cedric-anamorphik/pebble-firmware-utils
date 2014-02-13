@@ -565,7 +565,7 @@ def patch_fw(args):
                 b = int(s, 16) # must work as we checked already
                 string += chr(b)
             elif s == '@':
-                myassert(offset == 0, "Multiple '@'s (or starting with skip) - it is not good! Where am I?")
+                myassert(offset == 0, "Multiple '@'s (or mask starting with skip) - it is not good! Where am I?")
                 offset = masklen() + len(string)
             elif s[0] == '?':
                 s = s[1:]
@@ -573,12 +573,14 @@ def patch_fw(args):
                     val = 1
                 else:
                     val = tryc(lambda: int(s), "Not a number: %s" % s)
-                if string: # this is not very first skip
+                if string: # this skip is not very first mask item
                     mask.append(string)
                     string = ''
                     mask.append(val)
                 else: # first mask item must be string, so just use offset
                     offset = -val
+            elif s[0] == '"' and s[-1] == '"': # string specified
+                string += s[1:-1]
             else:
                 myassert(False, "Illegal value: %s" % s)
         if string:
