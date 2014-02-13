@@ -14,8 +14,8 @@ def genCode(pos, to, is_bl):
     offset = to - (pos+4)
     offset = offset >> 1
     if abs(offset) >= 1<<22:
-        print ("Offset %X exceeds maximum of %X!" %
-                            (offset, 1<<22))
+        #print ("Offset %X exceeds maximum of %X!" %
+        #                    (offset, 1<<22))
         return '' # we don't need exception here,
                   # just return empty string which will not match anything
         raise ValueError("Offset %X exceeds maximum of %X!" %
