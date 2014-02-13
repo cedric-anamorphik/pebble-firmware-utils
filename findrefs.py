@@ -53,8 +53,11 @@ if __name__ == "__main__":
         iadr = i + 0x08010000
         if d == sval:
             print "Offset 0x%X (0x%X): DCD 0x%X" % (i, iadr, val)
-        if d == genCode(iadr, val, False):
-            print "Offset 0x%X (0x%X): B.W 0x%X" % (i, iadr, val)
-        if d == genCode(iadr, val, True):
-            print "Offset 0x%X (0x%X): BL 0x%X" % (i, iadr, val)
+        for ix in (i, i+2) if i<len(data)-1 else (i,):
+            d = data[ix:ix+4]
+            iadr = ix + 0x08010000
+            if d == genCode(iadr, val, False):
+                print "Offset 0x%X (0x%X): B.W 0x%X" % (i, iadr, val)
+            if d == genCode(iadr, val, True):
+                print "Offset 0x%X (0x%X): BL 0x%X" % (i, iadr, val)
     print "Done."
