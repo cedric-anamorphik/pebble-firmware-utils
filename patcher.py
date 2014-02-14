@@ -535,6 +535,17 @@ def patch_fw(args):
 
     data = args.tintin.read()
 
+    def masklen(mask):
+        """ Returns length of given mask in bytes """
+        b=0
+        for m in mask:
+            if type(m) is str:
+                b += len(m)
+            elif type(m) is int:
+                b += m
+            else:
+                raise ValueError(m) # must never happen
+        return b
     def search_addr(sig):
         """
         This function tries to match signature to data,
@@ -545,16 +556,6 @@ def patch_fw(args):
         """
         def is_hex(n):
             return n.isdigit() or n.lower() in 'abcdef'
-        def masklen():
-            b=0
-            for m in mask:
-                if type(m) is str:
-                    b += len(m)
-                elif type(m) is int:
-                    b += m
-                else:
-                    raise ValueError(m) # must never happen
-            return b
         if not sig:
             raise ValueError("Cannot search for empty mask")
         offset = 0 # for @
@@ -566,7 +567,7 @@ def patch_fw(args):
                 string += chr(b)
             elif s == '@':
                 myassert(offset == 0, "Multiple '@'s (or mask starting with skip) - it is not good! Where am I?")
-                offset = masklen() + len(string)
+                offset = masklen(mask) + len(string)
             elif s[0] == '?':
                 s = s[1:]
                 if len(s) == 0:
@@ -620,11 +621,13 @@ def patch_fw(args):
         return matches[0] + offset + 0x08010000
 
     blocks = [] # list of all our blocks
+    masklens = [] # list of mask lengths for each block
     blocknames = []
     procs = {} # all known procedure names -> addr
 
     # scratchpad:
     mask = [] # mask for determining baddr
+    mlen = 0 # length of mask in bytes
     baddr = None # block beginning
     addr = None # current instruction starting address, or block beginning
     block = None # current block - list of instructions
@@ -644,6 +647,7 @@ def patch_fw(args):
                 if t == '{': # end of mask, start of block
                     addr = baddr = search_addr(mask)
                     myassert(addr != False, "Mask not found. Failing.")
+                    mlen = masklen(mask)
                     block = [] # now in block
                 elif block == None: # another part of mask, block not started yet
                     mask.append(t)
@@ -660,6 +664,7 @@ def patch_fw(args):
                     label = None
                     block.append(instr)
                 blocks.append(block)
+                masklens.append(mlen)
                 blocknames.append(blockname)
                 procs[blockname] = baddr # save this block's address for future use
                 mask = []
@@ -792,6 +797,8 @@ def patch_fw(args):
                 raise ValueError("Instruction length mismatch: expected %d, got %d. %s" %
                                  (len(icode), i.getSize(), str(i)))
             code += icode
+        if len(code) > masklens[bnum]:
+            print "WARNING: code length exceeds mask length! Strange things may happen..."
         blen = len(datar)
         datar = datar[:start] + code + datar[start+len(code):]
         if len(datar) != blen:
