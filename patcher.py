@@ -395,6 +395,19 @@ class ADR(Instruction):
             raise ValueError("offset 0x%X is not divisible by 4" % ofs)
         ofs = ofs >> 2
         return (0x14 << 11) + (rd << 8) + ofs
+class UXTx(Instruction):
+    def __init__(self, is_halfword, args):
+        args = parseArgs(args)
+        if not (len(args) == 2 and
+                isReg(args[0], True) and isReg(args[1], True)):
+            raise ValueError("Invalid args: %s" % repr(args))
+        self.rd = args[0]
+        self.rs = args[1]
+        self.b = 0 if is_halfword else 1
+    def _getCodeN(self):
+        rd = parseReg(self.rd, True)
+        rs = parseReg(self.rs, True)
+        return (0b110100101 << 7) + (self.b << 6) + (rs << 3) + (rd)
 class LDRSTR(Instruction):
     """ LDR and STR """
     def __init__(self, is_load, datatype, args):
@@ -729,6 +742,8 @@ def patch_fw(args):
                     del tokens[0]
                     myassert(len(tokens) == 2, "Bad arguments count for ADR")
                     instr = ADR(tokens)
+                elif tokens[0] in ["UXTB", "UXTH"]:
+                    instr = UXTx('H' in tokens[0], tokens[1:])
                 elif tokens[0] in ["LDR", "STR", "LDRB", "STRB"]:
                     instr = LDRSTR(tokens[0].startswith("LDR"), tokens[0][3:], tokens[1:])
                 elif tokens[0] in ["BX"]:
