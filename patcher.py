@@ -309,13 +309,22 @@ class ADDSUB(Instruction):
                 self.imm = parseNumber(args[1], 8)
         elif len(args) == 3:
             self.rd = parseReg(args[0],True)
-            self.rs = parseReg(args[1],True)
             if isReg(args[2]):
+                self.rs = parseReg(args[1],True)
                 self.isImm = False
                 self.ro = parseReg(args[2],True)
             else:
+                self.rs = parseReg(args[1])
                 self.isImm = True
-                self.imm = parseNumber(args[2], 3)
+                if self.rs >= 8:
+                    if self.rs != _regs['SP']:
+                        raise ValueError("Invalid hireg: %s" % repr(args))
+                    if is_sub:
+                        raise ValueError("Cannot SUB from SP to loreg: %s" % repr(args))
+                    # ADD Rd, SP,imm -> shifted imm must fit 8bits
+                    self.imm = parseNumber(args[2], 10) >> 2
+                else:
+                    self.imm = parseNumber(args[2], 3)
         else:
             raise ValueError("Invalid args: %s" % repr(args))
     def _getCodeN(self):
@@ -325,6 +334,8 @@ class ADDSUB(Instruction):
                     return (0xb0 << 8) + (self.is_sub << 7) + self.imm
                 # duplicate SimpleInstruction
                 return (1 << 13) + ((3 if self.is_sub else 2) << 11) + (self.rd << 8) + self.imm
+            elif self.rs == _regs['SP']: # ADD Rd, SP,imm
+                return (0b10101 << 11) + (self.rd << 8) + self.imm
             else: # 3-bit offset
                 return (3 << 11) + (1 << 10) + (self.is_sub << 9) + (self.imm << 6) + (self.rs << 3) + (self.rd)
         else:
@@ -724,16 +735,16 @@ def patch_fw(args):
                 elif tokens[0] in ["ALIGN"]:
                     myassert(len(tokens) == 2, "Error - must specify 1 argument for ALIGN")
                     instr = ALIGN(tokens[1])
-                elif tokens[0] in ["CMP", "MOV", "ADD"]:
+                elif tokens[0] in ["CMP", "MOV"]:
                     codes = {"CMP": (1, 1),
                             "MOV": (0, 2),
-                            "ADD": (2, 0),
+                            "ADD": (2, 0), # unused now
                             }
                     code = codes[tokens[0]]
                     del tokens[0]
                     instr = SimpleInstruction(tokens, code[0], code[1])
-                elif tokens[0] in ["SUB"]:
-                    instr = ADDSUB(True, tokens[1:])
+                elif tokens[0] in ["ADD", "SUB"]:
+                    instr = ADDSUB(tokens[0] == "SUB", tokens[1:])
                 elif tokens[0] in AluSimple.codes:
                     instr = AluSimple(tokens[0], tokens[1:])
                 elif tokens[0] in ["MOV.W", "MOVS.W"]:
