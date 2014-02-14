@@ -418,7 +418,7 @@ class UXTx(Instruction):
     def _getCodeN(self):
         rd = parseReg(self.rd, True)
         rs = parseReg(self.rs, True)
-        return (0b110100101 << 7) + (self.b << 6) + (rs << 3) + (rd)
+        return (0b101100101 << 7) + (self.b << 6) + (rs << 3) + (rd)
 class LDRSTR(Instruction):
     """ LDR and STR """
     def __init__(self, is_load, datatype, args):
