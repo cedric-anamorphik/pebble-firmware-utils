@@ -491,6 +491,8 @@ class LDRSTR(Instruction):
         return (0x3 << 13) + (self.b << 12) + (self.l << 11) + (imm << 6) + (rb << 3) + rd
 class EmptyInstruction(Instruction):
     """ Pseudo-instruction with zero size, for labels """
+    def __init__(self):
+        self.srcline = None
     def getSize(self):
         return 0
     def getCode(self):
