@@ -522,6 +522,8 @@ def parse_args():
                         help="File with patch to apply, by default will read from stdin")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Print debug information while patching")
+    parser.add_argument("-D", "--define", action="append",
+                        help="Add some #define'd constant. Usage: either -D constant or -D name=val")
     return parser.parse_args()
 
 def patch_fw(args):
@@ -650,6 +652,20 @@ def patch_fw(args):
     masklens = [] # list of mask lengths for each block
     blocknames = []
     procs = {} # all known procedure names -> addr
+    # and for #if's:
+    definitions = {}
+    for d in args.define:
+        if '=' in d:
+            name,val = d.split('=', 1)
+            definitions[name] = val
+        else:
+            definitions[d] = True
+    if_state = [True]
+    # This is a stack.
+    # True: in matched If or unmatched If's Else (processing)
+    # False: in unmatched If or matched If's Else
+    # (skipping, just counting If/Endif)
+    # Initial True must always stay there, or else we have something unmatched
 
     # scratchpad:
     mask = [] # mask for determining baddr
@@ -664,9 +680,50 @@ def patch_fw(args):
         line = line[:-1].strip() # remove \n and leading/trailing whitespaces
         if line.find(';') >= 0:
             line = line[:line.find(';')].strip()
+        if len(line) == 0: # empty line
+            continue
+
+        # now process #if's:
+        if line[0] == '#':
+            tokens = line.split()
+            cmd,args = tokens[0],tokens[1:]
+            if cmd == "#define":
+                myassert(len(args)>0, "At least one argument required for #define!")
+                name = args[0]
+                if len(args) >= 2:
+                    val = args[1]
+                else:
+                    val = True
+                if args.debug:
+                    print "#defining %s to %s" % name, val
+                definitions[name] = val
+            elif cmd in ["#ifdef", "#ifval"]:
+                myassert(len(args)>0, "Arguments required!")
+                if cmd == "#ifval":
+                    vals = definitions.values()
+                # "OR" logic, as one can implement "AND" with nested #ifdef's
+                matched = False
+                for a in args:
+                    if cmd == "#ifdef":
+                        matched = matched or (a in definitions)
+                    else: # ifval
+                        matched = matched or (a in vals)
+                if_state.append(matched)
+            elif cmd == "#else":
+                myassert(len(if_state)>1, "Unexpected #else")
+                if_state[-1] = not if_state[-1]
+            elif cmd == "#endif":
+                myassert(len(if_state)>1, "Unexpected #endif")
+                if_state.pop()
+            else:
+                myassert(False, "Unknown #command %s" % cmd)
+            continue # we already handled this line
+        if not if_state[-1]: # skipping current block
+            continue
+
         tokens = line.split()
         if len(tokens) == 0:
-            continue # empty line, or only comments/whitespaces
+            continue # only comments/whitespaces
         if block == None: # outside of block
             excess = [] # tokens after '{'
             for t in tokens:
