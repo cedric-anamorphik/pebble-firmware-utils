@@ -522,7 +522,7 @@ def parse_args():
                         help="File with a patch to apply")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Print debug information while patching")
-    parser.add_argument("-D", "--define", action="append",
+    parser.add_argument("-D", "--define", action="append", default=[],
                         help="Add some #define'd constant. Usage: either -D constant or -D name=val")
     return parser.parse_args()
 
@@ -641,10 +641,10 @@ def patch_fw(args):
             gpos += 1 # to skip this occurance next time
         if len(matches) == 0:
             print "Mask not found"
-            return False
+            return False, -1
         if len(matches) > 1:
             print "Multiple match - ambiguous, so failing"
-            return False
+            return False, -1
         #print "Mask found at %X" % (matches[0] + offset + 0x08010000)
         return matches[0] + offset + 0x08010000, masklen()-offset
 
@@ -668,7 +668,7 @@ def patch_fw(args):
     # Initial True must always stay there, or else we have something unmatched
 
     def load_file(patchfile):
-        print "Loading %s..." % patchfile
+        print "Loading %s..." % patchfile.name
         # scratchpad:
         mask = [] # mask for determining baddr
         mlen = 0 # length of mask in bytes
@@ -677,6 +677,8 @@ def patch_fw(args):
         block = None # current block - list of instructions
         label = None # label saved for further use
         blockname = None # proc
+
+        global lnum, line
 
         for lnum, line in enumerate(patchfile):
             line = line[:-1].strip() # remove \n and leading/trailing whitespaces
@@ -731,8 +733,8 @@ def patch_fw(args):
                 for t in tokens:
                     if t == '{': # end of mask, start of block
                         addr, mlen = search_addr(mask)
-                        baddr = addr
                         myassert(addr != False, "Mask not found. Failing.")
+                        baddr = addr
                         block = [] # now in block
                     elif block == None: # another part of mask, block not started yet
                         mask.append(t)
