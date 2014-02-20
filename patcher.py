@@ -522,7 +522,7 @@ def parse_args():
                         help="File with patch to apply, by default will read from stdin")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Print debug information while patching")
-    parser.add_argument("-D", "--define", action="append",
+    parser.add_argument("-D", "--define", action="append", default=[],
                         help="Add some #define'd constant. Usage: either -D constant or -D name=val")
     return parser.parse_args()
 
