@@ -641,10 +641,10 @@ def patch_fw(args):
             gpos += 1 # to skip this occurance next time
         if len(matches) == 0:
             print "Mask not found"
-            return False
+            return False, -1
         if len(matches) > 1:
             print "Multiple match - ambiguous, so failing"
-            return False
+            return False, -1
         #print "Mask found at %X" % (matches[0] + offset + 0x08010000)
         return matches[0] + offset + 0x08010000, masklen()-offset
 
