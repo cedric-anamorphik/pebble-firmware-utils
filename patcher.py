@@ -298,15 +298,21 @@ class ADDSUB(Instruction):
         args = parseArgs(args)
         self.is_sub = 1 if is_sub else 0
         if len(args) == 2:
-            self.isImm = True
-            self.rd = parseReg(args[0])
-            self.rs = None
-            if self.rd >= 8:
-                if self.rd != _regs['SP']:
-                    raise ValueError("Invalid hireg: %s" % repr(args))
-                self.imm = parseNumber(args[1], 7)
+            if isReg(args[1], True): # ADD Rx,Ry is alias to ADD Rx,Rx,Ry
+                self.isImm = False
+                self.rd = parseReg(args[0], True)
+                self.rs = parseReg(args[0], True)
+                self.ro = parseReg(args[1], True)
             else:
-                self.imm = parseNumber(args[1], 8)
+                self.isImm = True
+                self.rd = parseReg(args[0])
+                self.rs = None
+                if self.rd >= 8:
+                    if self.rd != _regs['SP']:
+                        raise ValueError("Invalid hireg: %s" % repr(args))
+                    self.imm = parseNumber(args[1], 7)
+                else:
+                    self.imm = parseNumber(args[1], 8)
         elif len(args) == 3:
             self.rd = parseReg(args[0],True)
             if isReg(args[2]):
