@@ -373,11 +373,14 @@ class MOVW(Instruction):
             else:
                 # rotating scheme
                 def rol(n, ofs):
-                    return ((n << ofs) & 0xFFFFFFFF) | (n >> (32-ofs)) # maybe buggy for x >= 1<<32, but we will not have such values
+                    return ((n << ofs) & 0xFFFFFFFF) | (n >> (32-ofs))
+                    # maybe buggy for x >= 1<<32,
+                    # but we will not have such values -
+                    # see parseNumber above for explanation
                 ok = False
                 for i in range(0b1000, 32): # lower values will cause autodetermining to fail
                     val = rol(self.val, i)
-                    if (val & 0xFF) == 0x80 + (val & 0x7F): # correct
+                    if (val & 0xFFFFFF00) == 0 and (val & 0xFF) == 0x80 + (val & 0x7F): # correct
                         ok = True
                         val = ((i << 7) & 0xFFF) + (val & 0x7F)
                         break
