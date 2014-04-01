@@ -406,6 +406,8 @@ class ADR(Instruction):
     def _getCodeN(self):
         rd = parseReg(self.rd, True)
         ofs = self._getOffset(self.dest) # offset to that label
+        if ofs < 0:
+            raise ValueError("Negative offset for ADR is not supported: %X" % ofs)
         if abs(ofs) >= (1 << 10):
             raise ValueError("Offset is too far")
         if ofs & 0b11: # not 4-divisible
