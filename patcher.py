@@ -385,7 +385,8 @@ class MOVW(Instruction):
                         val = ((i << 7) & 0xFFF) + (val & 0x7F)
                         break
                 if not ok: # try T3 encoding
-                    if val <= 0xFFFF and not self.s:
+                    if val <= 0x7FFF and not self.s:
+                        val = val << 1 # don't know why, but will have val/2 without this
                         imm4 = val >> 12
                         i = (val >> 11) & 1
                         imm3 = (val >> 8) & 0b111
