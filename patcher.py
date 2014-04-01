@@ -478,8 +478,6 @@ class LDRSTR(Instruction):
         # imm
         if isLabel(self.ro):
             imm = self._getOffset(self.ro)
-            if abs(imm) >= (1 << 10):
-                raise ValueError("Offset is too far: 0x%X" % imm)
         elif rb in (_regs['PC'], _regs['SP']):
             imm = parseNumber(self.ro, 8)
         else:
@@ -487,7 +485,11 @@ class LDRSTR(Instruction):
 
         if imm & ((1<<self.shift)-1): # not 2^numbytes-divisible
             raise ValueError("imm 0x%X is not divisible by 4" % imm)
+        if imm < 0:
+            raise ValueError("Negative offset 0x%X" % imm)
         imm = imm >> self.shift
+        if abs(imm) >= (1 << (8 if rb in (_regs['PC'],_regs['SP']) else 3)):
+            raise ValueError("Offset is too far: 0x%X" % imm)
         if rb == _regs['PC']: # pc-relative
             if not self.l:
                 raise ValueError("PC-relative STR is impossible")
