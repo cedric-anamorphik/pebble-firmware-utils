@@ -384,8 +384,17 @@ class MOVW(Instruction):
                         ok = True
                         val = ((i << 7) & 0xFFF) + (val & 0x7F)
                         break
-                if not ok:
-                    raise ValueError("Cannot use MOV.W for value 0x%X!") % self.val
+                if not ok: # try T3 encoding
+                    if val <= 0xFFFF and not self.s:
+                        imm4 = val >> 12
+                        i = (val >> 11) & 1
+                        imm3 = (val >> 8) & 0b111
+                        imm8 = val & 0xFF
+                        code1 = (0b11110 << 11) + (i << 10) + (0b100100 << 4) + imm4
+                        code2 = (imm3 << 12) + (self.rd << 8) + imm8
+                        return pack("<HH", code1, code2)
+                    else:
+                        raise ValueError("Cannot use MOV.W for value 0x%X!" % self.val)
         # now we have correctly encoded value
         i = val >> 11
         imm3 = (val >> 8) & 0b111
