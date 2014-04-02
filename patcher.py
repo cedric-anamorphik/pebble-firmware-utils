@@ -832,9 +832,7 @@ def patch_fw(args):
                 elif tokens[0] in ["MOV.W", "MOVS.W"]:
                     instr = MOVW(tokens[1:], 'S' in tokens[0])
                 elif tokens[0] in ["ADR"]:
-                    del tokens[0]
-                    myassert(len(tokens) == 2, "Bad arguments count for ADR")
-                    instr = ADR(tokens)
+                    instr = ADR(tokens[1:])
                 elif tokens[0] in ["UXTB", "UXTH"]:
                     instr = UXTx('H' in tokens[0], tokens[1:])
                 elif tokens[0] in ["LDR", "STR", "LDRB", "STRB"]:
