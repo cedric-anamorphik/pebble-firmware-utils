@@ -715,14 +715,14 @@ def patch_fw(args):
                 tokens = line.split()
                 cmd,cargs = tokens[0],tokens[1:]
                 if cmd == "#define":
-                    myassert(len(args)>0, "At least one argument required for #define!")
+                    myassert(len(cargs)>0, "At least one argument required for #define!")
                     name = cargs[0]
                     if len(cargs) >= 2:
                         val = cargs[1]
                     else:
                         val = True
-                    if cargs.debug:
-                        print "#defining %s to %s" % name, val
+                    if args.debug:
+                        print "#defining %s to %s" % (name, val)
                     definitions[name] = val
                 elif cmd in ["#ifdef", "#ifval"]:
                     myassert(len(cargs)>0, "Arguments required!")
