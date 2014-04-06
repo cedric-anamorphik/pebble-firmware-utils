@@ -824,6 +824,7 @@ def patch_fw(args):
                     continue
 
                 if tokens[0].endswith(':'): # label
+                    myassert(not label, "Only one label per instruction allowed")
                     label = tokens[0][:-1]
                     del tokens[0]
                     if len(tokens) == 0:
