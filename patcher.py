@@ -690,8 +690,8 @@ def patch_fw(args):
     # (skipping, just counting If/Endif)
     # Initial True must always stay there, or else we have something unmatched
 
-    def load_file(patchfile):
-        print "Loading %s..." % patchfile.name
+    def load_file(patchfile, recindent=''):
+        print "%sLoading %s..." % (recindent, patchfile.name)
         # scratchpad:
         mask = [] # mask for determining baddr
         mlen = 0 # length of mask in bytes
@@ -722,7 +722,7 @@ def patch_fw(args):
                     else:
                         val = True
                     if args.debug:
-                        print "#defining %s to %s" % (name, val)
+                        print "%s#defining %s to %s" % (recindent, name, val)
                     definitions[name] = val
                 elif cmd in ["#ifdef", "#ifval"]:
                     myassert(len(cargs)>0, "Arguments required!")
@@ -742,6 +742,12 @@ def patch_fw(args):
                 elif cmd == "#endif":
                     myassert(len(if_state)>1, "Unexpected #endif")
                     if_state.pop()
+                elif cmd == "#include":
+                    myassert(len(cargs) == 1, "One argument required!")
+                    import os.path
+                    filename = os.path.join(os.path.dirname(patchfile.name), cargs[0])
+                    f = open(filename, 'r')
+                    load_file(f, recindent+'> ') # recursion
                 else:
                     myassert(False, "Unknown #command %s" % cmd)
                 continue # we already handled this line
@@ -797,7 +803,7 @@ def patch_fw(args):
                     valname = tokens[1]
                     myassert(valname not in procs, "Duplicate name: %s" % valname)
                     val = unpack('<I', data[addr-0x8010000:addr-0x8010000+4])[0]
-                    print "Determined: %s = 0x%X" % (valname, val)
+                    print "%sDetermined: %s = 0x%X" % (recindent, valname, val)
                     procs[valname] = val # save this value to global context
                     continue
 
@@ -887,7 +893,8 @@ def patch_fw(args):
                 addr += instr.getSize()
                 block.append(instr)
         if block: # unterminated?
-            print "WARNING: unterminated block detected, will ignore it"
+            print "%sWARNING: unterminated block detected, will ignore it" % recindent
+        print "%sFile %s loaded" % (recindent, patchfile.name)
     # load all required patch files
     for p in args.patch:
         load_file(p)
