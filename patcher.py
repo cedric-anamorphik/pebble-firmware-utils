@@ -553,6 +553,14 @@ def patch_fw(args):
     data = ""
     datar = ""
 
+    # for compatibility with older callers (as previous versions expected this
+    # to be a single open file)
+    if type(args.patch) is not list:
+        args.patch = [args.patch]
+
+    data = args.tintin.read()
+    datar = data
+
     def myassert(cond, msg):
         """ Raise descriptive SyntaxError if not cond """
         if not cond:
@@ -583,8 +591,6 @@ def patch_fw(args):
             raise ValueError("Not a valid string")
         s = s[1:-1]
         return s.replace('\\n','\n').replace('\\r','\r').replace('\\"', '"')
-
-    data = args.tintin.read()
 
     def search_addr(sig):
         """
@@ -899,13 +905,14 @@ def patch_fw(args):
         if block: # unterminated?
             print "%sWARNING: unterminated block detected, will ignore it" % recindent
         print "%sFile %s loaded" % (recindent, patchfile.name)
+
+    ###############################
     # load all required patch files
     for p in args.patch:
         load_file(p)
 
     # now apply patches
     print "Applying patches..."
-    datar = data
     for bnum, block in enumerate(blocks):
         print "Block %d: %s" % (bnum+1, blocknames[bnum] or "(no name)")
         print " ",
