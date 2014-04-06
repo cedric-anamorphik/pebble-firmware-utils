@@ -537,12 +537,12 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(
         description="Pebble firmware patcher")
-    parser.add_argument("output", type=argparse.FileType("wb"),
+    parser.add_argument("patch", nargs='+', action="append", type=argparse.FileType("r"),
+                        help="File with a patch to apply")
+    parser.add_argument("-o", "--output", required=True, type=argparse.FileType("wb"),
                         help="Output file name")
     parser.add_argument("-t", "--tintin", nargs='?', default="tintin_fw.bin", type=argparse.FileType("rb"),
                         help="Input tintin_fw file, defaults to tintin_fw.bin")
-    parser.add_argument("-p", "--patch", action="append", type=argparse.FileType("r"),
-                        help="File with a patch to apply")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Print debug information while patching")
     parser.add_argument("-D", "--define", action="append", default=[],
