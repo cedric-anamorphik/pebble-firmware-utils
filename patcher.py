@@ -691,6 +691,10 @@ def patch_fw(args):
     # Initial True must always stay there, or else we have something unmatched
 
     def load_file(patchfile, recindent=''):
+        """
+        This function loads a patch file.
+        Recindent is used for recursively loaded files (#include)
+        """
         print "%sLoading %s..." % (recindent, patchfile.name)
         # scratchpad:
         mask = [] # mask for determining baddr
@@ -885,7 +889,7 @@ def patch_fw(args):
                         myassert(False, "Unknown instruction %s" % tokens[0])
                 except ValueError as e:
                     myassert(False, "Syntax error: " + str(e))
-                instr.setSrcLine((lnum, line))
+                instr.setSrcLine((patchfile.name, lnum, line))
                 if label: # current instruction has a label?
                     instr.setLabel(label)
                     label = None
