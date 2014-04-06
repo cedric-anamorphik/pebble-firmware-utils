@@ -798,7 +798,7 @@ def patch_fw(args):
                     blocks.append(block)
                     masklens.append(mlen)
                     blocknames.append(blockname)
-                    myassert(blockname not in procs, "Duplicate name: %s" % blockname)
+                    myassert(blockname == None or blockname not in procs, "Duplicate name: %s" % blockname)
                         #-- this was checked when 'proc' was read (probably in block beginning; see below),
                         #   but from that time we could receive new names
                     procs[blockname] = baddr # save this block's address for future use
@@ -811,8 +811,8 @@ def patch_fw(args):
                 if tokens[0] == "proc": # this block has name!
                     myassert(len(tokens) == 2, "proc keyword requires one argument")
                     myassert(not blockname, "Duplicate 'proc' statement, this block already has name <%s>" % blockname)
-                    myassert(blockname not in procs, "Duplicate name: %s" % blockname)
                     blockname = tokens[1]
+                    myassert(blockname not in procs, "Duplicate name: %s" % blockname)
                     continue
                 elif tokens[0] == 'val': # read value (currently only 4-bytes)
                     myassert(len(tokens) == 2, "val keyword requires one argument (name)")
