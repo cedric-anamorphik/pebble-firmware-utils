@@ -755,6 +755,10 @@ def patch_fw(args):
                     myassert(len(if_state)>1, "Unexpected #endif")
                     if_state.pop()
                 elif cmd == "#include":
+                    # Usage: #include filename (relative to current file)
+                    # Must not be used within block. Anyway, included file will
+                    # introduce its own blocks.
+                    # And you must avoid name clashes.
                     myassert(len(cargs) == 1, "One argument required!")
                     import os.path
                     filename = os.path.join(os.path.dirname(patchfile.name), cargs[0])
