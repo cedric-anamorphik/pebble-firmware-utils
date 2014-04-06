@@ -537,9 +537,9 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(
         description="Pebble firmware patcher")
-    parser.add_argument("patch", default=sys.stdin, type=argparse.FileType("r"),
-                        help="File with patch to apply, by default will read from stdin")
-    parser.add_argument("output", type=argparse.FileType("wb"),
+    parser.add_argument("patch", nargs='+', type=argparse.FileType("r"),
+                        help="File with a patch to apply")
+    parser.add_argument("-o", "--output", required=True, type=argparse.FileType("wb"),
                         help="Output file name")
     parser.add_argument("-t", "--tintin", nargs='?', default="tintin_fw.bin", type=argparse.FileType("rb"),
                         help="Input tintin_fw file, defaults to tintin_fw.bin")
@@ -552,6 +552,14 @@ def parse_args():
 def patch_fw(args):
     data = ""
     datar = ""
+
+    # for compatibility with older callers (as previous versions expected this
+    # to be a single open file)
+    if type(args.patch) is not list:
+        args.patch = [args.patch]
+
+    data = args.tintin.read()
+    datar = data
 
     def myassert(cond, msg):
         """ Raise descriptive SyntaxError if not cond """
@@ -583,8 +591,6 @@ def patch_fw(args):
             raise ValueError("Not a valid string")
         s = s[1:-1]
         return s.replace('\\n','\n').replace('\\r','\r').replace('\\"', '"')
-
-    data = args.tintin.read()
 
     def search_addr(sig):
         """
@@ -690,197 +696,223 @@ def patch_fw(args):
     # (skipping, just counting If/Endif)
     # Initial True must always stay there, or else we have something unmatched
 
-    # scratchpad:
-    mask = [] # mask for determining baddr
-    mlen = 0 # length of mask in bytes
-    baddr = None # block beginning
-    addr = None # current instruction starting address, or block beginning
-    block = None # current block - list of instructions
-    label = None # label saved for further use
-    blockname = None # proc
+    def load_file(patchfile, recindent=''):
+        """
+        This function loads a patch file.
+        Recindent is used for recursively loaded files (#include)
+        """
+        print "%sLoading %s..." % (recindent, patchfile.name)
+        # scratchpad:
+        mask = [] # mask for determining baddr
+        mlen = 0 # length of mask in bytes
+        baddr = None # block beginning
+        addr = None # current instruction starting address, or block beginning
+        block = None # current block - list of instructions
+        label = None # label saved for further use
+        blockname = None # proc
 
-    for lnum, line in enumerate(args.patch):
-        line = line[:-1].strip() # remove \n and leading/trailing whitespaces
-        if line.find(';') >= 0:
-            line = line[:line.find(';')].strip()
-        if len(line) == 0: # empty line
-            continue
+        global lnum, line
 
-        # now process #if's:
-        if line[0] == '#':
+        for lnum, line in enumerate(patchfile):
+            line = line[:-1].strip() # remove \n and leading/trailing whitespaces
+            if line.find(';') >= 0:
+                line = line[:line.find(';')].strip()
+            if len(line) == 0: # empty line
+                continue
+
+            # now process #if's:
+            if line[0] == '#':
+                tokens = line.split()
+                cmd,cargs = tokens[0],tokens[1:]
+                if cmd == "#define":
+                    myassert(len(cargs)>0, "At least one argument required for #define!")
+                    name = cargs[0]
+                    if len(cargs) >= 2:
+                        val = cargs[1]
+                    else:
+                        val = True
+                    if args.debug:
+                        print "%s#defining %s to %s" % (recindent, name, val)
+                    definitions[name] = val
+                elif cmd in ["#ifdef", "#ifval"]:
+                    myassert(len(cargs)>0, "Arguments required!")
+                    if cmd == "#ifval":
+                        vals = definitions.values()
+                    # "OR" logic, as one can implement "AND" with nested #ifdef's
+                    matched = False
+                    for a in cargs:
+                        if cmd == "#ifdef":
+                            matched = matched or (a in definitions)
+                        else: # ifval
+                            matched = matched or (a in vals)
+                    if_state.append(matched)
+                elif cmd == "#else":
+                    myassert(len(if_state)>1, "Unexpected #else")
+                    if_state[-1] = not if_state[-1]
+                elif cmd == "#endif":
+                    myassert(len(if_state)>1, "Unexpected #endif")
+                    if_state.pop()
+                elif cmd == "#include":
+                    myassert(len(cargs) == 1, "One argument required!")
+                    import os.path
+                    filename = os.path.join(os.path.dirname(patchfile.name), cargs[0])
+                    f = open(filename, 'r')
+                    load_file(f, recindent+'> ') # recursion
+                else:
+                    myassert(False, "Unknown #command %s" % cmd)
+                continue # we already handled this line
+            if not if_state[-1]: # skipping current block
+                continue
+
             tokens = line.split()
-            cmd,cargs = tokens[0],tokens[1:]
-            if cmd == "#define":
-                myassert(len(args)>0, "At least one argument required for #define!")
-                name = cargs[0]
-                if len(cargs) >= 2:
-                    val = cargs[1]
-                else:
-                    val = True
-                if cargs.debug:
-                    print "#defining %s to %s" % name, val
-                definitions[name] = val
-            elif cmd in ["#ifdef", "#ifval"]:
-                myassert(len(cargs)>0, "Arguments required!")
-                if cmd == "#ifval":
-                    vals = definitions.values()
-                # "OR" logic, as one can implement "AND" with nested #ifdef's
-                matched = False
-                for a in cargs:
-                    if cmd == "#ifdef":
-                        matched = matched or (a in definitions)
-                    else: # ifval
-                        matched = matched or (a in vals)
-                if_state.append(matched)
-            elif cmd == "#else":
-                myassert(len(if_state)>1, "Unexpected #else")
-                if_state[-1] = not if_state[-1]
-            elif cmd == "#endif":
-                myassert(len(if_state)>1, "Unexpected #endif")
-                if_state.pop()
-            else:
-                myassert(False, "Unknown #command %s" % cmd)
-            continue # we already handled this line
-        if not if_state[-1]: # skipping current block
-            continue
+            if len(tokens) == 0:
+                continue # only comments/whitespaces
+            if block == None: # outside of block
+                excess = [] # tokens after '{'
+                for t in tokens:
+                    if t == '{': # end of mask, start of block
+                        addr, mlen = search_addr(mask)
+                        myassert(addr != False, "Mask not found. Failing.")
+                        baddr = addr
+                        block = [] # now in block
+                    elif block == None: # another part of mask, block not started yet
+                        mask.append(t)
+                    else:
+                        excess.append(t) # pass these to the following code
+                tokens = excess # pass any excess tokens to below
+            if len(tokens) > 0: # normal line inside block, or remainder from after '{'
+                if len(tokens) == 1 and tokens[0] == '}': # end of block
+                    if label: # label at the end of block
+                        # append pseudo-instruction for it
+                        instr = EmptyInstruction()
+                        instr.setPosition(addr)
+                        instr.setLabel(label)
+                        label = None
+                        block.append(instr)
+                    blocks.append(block)
+                    masklens.append(mlen)
+                    blocknames.append(blockname)
+                    myassert(blockname not in procs, "Duplicate name: %s" % blockname)
+                        #-- this was checked when 'proc' was read (probably in block beginning; see below),
+                        #   but from that time we could receive new names
+                    procs[blockname] = baddr # save this block's address for future use
+                    mask = []
+                    baddr = None
+                    addr = None
+                    block = None
+                    blockname = None
+                    continue
+                if tokens[0] == "proc": # this block has name!
+                    myassert(len(tokens) == 2, "proc keyword requires one argument")
+                    myassert(not blockname, "Duplicate 'proc' statement, this block already has name <%s>" % blockname)
+                    myassert(blockname not in procs, "Duplicate name: %s" % blockname)
+                    blockname = tokens[1]
+                    continue
+                elif tokens[0] == 'val': # read value (currently only 4-bytes)
+                    myassert(len(tokens) == 2, "val keyword requires one argument (name)")
+                    valname = tokens[1]
+                    myassert(valname not in procs, "Duplicate name: %s" % valname)
+                    val = unpack('<I', data[addr-0x8010000:addr-0x8010000+4])[0]
+                    print "%sDetermined: %s = 0x%X" % (recindent, valname, val)
+                    procs[valname] = val # save this value to global context
+                    continue
 
-        tokens = line.split()
-        if len(tokens) == 0:
-            continue # only comments/whitespaces
-        if block == None: # outside of block
-            excess = [] # tokens after '{'
-            for t in tokens:
-                if t == '{': # end of mask, start of block
-                    addr, mlen = search_addr(mask)
-                    baddr = addr
-                    myassert(addr != False, "Mask not found. Failing.")
-                    block = [] # now in block
-                elif block == None: # another part of mask, block not started yet
-                    mask.append(t)
-                else:
-                    excess.append(t) # pass these to the following code
-            tokens = excess # pass any excess tokens to below
-        if len(tokens) > 0: # normal line inside block, or remainder from after '{'
-            if len(tokens) == 1 and tokens[0] == '}': # end of block
-                if label: # label at the end of block
-                    # append pseudo-instruction for it
-                    instr = EmptyInstruction()
-                    instr.setPosition(addr)
+                if tokens[0].endswith(':'): # label
+                    label = tokens[0][:-1]
+                    del tokens[0]
+                    if len(tokens) == 0:
+                        continue # line contains only label; will use it in next pass
+                    # else go below: all following items can have label
+                instr = None # this will be current instruction
+                try:
+                    if tokens[0] in ["db", "DCB"]: # define byte - most common instruction
+                        myassert(len(tokens) >= 2, "Error - 'db' without value?")
+                        del tokens[0]
+                        instr = DCB(parse_hex(tokens))
+                    elif tokens[0] in ["DCD", "DCW"]:
+                        myassert(len(tokens) == 2, "Bad value count for DCx")
+                        instr = DCx(2 if tokens[0]=="DCW" else 4, tokens[1])
+                    elif tokens[0] == 'global': # global label
+                        myassert(len(tokens) == 2, "Error - illegal 'global' call")
+                        label = tokens[1]
+                        myassert(label not in procs, "Duplicate name: %s" % label)
+                        if label.endswith(':'):
+                            label = label[:-1] # remove trailing ':', if any
+                        instr = EmptyInstruction()
+                        # and store address to globals
+                        procs[label] = addr
+                    elif tokens[0] in ["ALIGN"]:
+                        myassert(len(tokens) == 2, "Error - must specify 1 argument for ALIGN")
+                        instr = ALIGN(tokens[1])
+                    elif tokens[0] in ["CMP", "MOV"]:
+                        codes = {"CMP": (1, 1),
+                                "MOV": (0, 2),
+                                "ADD": (2, 0), # unused now
+                                }
+                        code = codes[tokens[0]]
+                        del tokens[0]
+                        instr = SimpleInstruction(tokens, code[0], code[1])
+                    elif tokens[0] in ["ADD", "SUB"]:
+                        instr = ADDSUB(tokens[0] == "SUB", tokens[1:])
+                    elif tokens[0] in AluSimple.codes:
+                        instr = AluSimple(tokens[0], tokens[1:])
+                    elif tokens[0] in ["MOV.W", "MOVS.W"]:
+                        instr = MOVW(tokens[1:], 'S' in tokens[0])
+                    elif tokens[0] in ["ADR"]:
+                        instr = ADR(tokens[1:])
+                    elif tokens[0] in ["UXTB", "UXTH"]:
+                        instr = UXTx('H' in tokens[0], tokens[1:])
+                    elif tokens[0] in ["LDR", "STR", "LDRB", "STRB"]:
+                        instr = LDRSTR(tokens[0].startswith("LDR"), tokens[0][3:], tokens[1:])
+                    elif tokens[0] in ["BX"]:
+                        del tokens[0]
+                        instr = SimpleInstruction(['R0,', tokens[1]], -1, 3)
+                    elif tokens[0] in Bxx.codes:
+                        myassert(len(tokens) == 2, "Bad arguments count for Bxx")
+                        instr = Bxx(tokens[1], tokens[0][1:])
+                    elif tokens[0] in ["CBZ", "CBNZ"]:
+                        instr = CBx(tokens[0] == "CBZ", tokens[1:])
+                    elif tokens[0] == "jump":
+                        myassert(len(tokens) >= 3, "Too few arguments for Jump")
+                        myassert(len(tokens) <= 4, "Too many arguments for Jump")
+                        del tokens[0]
+                        reg = None
+                        dest = None
+                        cond = None
+                        for t in tokens:
+                            if len(t) == 2 and t[0] == 'R': # register
+                                reg = int(t[1])
+                            elif t[0].isalpha() or t[0] == '_': # identifier (label)
+                                dest = t
+                            else: # must be number
+                                cond = tryc(lambda: int(t), "Malformed argument for Jump: %s" % t)
+                        myassert(cond != None and dest, "Illegal Jump call")
+                        instr = Jump(dest, cond, reg)
+                    elif tokens[0] in ["B.W", "BL"]:
+                        myassert(len(tokens) == 2, "%s keyword requires one argument" % tokens[0])
+                        instr = LongJump(tokens[1], tokens[0] == "BL")
+                    else:
+                        myassert(False, "Unknown instruction %s" % tokens[0])
+                except ValueError as e:
+                    myassert(False, "Syntax error: " + str(e))
+                instr.setSrcLine((patchfile.name, lnum, line))
+                if label: # current instruction has a label?
                     instr.setLabel(label)
                     label = None
-                    block.append(instr)
-                blocks.append(block)
-                masklens.append(mlen)
-                blocknames.append(blockname)
-                procs[blockname] = baddr # save this block's address for future use
-                mask = []
-                baddr = None
-                addr = None
-                block = None
-                blockname = None
-                continue
-            if tokens[0] == "proc": # this block has name!
-                myassert(len(tokens) == 2, "proc keyword requires one argument")
-                blockname = tokens[1]
-                continue
-            elif tokens[0] == 'val': # read value (currently only 4-bytes)
-                myassert(len(tokens) == 2, "val keyword requires one argument (name)")
-                valname = tokens[1]
-                val = unpack('<I', data[addr-0x8010000:addr-0x8010000+4])[0]
-                print "Determined: %s = 0x%X" % (valname, val)
-                procs[valname] = val # save this value to global context
-                continue
+                instr.setPosition(addr)
+                addr += instr.getSize()
+                block.append(instr)
+        if block: # unterminated?
+            print "%sWARNING: unterminated block detected, will ignore it" % recindent
+        print "%sFile %s loaded" % (recindent, patchfile.name)
 
-            if tokens[0].endswith(':'): # label
-                label = tokens[0][:-1]
-                del tokens[0]
-                if len(tokens) == 0:
-                    continue # line contains only label; will use it in next pass
-                # else go below: all following items can have label
-            instr = None # this will be current instruction
-            try:
-                if tokens[0] in ["db", "DCB"]: # define byte - most common instruction
-                    myassert(len(tokens) >= 2, "Error - 'db' without value?")
-                    del tokens[0]
-                    instr = DCB(parse_hex(tokens))
-                elif tokens[0] in ["DCD", "DCW"]:
-                    myassert(len(tokens) == 2, "Bad value count for DCx")
-                    instr = DCx(2 if tokens[0]=="DCW" else 4, tokens[1])
-                elif tokens[0] == 'global': # global label
-                    myassert(len(tokens) == 2, "Error - illegal 'global' call")
-                    label = tokens[1]
-                    if label.endswith(':'):
-                        label = label[:-1] # remove trailing ':', if any
-                    instr = EmptyInstruction()
-                    # and store address to globals
-                    procs[label] = addr
-                elif tokens[0] in ["ALIGN"]:
-                    myassert(len(tokens) == 2, "Error - must specify 1 argument for ALIGN")
-                    instr = ALIGN(tokens[1])
-                elif tokens[0] in ["CMP", "MOV"]:
-                    codes = {"CMP": (1, 1),
-                            "MOV": (0, 2),
-                            "ADD": (2, 0), # unused now
-                            }
-                    code = codes[tokens[0]]
-                    del tokens[0]
-                    instr = SimpleInstruction(tokens, code[0], code[1])
-                elif tokens[0] in ["ADD", "SUB"]:
-                    instr = ADDSUB(tokens[0] == "SUB", tokens[1:])
-                elif tokens[0] in AluSimple.codes:
-                    instr = AluSimple(tokens[0], tokens[1:])
-                elif tokens[0] in ["MOV.W", "MOVS.W"]:
-                    instr = MOVW(tokens[1:], 'S' in tokens[0])
-                elif tokens[0] in ["ADR"]:
-                    instr = ADR(tokens[1:])
-                elif tokens[0] in ["UXTB", "UXTH"]:
-                    instr = UXTx('H' in tokens[0], tokens[1:])
-                elif tokens[0] in ["LDR", "STR", "LDRB", "STRB"]:
-                    instr = LDRSTR(tokens[0].startswith("LDR"), tokens[0][3:], tokens[1:])
-                elif tokens[0] in ["BX"]:
-                    del tokens[0]
-                    instr = SimpleInstruction(['R0,', tokens[1]], -1, 3)
-                elif tokens[0] in Bxx.codes:
-                    myassert(len(tokens) == 2, "Bad arguments count for Bxx")
-                    instr = Bxx(tokens[1], tokens[0][1:])
-                elif tokens[0] in ["CBZ", "CBNZ"]:
-                    instr = CBx(tokens[0] == "CBZ", tokens[1:])
-                elif tokens[0] == "jump":
-                    myassert(len(tokens) >= 3, "Too few arguments for Jump")
-                    myassert(len(tokens) <= 4, "Too many arguments for Jump")
-                    del tokens[0]
-                    reg = None
-                    dest = None
-                    cond = None
-                    for t in tokens:
-                        if len(t) == 2 and t[0] == 'R': # register
-                            reg = int(t[1])
-                        elif t[0].isalpha() or t[0] == '_': # identifier (label)
-                            dest = t
-                        else: # must be number
-                            cond = tryc(lambda: int(t), "Malformed argument for Jump: %s" % t)
-                    myassert(cond != None and dest, "Illegal Jump call")
-                    instr = Jump(dest, cond, reg)
-                elif tokens[0] in ["B.W", "BL"]:
-                    myassert(len(tokens) == 2, "%s keyword requires one argument" % tokens[0])
-                    instr = LongJump(tokens[1], tokens[0] == "BL")
-                else:
-                    myassert(False, "Unknown instruction %s" % tokens[0])
-            except ValueError as e:
-                myassert(False, "Syntax error: " + str(e))
-            instr.setSrcLine((lnum, line))
-            if label: # current instruction has a label?
-                instr.setLabel(label)
-                label = None
-            instr.setPosition(addr)
-            addr += instr.getSize()
-            block.append(instr)
-    if block: # unterminated?
-        print "WARNING: unterminated block detected, will ignore it"
+    ###############################
+    # load all required patch files
+    for p in args.patch:
+        load_file(p)
 
     # now apply patches
     print "Applying patches..."
-    datar = data
     for bnum, block in enumerate(blocks):
         print "Block %d: %s" % (bnum+1, blocknames[bnum] or "(no name)")
         print " ",
