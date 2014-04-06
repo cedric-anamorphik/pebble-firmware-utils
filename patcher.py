@@ -298,15 +298,21 @@ class ADDSUB(Instruction):
         args = parseArgs(args)
         self.is_sub = 1 if is_sub else 0
         if len(args) == 2:
-            self.isImm = True
-            self.rd = parseReg(args[0])
-            self.rs = None
-            if self.rd >= 8:
-                if self.rd != _regs['SP']:
-                    raise ValueError("Invalid hireg: %s" % repr(args))
-                self.imm = parseNumber(args[1], 7)
+            if isReg(args[1], True): # ADD Rx,Ry is alias to ADD Rx,Rx,Ry
+                self.isImm = False
+                self.rd = parseReg(args[0], True)
+                self.rs = parseReg(args[0], True)
+                self.ro = parseReg(args[1], True)
             else:
-                self.imm = parseNumber(args[1], 8)
+                self.isImm = True
+                self.rd = parseReg(args[0])
+                self.rs = None
+                if self.rd >= 8:
+                    if self.rd != _regs['SP']:
+                        raise ValueError("Invalid hireg: %s" % repr(args))
+                    self.imm = parseNumber(args[1], 7)
+                else:
+                    self.imm = parseNumber(args[1], 8)
         elif len(args) == 3:
             self.rd = parseReg(args[0],True)
             if isReg(args[2]):
@@ -367,16 +373,29 @@ class MOVW(Instruction):
             else:
                 # rotating scheme
                 def rol(n, ofs):
-                    return ((n << ofs) & 0xFFFFFFFF) | (n >> (32-ofs)) # maybe buggy for x >= 1<<32, but we will not have such values
+                    return ((n << ofs) & 0xFFFFFFFF) | (n >> (32-ofs))
+                    # maybe buggy for x >= 1<<32,
+                    # but we will not have such values -
+                    # see parseNumber above for explanation
                 ok = False
                 for i in range(0b1000, 32): # lower values will cause autodetermining to fail
                     val = rol(self.val, i)
-                    if (val & 0xFF) == 0x80 + (val & 0x7F): # correct
+                    if (val & 0xFFFFFF00) == 0 and (val & 0xFF) == 0x80 + (val & 0x7F): # correct
                         ok = True
                         val = ((i << 7) & 0xFFF) + (val & 0x7F)
                         break
-                if not ok:
-                    raise ValueError("Cannot use MOV.W for value 0x%X!") % self.val
+                if not ok: # try T3 encoding
+                    if val <= 0x7FFF and not self.s:
+                        val = val << 1 # don't know why, but will have val/2 without this
+                        imm4 = val >> 12
+                        i = (val >> 11) & 1
+                        imm3 = (val >> 8) & 0b111
+                        imm8 = val & 0xFF
+                        code1 = (0b11110 << 11) + (i << 10) + (0b100100 << 4) + imm4
+                        code2 = (imm3 << 12) + (self.rd << 8) + imm8
+                        return pack("<HH", code1, code2)
+                    else:
+                        raise ValueError("Cannot use MOV.W for value 0x%X!" % self.val)
         # now we have correctly encoded value
         i = val >> 11
         imm3 = (val >> 8) & 0b111
@@ -400,6 +419,8 @@ class ADR(Instruction):
     def _getCodeN(self):
         rd = parseReg(self.rd, True)
         ofs = self._getOffset(self.dest) # offset to that label
+        if ofs < 0:
+            raise ValueError("Negative offset for ADR is not supported: %X" % ofs)
         if abs(ofs) >= (1 << 10):
             raise ValueError("Offset is too far")
         if ofs & 0b11: # not 4-divisible
@@ -472,8 +493,6 @@ class LDRSTR(Instruction):
         # imm
         if isLabel(self.ro):
             imm = self._getOffset(self.ro)
-            if abs(imm) >= (1 << 10):
-                raise ValueError("Offset is too far: 0x%X" % imm)
         elif rb in (_regs['PC'], _regs['SP']):
             imm = parseNumber(self.ro, 8)
         else:
@@ -481,7 +500,11 @@ class LDRSTR(Instruction):
 
         if imm & ((1<<self.shift)-1): # not 2^numbytes-divisible
             raise ValueError("imm 0x%X is not divisible by 4" % imm)
+        if imm < 0:
+            raise ValueError("Negative offset 0x%X" % imm)
         imm = imm >> self.shift
+        if abs(imm) >= (1 << (8 if rb in (_regs['PC'],_regs['SP']) else 3)):
+            raise ValueError("Offset is too far: 0x%X" % imm)
         if rb == _regs['PC']: # pc-relative
             if not self.l:
                 raise ValueError("PC-relative STR is impossible")
@@ -813,9 +836,7 @@ def patch_fw(args):
                     elif tokens[0] in ["MOV.W", "MOVS.W"]:
                         instr = MOVW(tokens[1:], 'S' in tokens[0])
                     elif tokens[0] in ["ADR"]:
-                        del tokens[0]
-                        myassert(len(tokens) == 2, "Bad arguments count for ADR")
-                        instr = ADR(tokens)
+                        instr = ADR(tokens[1:])
                     elif tokens[0] in ["UXTB", "UXTH"]:
                         instr = UXTx('H' in tokens[0], tokens[1:])
                     elif tokens[0] in ["LDR", "STR", "LDRB", "STRB"]:
