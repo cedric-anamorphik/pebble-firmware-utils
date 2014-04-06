@@ -776,6 +776,9 @@ def patch_fw(args):
                     blocks.append(block)
                     masklens.append(mlen)
                     blocknames.append(blockname)
+                    myassert(blockname not in procs, "Duplicate name: %s" % blockname)
+                        #-- this was checked when 'proc' was read (probably in block beginning; see below),
+                        #   but from that time we could receive new names
                     procs[blockname] = baddr # save this block's address for future use
                     mask = []
                     baddr = None
@@ -785,11 +788,14 @@ def patch_fw(args):
                     continue
                 if tokens[0] == "proc": # this block has name!
                     myassert(len(tokens) == 2, "proc keyword requires one argument")
+                    myassert(not blockname, "Duplicate 'proc' statement, this block already has name <%s>" % blockname)
+                    myassert(blockname not in procs, "Duplicate name: %s" % blockname)
                     blockname = tokens[1]
                     continue
                 elif tokens[0] == 'val': # read value (currently only 4-bytes)
                     myassert(len(tokens) == 2, "val keyword requires one argument (name)")
                     valname = tokens[1]
+                    myassert(valname not in procs, "Duplicate name: %s" % valname)
                     val = unpack('<I', data[addr-0x8010000:addr-0x8010000+4])[0]
                     print "Determined: %s = 0x%X" % (valname, val)
                     procs[valname] = val # save this value to global context
@@ -813,6 +819,7 @@ def patch_fw(args):
                     elif tokens[0] == 'global': # global label
                         myassert(len(tokens) == 2, "Error - illegal 'global' call")
                         label = tokens[1]
+                        myassert(label not in procs, "Duplicate name: %s" % label)
                         if label.endswith(':'):
                             label = label[:-1] # remove trailing ':', if any
                         instr = EmptyInstruction()
