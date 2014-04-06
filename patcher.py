@@ -709,24 +709,24 @@ def patch_fw(args):
         # now process #if's:
         if line[0] == '#':
             tokens = line.split()
-            cmd,args = tokens[0],tokens[1:]
+            cmd,cargs = tokens[0],tokens[1:]
             if cmd == "#define":
                 myassert(len(args)>0, "At least one argument required for #define!")
-                name = args[0]
-                if len(args) >= 2:
-                    val = args[1]
+                name = cargs[0]
+                if len(cargs) >= 2:
+                    val = cargs[1]
                 else:
                     val = True
-                if args.debug:
+                if cargs.debug:
                     print "#defining %s to %s" % name, val
                 definitions[name] = val
             elif cmd in ["#ifdef", "#ifval"]:
-                myassert(len(args)>0, "Arguments required!")
+                myassert(len(cargs)>0, "Arguments required!")
                 if cmd == "#ifval":
                     vals = definitions.values()
                 # "OR" logic, as one can implement "AND" with nested #ifdef's
                 matched = False
-                for a in args:
+                for a in cargs:
                     if cmd == "#ifdef":
                         matched = matched or (a in definitions)
                     else: # ifval
