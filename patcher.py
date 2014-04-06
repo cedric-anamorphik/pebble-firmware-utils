@@ -537,7 +537,7 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(
         description="Pebble firmware patcher")
-    parser.add_argument("patch", nargs='+', action="append", type=argparse.FileType("r"),
+    parser.add_argument("patch", nargs='+', type=argparse.FileType("r"),
                         help="File with a patch to apply")
     parser.add_argument("-o", "--output", required=True, type=argparse.FileType("wb"),
                         help="Output file name")
