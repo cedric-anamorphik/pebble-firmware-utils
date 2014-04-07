@@ -94,7 +94,7 @@ class Reg(int, Argument):
     def is_reg(name):
         """ Checks whether string is valid register name """
         return name.upper() in Reg._regs
-    def __new__(cls, name=None, hi=None):
+    def __new__(cls, name=None, hi='any'):
         """
         Usage: either Reg('name') or Reg(hi=True/False) or Reg()
         First is a plain register, others are masks
@@ -111,7 +111,7 @@ class Reg(int, Argument):
                 "Any")
             val = -1
         else:
-            val = lookup(name)
+            val = Reg.lookup(name)
             mask = None
         ret = int.__new__(cls, val)
         ret.name = name
@@ -122,7 +122,7 @@ class Reg(int, Argument):
     def match(self, other):
         if not type(other) is Reg:
             return False
-        if 'mask' in self:
+        if self.mask != None:
             if self.mask == True: # hireg
                 return other >= 8
             elif self.mask == False: # loreg
