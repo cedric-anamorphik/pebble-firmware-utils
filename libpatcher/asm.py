@@ -60,7 +60,7 @@ class Num(int, Argument):
 
 class List(list, Argument):
     def match(self, other):
-        if type(other) is not List:
+        if type(other) not in (List, list): # it may be either our specific List obj or plain list
             return False
         if len(self) != len(other):
             return False
