@@ -292,8 +292,8 @@ def BL(ctx, label):
     pass
 @instruct_class
 class DCB(Instruction):
-    def __init__(self, args=None, pos=None):
-        Instruction.__init__(self, None, args, None, pos)
+    def __init__(self, opcode=None, args=None, pos=None):
+        Instruction.__init__(self, opcode, args, None, pos)
         if args:
             code = ''
             for a in args:
@@ -308,7 +308,7 @@ class DCB(Instruction):
     def match(self, opcode, args):
         return opcode in ['DCB', 'db']
     def instantiate(self, opcode, args, pos):
-        return DCB(args, pos)
+        return DCB(opcode, args, pos)
     def getCode(self):
         return self.code
 instruction('DCH', [Num(bits=16)], 2, lambda(ctx,num): num)
