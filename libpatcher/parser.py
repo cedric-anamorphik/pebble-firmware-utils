@@ -243,7 +243,9 @@ def parseBlock(f, pos):
                     else:
                         raise SyntaxError("Bad token: %s" % t, pos)
             is_str = not is_str
-    raise SyntaxError("Unexpected end of file", pos)
+    if mask or bstr or bskip:
+        raise SyntaxError("Unexpected end of file", pos)
+    return None, None
 
 def parsePatch(f):
     """
@@ -255,8 +257,10 @@ def parsePatch(f):
     pos = FilePos(f.name)
     while True:
         mask, content = parseBlock(f, pos)
+        if not mask:
+            break
         blocks.append((mask, content))
-    # FIXME: catch exception
+    return blocks
 
 if __name__ == "__main__":
     import sys
