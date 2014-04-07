@@ -178,6 +178,7 @@ def parseBlock(f, pos, definitions):
                         newstate = not newstate
                         break
                 if_state.append(newstate)
+                continue
             elif cmd == "#else":
                 if len(if_state) <= 1:
                     raise SyntaxError("Unexpected #else", pos)
@@ -197,6 +198,8 @@ def parseBlock(f, pos, definitions):
                     raise SyntaxError("At least one argument required for #define", pos)
                 name = args[0]
                 val = args[1:] or True
+                if len(val) == 1:
+                    val = val[0]
                 # FIXME: numeric values?
                 definitions[name] = val
             else:
