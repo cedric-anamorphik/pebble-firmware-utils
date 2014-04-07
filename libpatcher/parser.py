@@ -3,7 +3,23 @@
 import asm
 from itertools import chain
 
-def parseFile(f, prev=()):
+def uncomment(line):
+    """ Removes comment, if any, from line. Also strips line """
+    linewoc = '' # line without comment
+    in_str = ''
+    for c in line:
+        if in_str:
+            if c == in_str:
+                in_str = ''
+        else:
+            if c in '#;': # our comment characters
+                break
+            elif c in '"\'':
+                in_str = c
+        linewoc += c
+    return linewoc.strip() # remove leading and trailing spaces
+
+def parseAsm(f, prev=()):
     """
     Usage: pass it file after you encounter { (block beginning)
     and optionally pass everything after that character as prev arg.
@@ -18,20 +34,7 @@ def parseFile(f, prev=()):
 
     instructions = []
     for line in chain(prev, f):
-        # remove comments
-        linewoc = '' # line without comment
-        in_str = ''
-        for c in line:
-            if in_str:
-                if c == in_str:
-                    in_str = ''
-            else:
-                if c in '#;': # our comment characters
-                    break
-                elif c in '"\'':
-                    in_str = c
-            linewoc += c
-        line = linewoc.strip() # remove trailing spaces
+        line = uncomment(line)
 
         # ignore empty lines
         if not line:
