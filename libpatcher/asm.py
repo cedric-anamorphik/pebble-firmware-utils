@@ -26,20 +26,22 @@ class Argument:
 
 class Num(int, Argument):
     """ Just remember initially specified value format """
-    def __init__(self, val=None, bits=None, positive=False):
-        if val is None:
-            self.bits = bits
-            if bits:
-                self.maximum = 1 << bits
-            self.positive = positive
-            return int.__init__(self, 0)
-        self.initial = val
-        # and for consistency with Reg:
-        self.val = self
+    def __new__(cls, val=None, bits=None, positive=False):
         if type(val) == 'str':
-            return int.__init__(self, val, 0) # auto determine base
+            ret = int.__new__(cls, val, 0) # auto determine base
+        elif val is None:
+            ret = int.__new__(cls, 0)
+            ret.bits = bits
+            if bits:
+                ret.maximum = 1 << bits
+            ret.positive = positive
+            return ret
         else:
-            return int.__init__(self, val)
+            ret = int.__new__(cls, val)
+        ret.initial = val
+        # and for consistency with Reg:
+        ret.val = ret
+        return ret
     def __str__(self):
         if 'bits' in self:
             if self.bits:
@@ -150,13 +152,15 @@ class Label(Argument):
             raise LabelError
 class Str(str, Argument):
     """ This represents _quoted_ string """
-    def __init__(self, val=None):
+    def __new__(cls, val=None):
         if val == None:
             val = "String"
-            self.mask = True
+            mask = True
         else:
-            self.mask = False
-        return str.__init__(self, val)
+            mask = False
+        ret = str.__new__(cls, val)
+        ret.mask = mask
+        return ret
     def match(self, other):
         if type(other) is not Str:
             return False
