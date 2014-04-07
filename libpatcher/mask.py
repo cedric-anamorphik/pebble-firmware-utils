@@ -13,6 +13,8 @@ class Mask(object):
         self.parts = parts
         self.offset = offset
         # TODO: validate
+    def __repr__(self):
+        return ','.join([repr(x) for x in self.parts])+" @"+str(self.offset)
     def match(self, data):
         """
         Tries to match this mask to given data.
