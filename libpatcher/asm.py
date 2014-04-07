@@ -43,7 +43,7 @@ class Num(int, Argument):
         ret.val = ret
         ret.bits = None
         return ret
-    def __str__(self):
+    def __repr__(self):
         if self.bits != None:
             if self.bits != 'any': # numeric
                 return "%d-bits integer%s" % (self.bits,
@@ -118,7 +118,7 @@ class Reg(int, Argument):
         ret.name = name
         ret.mask = mask
         return ret
-    def __str__(self):
+    def __repr__(self):
         return self.name
     def match(self, other):
         if not type(other) is Reg:
@@ -140,7 +140,7 @@ class LabelError(Exception):
 class Label(Argument):
     def __init__(self, name=None):
         self.name = name
-    def __str__(self):
+    def __repr__(self):
         return self.name
     def match(self, other):
         return type(other) is Label
@@ -229,6 +229,8 @@ class Instruction:
     def getPos(self):
         " pos is instruction's position in file "
         return self.pos
+    def __repr__(self):
+        return "<Instruction: %s %s>" % (self.opcode, ','.join(self.args))
 
 _instructions = []
 def instruction(opcode, args, size=2, proc=None):
