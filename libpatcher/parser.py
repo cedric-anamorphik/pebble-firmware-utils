@@ -5,13 +5,18 @@ from itertools import chain
 
 class FilePos:
     " This holds current line info (filename, line text, line number) "
-    def __init__(self, filename):
+    def __init__(self, filename, lnum=None, line=None):
         self.filename = filename
+        self.lnum = lnum
+        self.line = line
     def setLine(self, lnum, line):
         self.lnum = lnum
         self.line = line
     def getLnum(self):
         return self.lnum
+    def clone(self):
+        " Useful for instructions to hold exact position "
+        return FilePos(self.filename, self.lnum, self.line)
     def __str__(self):
         return "%s\n%s@%s" % (self.line, self.filename, self.lnum)
 
@@ -238,7 +243,7 @@ def parsePatch(f):
     # list of masks and corresponding instruction listings
     blocks = []
 
-    pos = FilePos(f)
+    pos = FilePos(f.name)
     while True:
         mask, content = parseBlock(f, pos)
         blocks.append(mask, content)
