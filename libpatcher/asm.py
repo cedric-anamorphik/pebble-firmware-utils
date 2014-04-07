@@ -195,13 +195,26 @@ class Instruction:
         elif type(code) is tuple:
             return pack('<HH', code[0], code[1])
         raise ValueError("Bad code: %s" % repr(code))
+    def getSize(self):
+        """ default implementation; may be overriden by decorator """
+        return self.size
 # list of instruction definitions
 _instructions = []
-def instruction(opcode, args):
+def instruction(opcode, args, size=2):
     """ this is a function decorator for instruction definitions """
     def gethandler(proc):
-        _instructions.append(Instruction(opcode, args, proc))
+        instr = Instruction(opcode, args, proc)
+        if callable(size):
+            instr.getSize = size
+        else:
+            instr.size = size
+        _instructions.append(instr)
+        return proc
     return gethandler
+def instruct_class(c):
+    """ decorator for custom instruction classes """
+    _instructions.append(c())
+    return c
 
 instruction('ADD', [Reg(hi=False), Num()])(lambda(c,rd,imm):
             (1 << 13) + (2 << 11) + (rd.val << 8) + imm)
@@ -218,9 +231,31 @@ def _longJump(ctx, dest, bl):
     hi = (hi_c << 11) + hi_o
     lo = (lo_c << 11) + lo_o
     return (hi,lo)
-instruction('BL', [Label()])(lambda(ctx,dest): _longJump(ctx,dest,True))
-instruction('B.W', [Label()])(lambda(ctx,dest): _longJump(ctx,dest,False))
-@instruction('BL', [Label()])
+instruction('BL', [Label()], 4)(lambda(ctx,dest): _longJump(ctx,dest,True))
+instruction('B.W', [Label()], 4)(lambda(ctx,dest): _longJump(ctx,dest,False))
+@instruction('BL', [Label()], 4)
 def BL(ctx, label):
     pass
-
+@instruct_class
+class DCB(Instruction):
+    def __init__(self, args=None):
+        super('DCB', args, None)
+        if args:
+            code = ''
+            for a in args:
+                if type(a) is str: # FIXME: String?
+                    code += a
+                elif type(a) is Num:
+                    code += pack('<C', a)
+                else:
+                    raise ValueError("Bad argument: %s" % repr(a))
+            self.code = code
+            self.size = len(code)
+    def match(self, opcode, args):
+        return opcode in ['DCB']
+    def instantiate(self, opcode, args):
+        return DCB(args)
+    def getCode(self):
+        return self.code
+instruction('DCH', [Num(bits=16)], 2)(lambda(ctx,num): num)
+instruction('DCD', [Num(bits=32)], 4)(lambda(ctx,num): pack('<I', num))
