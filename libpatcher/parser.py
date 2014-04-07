@@ -10,6 +10,9 @@ class SyntaxError(Exception):
         self.line = line
     def __str__(self):
         return "%s@%s: %s" % (self.file.name, self.line, self.msg)
+class BlockDone(Exception):
+    " raised when block is parsed, to break thru 2 layers of for "
+    pass
 
 def uncomment(line):
     """ Removes comment, if any, from line. Also strips line """
@@ -214,6 +217,7 @@ def parsePatch(f):
                         content = parseAsm(f, remainder)
                         # TODO: save mask and content
                         mask = []
+                        raise BlockDone
                     else:
                         raise SyntaxError("Bad token: %s" % t, f, line)
             is_str = not is_str
