@@ -1,12 +1,39 @@
 # This is a parser for assembler listings (?)
 
 import asm
+from itertools import chain
 
-def parseLine(f):
-    for line in f:
+def parseFile(f, prev=()):
+    """
+    Usage: pass it file after you encounter { (block beginning)
+    and optionally pass everything after that character as prev arg.
+    After it encounter }, it will return list of instructions:
+        [
+            ("opcode", [arg1,arg2...]),
+            ...
+        ]
+    """
+    if prev:
+        prev = (prev,) # to be iterable
+
+    instructions = []
+    for line in chain(prev, f):
         line = line.strip()
         # comments, empty lines..
-        opcode, arg = line.split(None,1)
+
+        # end of block?
+        if line.startswith('}'):
+            # FIXME: what to do with remainder?
+            remainder = line[1:]
+            if remainder:
+                print "Warning: spare characters after '}', will ignore"
+            break
+
+        try:
+            opcode, arg = line.split(None,1)
+        except ValueError: # only one token
+            opcode = line
+            arg = ''
 
         # now parse args
         args = []
@@ -64,7 +91,7 @@ def parseLine(f):
                 elif c.isspace(): # including last \n
                     continue # skip
                 elif c == ',':
-                    continue # skip - is it correct?
+                    continue # skip - is it a good approach? allows both "MOV R0,R1" and "MOV R1 R1"
                 elif c == '[':
                     if br:
                         raise SyntaxError("Nested [] are not supported")
@@ -79,7 +106,12 @@ def parseLine(f):
                     br = False
                 else:
                     raise SyntaxError("Bad character: %c" % c)
+        # now let's check that everything went clean
         if t:
-            raise SyntaxError("Unterminated string?")
+            raise SyntaxError("Unterminated string? %c" % t)
         if br:
             raise SyntaxError("Unmatched '['")
+
+        # now we have a good instruction
+        instructions.append((opcode, args))
+    return instructions
