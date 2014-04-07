@@ -300,7 +300,7 @@ def parseBlock(f, pos, definitions):
         raise SyntaxError("Unexpected end of file", pos)
     return None, None
 
-def parsePatch(f, definitions=None):
+def parseFile(f, definitions=None):
     """
     Parses patch file.
     Definitions dictionary is used for #define and its companions.
@@ -321,4 +321,4 @@ def parsePatch(f, definitions=None):
 if __name__ == "__main__":
     import sys
     from pprint import pprint
-    pprint(parsePatch(open(sys.argv[1])))
+    pprint(parseFile(open(sys.argv[1])))
