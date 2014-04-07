@@ -89,11 +89,11 @@ class Reg(int, Argument):
         Tries to convert given register name to its integer value.
         Will raise IndexError if name is invalid.
         """
-        return _regs[name.upper()]
+        return Reg._regs[name.upper()]
     @staticmethod
     def is_reg(name):
         """ Checks whether string is valid register name """
-        return name.upper() in _regs
+        return name.upper() in Reg._regs
     def __new__(cls, name=None, hi=None):
         """
         Usage: either Reg('name') or Reg(hi=True/False) or Reg()
