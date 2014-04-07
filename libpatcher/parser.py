@@ -138,44 +138,6 @@ def parseInstruction(line, pos):
     except IndexError:
         raise SyntaxError("Unknown instruction: %s %s" % (opcode, ','.join([repr(x) for x in args])), pos)
 
-def parseAsm(f, prev, pos):
-    """
-    Usage: pass it file after you encounter { (block beginning)
-    and pass everything after that character as prev arg (which may be empty).
-    After it encounter }, it will return list of instructions:
-        [
-            ("opcode", [arg1,arg2...]),
-            ...
-        ]
-    """
-    if prev:
-        prev = (prev,) # to be iterable
-    else: # empty line, None, etc
-        prev = ()
-
-    instructions = []
-    for lnum, line in enumerate(chain(prev, f), pos.getLnum()+1-len(prev)):
-        pos.setLine(lnum, line.strip())
-        line = uncomment(line)
-        # ignore empty lines
-        if not line:
-            continue
-
-        # end of block?
-        if line.startswith('}'):
-            # FIXME: what to do with remainder?
-            remainder = line[1:]
-            if remainder:
-                print "Warning: spare characters after '}', will ignore"
-            break
-
-        instr = parseInstruction(line, pos)
-
-        instructions.append(instr)
-    else: # if reached end of file
-        raise SyntaxError("Unclosed block!", pos)
-    return instructions
-
 def parseBlock(f, pos):
     " Parses one mask from patch file. Returns results (mask and block contents) as tuple "
 
@@ -185,67 +147,82 @@ def parseBlock(f, pos):
     bstr = ''
     # current mask item (integer, number of bytes to skip)
     bskip = 0
+
+    # and to be used when in block:
+    instructions = None
+
     for lnum, line in enumerate(f, pos.getLnum()+1):
         pos.setLine(lnum,line.strip())
         line = uncomment(line)
         if not line:
             continue
 
-        # read mask: it consists of 00 f7 items, ? ?4 items, and "strings"
-        tokens = line.split('"')
-        if len(tokens) % 2 == 0:
-            raise SyntaxError("Unterminated string", pos)
-        is_str = False
-        for tnum, token in enumerate(tokens):
-            if is_str:
-                if bskip:
-                    mask.append(bskip)
-                    bskip = 0
-                bstr += token
-            else:
-                ts = token.split()
-                for t in ts:
-                    if len(t) == 2 and t.isalnum():
-                        if bskip:
-                            mask.append(bskip)
-                            bskip = 0
-                        try:
-                            c = chr(int(t, 16))
-                        except ValueError:
-                            raise SyntaxError("Bad token: %s" % t, pos)
-                        bstr += c
-                    elif t[0] == '?':
-                        if len(t) == 1:
-                            count = 1
-                        else:
+        if instructions == None: # not in block, reading mask
+            # read mask: it consists of 00 f7 items, ? ?4 items, and "strings"
+            tokens = line.split('"')
+            if len(tokens) % 2 == 0:
+                raise SyntaxError("Unterminated string", pos)
+            is_str = False
+            for tnum, token in enumerate(tokens):
+                if is_str:
+                    if bskip:
+                        mask.append(bskip)
+                        bskip = 0
+                    bstr += token
+                else:
+                    ts = token.split()
+                    for t in ts:
+                        if len(t) == 2 and t.isalnum():
+                            if bskip:
+                                mask.append(bskip)
+                                bskip = 0
                             try:
-                                count = int(t[1:])
+                                c = chr(int(t, 16))
                             except ValueError:
                                 raise SyntaxError("Bad token: %s" % t, pos)
-                        if bstr:
-                            mask.append(bstr)
-                            bstr = ''
-                        bskip += count
-                    elif t == '{':
-                        if bstr:
-                            mask.append(bstr)
-                            bstr = ''
+                            bstr += c
+                        elif t[0] == '?':
+                            if len(t) == 1:
+                                count = 1
+                            else:
+                                try:
+                                    count = int(t[1:])
+                                except ValueError:
+                                    raise SyntaxError("Bad token: %s" % t, pos)
+                            if bstr:
+                                mask.append(bstr)
+                                bstr = ''
+                            bskip += count
+                        elif t == '{':
+                            if bstr:
+                                mask.append(bstr)
+                                bstr = ''
+                                if bskip:
+                                    print mask,bstr,bskip
+                                    raise SyntaxError("Internal error: both bstr and bskip used", pos)
                             if bskip:
-                                print mask
-                                print bstr
-                                print bskip
-                                raise SyntaxError("Internal error: both bstr and bskip used", pos)
-                        if bskip:
-                            mask.append(bskip)
-                            bskip = 0
-                        remainder = '"'.join(tokens[tnum+1:])
-                        content = parseAsm(f, remainder, pos)
-                        # return and don't iterate over remaining tokens and t's
-                        # (which are now completely unneeded)
-                        return (mask, content)
-                    else:
-                        raise SyntaxError("Bad token: %s" % t, pos)
-            is_str = not is_str
+                                mask.append(bskip)
+                                bskip = 0
+                            line = '"'.join(tokens[tnum+1:]) # prepare remainder for next if
+                            instructions = [] # this will also break for's
+                        else:
+                            raise SyntaxError("Bad token: %s" % t, pos)
+                        if instructions != None: # if entered block
+                            break
+                is_str = not is_str
+                if instructions != None: # if entered block
+                    break
+        # mask read finished. Now read block content, if in block
+        if instructions != None and line: # if still have something in current line
+            if line.startswith('}'):
+                # FIXME: what to do with remainder?
+                remainder = line[1:]
+                if remainder:
+                    print "Warning: spare characters after '}', will ignore: %s" % remainder
+                return (mask, instructions)
+
+            instr = parseInstruction(line, pos)
+            instructions.append(instr)
     if mask or bstr or bskip:
         raise SyntaxError("Unexpected end of file", pos)
     return None, None
