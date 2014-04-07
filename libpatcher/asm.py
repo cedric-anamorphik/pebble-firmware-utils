@@ -141,7 +141,7 @@ class Label(Argument):
     def __init__(self, name=None):
         self.name = name
     def __repr__(self):
-        return self.name
+        return ("Label<%s>"%self.name) if self.name else "Label"
     def match(self, other):
         return type(other) is Label
     def getAddress(self, context):
