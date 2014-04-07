@@ -147,24 +147,55 @@ def parsePatch(f):
     """
     Parses patch file
     """
-    # list of masks
-    masks = []
+    # list of masks and corresponding instruction listings
+    blocks = []
 
     # current mask
     mask = []
-    # current mask item (bytes)
-    bs = ''
+    # current mask item (bytestring)
+    bstr = ''
+    # current mask item (integer, number of bytes to skip)
+    bskip = 0
     for line in f:
         line = uncomment(line)
         if not line:
             continue
 
-        # read mask: it may contain 00 f7 items, ? ?4 items, and "strings"
-        cb = '' # current item
-        state = ''
-        for c in line:
-            if state == 'b': # byte, two hex digits
-            if c.isalnum():
-                cb += c
-            elif
-        # and pass file to parseAsm to read block after it
+        # read mask: it consists of 00 f7 items, ? ?4 items, and "strings"
+        tokens = line.split('"')
+        if len(tokens) % 2 == 0:
+            raise SyntaxError("Unterminated string", f, line)
+        is_str = False
+        for token in tokens:
+            if is_str:
+                if bskip:
+                    mask.append(bskip)
+                    bskip = 0
+                bstr += token
+            else:
+                ts = token.split()
+                for t in ts:
+                    if len(t) == 2 and t.isalnum():
+                        if bskip:
+                            mask.append(bskip)
+                            bskip = 0
+                        try:
+                            c = chr(int(t, 16))
+                        except ValueError:
+                            raise SyntaxError("Bad token: %s" % t, f, line)
+                        bstr += c
+                    elif t[0] == '?':
+                        if len(t) == 1:
+                            count = 1
+                        else:
+                            try:
+                                count = int(t[1:])
+                            except ValueError:
+                                raise SyntaxError("Bad token: %s" % t, f, line)
+                        if bs:
+                            mask.append(bstr)
+                            bstr = ''
+                        bskip += count
+                    else:
+                        raise SyntaxError("Bad token: %s" % t, f, line)
+            is_str = not is_str
