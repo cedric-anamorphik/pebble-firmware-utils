@@ -1,5 +1,7 @@
 # This is a library of ARM/THUMB assembler instruction definitions
 
+from struct import pack
+
 def isInstruction(str):
     """
     Returns True if str is a valid assembler instruction name
@@ -148,13 +150,59 @@ class Label(Argument):
 # Instructions
 
 class Instruction:
-    pass
-def instruction(opcode, args, proc):
-    pass
+    """
+    This class may represent either instruction definition (with masks instead of args)
+    or real instruction (with concrete args and context).
+    """
+    def __init__(self, opcode, args, proc, mask=True):
+        self.opcode = opcode
+        self.args = args
+        self.proc = proc
+        self.mask = mask
+        self.ctx = None
+    def match(self, opcode, args):
+        """ Match this definition to given instruction """
+        if not self.mask:
+            raise ValueError("This is not mask, cannot match")
+        # check mnemonic...
+        if type(self.opcode) is str:
+            if self.opcode != opcode:
+                return False
+        else: # multiple opcodes possible
+            if opcode not in self.opcode:
+                return False
+        # ... and args
+        if len(self.args) != len(args):
+            return False
+        for a,b in zip(self.args, args):
+            if not a.match(b):
+                return False
+        return True
+    def instantiate(self, opcode, args):
+        if not self.mask:
+            raise ValueError("This is not mask, cannot instantiate")
+        return Instruction(opcode, args, self.proc, mask=False)
+    def setContext(self, ctx):
+        self.ctx = ctx
+    def getCode(self):
+        if not self.ctx:
+            raise ValueError("No context, cannot calculate code")
+        code = self.proc(self.ctx, *self.args)
+        if type(code) is str:
+            return code
+        elif type(code) is int:
+            return pack('<H', code)
+        elif type(code) is tuple:
+            return pack('<HH', code[0], code[1])
+        raise ValueError("Bad code: %s" % repr(code))
+# list of instruction definitions
+_instructions = []
+def _instruction(opcode, args, proc):
+    _instructions.append(Instruction(opcode, args, proc))
 
-instruction('ADD', [Reg(hi=False), Num()], lambda(c,rd,imm):
+_instruction('ADD', [Reg(hi=False), Num()], lambda(c,rd,imm):
             (1 << 13) + (2 << 11) + (rd.val << 8) + imm)
-def longJump(ctx, dest, bl):
+def _longJump(ctx, dest, bl):
     offset = dest.offset(ctx, 4)
     offset = offset >> 1
     if abs(offset) >= 1<<22:
@@ -167,5 +215,5 @@ def longJump(ctx, dest, bl):
     hi = (hi_c << 11) + hi_o
     lo = (lo_c << 11) + lo_o
     return (hi,lo)
-instruction('BL', [Label()], lambda(ctx,dest): longJump(ctx,dest,True))
-instruction('B.W', [Label()], lambda(ctx,dest): longJump(ctx,dest,False))
+_instruction('BL', [Label()], lambda(ctx,dest): _longJump(ctx,dest,True))
+_instruction('B.W', [Label()], lambda(ctx,dest): _longJump(ctx,dest,False))
