@@ -300,7 +300,7 @@ class DCB(Instruction):
                 if type(a) is Str:
                     code += a
                 elif type(a) is Num:
-                    code += pack('<C', a)
+                    code += pack('<B', a)
                 else:
                     raise ValueError("Bad argument: %s" % repr(a))
             self.code = code
