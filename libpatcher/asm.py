@@ -197,10 +197,13 @@ class Instruction:
         raise ValueError("Bad code: %s" % repr(code))
 # list of instruction definitions
 _instructions = []
-def _instruction(opcode, args, proc):
-    _instructions.append(Instruction(opcode, args, proc))
+def instruction(opcode, args):
+    """ this is a function decorator for instruction definitions """
+    def gethandler(proc):
+        _instructions.append(Instruction(opcode, args, proc))
+    return gethandler
 
-_instruction('ADD', [Reg(hi=False), Num()], lambda(c,rd,imm):
+instruction('ADD', [Reg(hi=False), Num()])(lambda(c,rd,imm):
             (1 << 13) + (2 << 11) + (rd.val << 8) + imm)
 def _longJump(ctx, dest, bl):
     offset = dest.offset(ctx, 4)
@@ -215,5 +218,9 @@ def _longJump(ctx, dest, bl):
     hi = (hi_c << 11) + hi_o
     lo = (lo_c << 11) + lo_o
     return (hi,lo)
-_instruction('BL', [Label()], lambda(ctx,dest): _longJump(ctx,dest,True))
-_instruction('B.W', [Label()], lambda(ctx,dest): _longJump(ctx,dest,False))
+instruction('BL', [Label()])(lambda(ctx,dest): _longJump(ctx,dest,True))
+instruction('B.W', [Label()])(lambda(ctx,dest): _longJump(ctx,dest,False))
+@instruction('BL', [Label()])
+def BL(ctx, label):
+    pass
+
