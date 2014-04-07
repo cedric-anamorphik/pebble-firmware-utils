@@ -134,3 +134,29 @@ def parseAsm(f, prev=()):
         # now we have a good instruction
         instructions.append((opcode, args))
     return instructions
+
+def parsePatch(f):
+    """
+    Parses patch file
+    """
+    # list of masks
+    masks = []
+
+    # current mask
+    mask = []
+    # current mask item (bytes)
+    bs = ''
+    for line in f:
+        line = uncomment(line)
+        if not line:
+            continue
+
+        # read mask: it may contain 00 f7 items, ? ?4 items, and "strings"
+        cb = '' # current item
+        state = ''
+        for c in line:
+            if state == 'b': # byte, two hex digits
+            if c.isalnum():
+                cb += c
+            elif
+        # and pass file to parseAsm to read block after it
