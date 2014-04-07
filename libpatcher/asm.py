@@ -19,7 +19,7 @@ def makeInstruction(op, args):
 # Instruction argument types:
 # integer, list of arguments, register, label
 
-class Argument:
+class Argument(object):
     def match(self, other):
         """ Matches this instance with given obj """
         raise NotImplementedError
@@ -141,7 +141,7 @@ class Label(Argument):
     def __init__(self, name=None):
         self.name = name
     def __repr__(self):
-        return ("Label<%s>"%self.name) if self.name else "Label"
+        return (":%s"%self.name) if self.name else "Label"
     def match(self, other):
         return type(other) is Label
     def getAddress(self, context):
