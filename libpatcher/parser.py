@@ -12,6 +12,7 @@ def parseLine(f):
         args = []
         s = '' # string repr of current arg
         t = None # type of current arg: None (no current), n(numeric), ',"(quoted str), l(reg or label)
+        br = False # whether we are in [] block
         for c in arg+'\n': # \n will be processed as last character
             domore = False # if current character needs to be processed further
             if t == None: # state: no current arg
@@ -51,7 +52,7 @@ def parseLine(f):
             else:
                 raise ValueError("Internal error: illegal type state %s" % t)
 
-            if domore: # current character must be processed further
+            if domore: # current character was not processed yet
                 if c.isdigit():
                     s += c
                     t = 'n'
@@ -64,7 +65,21 @@ def parseLine(f):
                     continue # skip
                 elif c == ',':
                     continue # skip - is it correct?
+                elif c == '[':
+                    if br:
+                        raise SyntaxError("Nested [] are not supported")
+                    br = True
+                    gargs = args
+                    args = asm.List()
+                elif c == ']':
+                    if not br:
+                        raise SyntaxError("Unmatched ]")
+                    gargs.append(args)
+                    args = gargs
+                    br = False
                 else:
                     raise SyntaxError("Bad character: %c" % c)
         if t:
             raise SyntaxError("Unterminated string?")
+        if br:
+            raise SyntaxError("Unmatched '['")
