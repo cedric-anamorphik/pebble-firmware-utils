@@ -350,3 +350,5 @@ def CBx(ctx, reg, lbl):
             (1 << 8) +
             ((offset & 0b11111) << 3) +
             reg)
+instruction('B', [Label()], 2, lambda(ctx,lbl):
+            (0b11100 << 11) + lbl.offset(ctx, 12))
