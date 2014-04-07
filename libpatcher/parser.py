@@ -250,21 +250,6 @@ def parseBlock(f, pos):
         raise SyntaxError("Unexpected end of file", pos)
     return None, None
 
-def processSharps(next):
-    conds = [True]
-    def nextLine():
-        line = next().strip()
-        while line.startswith('#'):
-            tokens = line.split()
-            cmd = tokens[0]
-            args = tokens[1:]
-            if cmd == '#define':
-                pass
-            else:
-                raise SyntaxError
-        else: # found not-sharpcmd
-            return line
-    return nextLine
 def parsePatch(f):
     """
     Parses patch file
@@ -273,7 +258,6 @@ def parsePatch(f):
     blocks = []
 
     pos = FilePos(f.name)
-    f.next = processSharps(f.next)
     while True:
         mask, content = parseBlock(f, pos)
         if not mask:
