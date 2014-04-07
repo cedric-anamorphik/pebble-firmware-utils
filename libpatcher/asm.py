@@ -215,8 +215,11 @@ class Instruction:
         return self.size
 # list of instruction definitions
 _instructions = []
-def instruction(opcode, args, size=2):
-    """ this is a function decorator for instruction definitions """
+def instruction(opcode, args, size=2, proc=None):
+    """
+    This is a function decorator for instruction definitions.
+    It may also be used as a plain function, then you should pass it a function as proc arg.
+    """
     def gethandler(proc):
         instr = Instruction(opcode, args, proc)
         if callable(size):
@@ -225,7 +228,10 @@ def instruction(opcode, args, size=2):
             instr.size = size
         _instructions.append(instr)
         return proc
-    return gethandler
+    if proc: # not used as decorator
+        gethandler(proc)
+    else:
+        return gethandler
 def instruct_class(c):
     """ decorator for custom instruction classes """
     _instructions.append(c())
@@ -246,8 +252,8 @@ def _longJump(ctx, dest, bl):
     hi = (hi_c << 11) + hi_o
     lo = (lo_c << 11) + lo_o
     return (hi,lo)
-instruction('BL', [Label()], 4)(lambda(ctx,dest): _longJump(ctx,dest,True))
-instruction('B.W', [Label()], 4)(lambda(ctx,dest): _longJump(ctx,dest,False))
+instruction('BL', [Label()], 4, lambda(ctx,dest): _longJump(ctx,dest,True))
+instruction('B.W', [Label()], 4, lambda(ctx,dest): _longJump(ctx,dest,False))
 @instruction('BL', [Label()], 4)
 def BL(ctx, label):
     pass
@@ -272,5 +278,5 @@ class DCB(Instruction):
         return DCB(args)
     def getCode(self):
         return self.code
-instruction('DCH', [Num(bits=16)], 2)(lambda(ctx,num): num)
-instruction('DCD', [Num(bits=32)], 4)(lambda(ctx,num): pack('<I', num))
+instruction('DCH', [Num(bits=16)], 2, lambda(ctx,num): num)
+instruction('DCD', [Num(bits=32)], 4, lambda(ctx,num): pack('<I', num))
