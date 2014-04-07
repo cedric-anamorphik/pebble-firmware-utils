@@ -9,10 +9,7 @@ class SyntaxError(Exception):
         self.file = f
         self.line = line
     def __str__(self):
-        return "%s@%s: %s" % (self.file.name, self.line, self.msg)
-class BlockDone(Exception):
-    " raised when block is parsed, to break thru 2 layers of for "
-    pass
+        return "%s%s: %s" % (self.file.name, ('@'+self.line) if self.line else '', self.msg)
 
 def uncomment(line):
     """ Removes comment, if any, from line. Also strips line """
@@ -146,12 +143,8 @@ def parseAsm(f, prev=()):
         instructions.append((opcode, args))
     return instructions
 
-def parsePatch(f):
-    """
-    Parses patch file
-    """
-    # list of masks and corresponding instruction listings
-    blocks = []
+def parseBlock(f):
+    " Parses one mask from patch file. Returns results (mask and block contents) as tuple "
 
     # current mask
     mask = []
@@ -215,9 +208,22 @@ def parsePatch(f):
                         # debug:
                         print remainder
                         content = parseAsm(f, remainder)
-                        # TODO: save mask and content
-                        mask = []
-                        raise BlockDone
+                        # return and don't iterate over remaining tokens and t's
+                        # (which are now completely unneeded)
+                        return (mask, content)
                     else:
                         raise SyntaxError("Bad token: %s" % t, f, line)
             is_str = not is_str
+    raise SyntaxError("Unexpected end of file", f, None)
+
+def parsePatch(f):
+    """
+    Parses patch file
+    """
+    # list of masks and corresponding instruction listings
+    blocks = []
+
+    while True:
+        mask, content = parseBlock(f)
+        blocks.append(mask, content)
+    # FIXME: catch exception
