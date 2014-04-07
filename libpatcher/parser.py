@@ -138,8 +138,11 @@ def parseInstruction(line, pos):
     except IndexError:
         raise SyntaxError("Unknown instruction: %s %s" % (opcode, ','.join([repr(x) for x in args])), pos)
 
-def parseBlock(f, pos):
+def parseBlock(f, pos, definitions):
     " Parses one mask from patch file. Returns results (mask and block contents) as tuple "
+
+    # for #commands:
+    if_state = [True] # this True should always be there
 
     # current mask
     mask = []
@@ -154,8 +157,55 @@ def parseBlock(f, pos):
     for lnum, line in enumerate(f, pos.getLnum()+1):
         pos.setLine(lnum,line.strip())
         line = uncomment(line)
-        if not line:
+        if not line: # skip empty lines
             continue
+
+        if line[0] == '#': # FIXME: was stripped by uncomment
+            tokens = line.split()
+            cmd,args = tokens[0],tokens[1:]
+            # these will not depend on if_state...
+            if cmd in ["#ifdef", "#ifndef", "#ifval", "#ifnval"]:
+                if not args:
+                    raise SyntaxError("%s requires at least one argument" % cmd, pos)
+                newstate = 'n' in cmd # False for 'ifdef', etc.
+                if "val" in cmd:
+                    vals = definitions.values()
+                # "OR" logic, as one can implement "AND" with nested #ifdef's
+                # so any matched arg stops checking
+                for a in args:
+                    if (("def" in cmd and a in definitions) or
+                        ("val" in cmd and a in vals)):
+                        matched = not matched
+                        break
+                if_state.append(matched)
+            elif cmd == "#else":
+                if len(if_state) <= 1:
+                    raise SyntaxError("Unexpected #else", pos)
+                if_state[-1] = not if_state[-1]
+                continue
+            elif cmd == "#endif":
+                if_state.pop() # remove latest state
+                if not if_state:
+                    raise SyntaxError("Unmatched #endif", pos)
+                continue
+            # ...now check if_state...
+            if not if_state[-1]:
+                continue # #define must only work if this is met
+            # ...and following will depend on it
+            if cmd == "#define":
+                if not args:
+                    raise SyntaxError("At least one argument required for #define", pos)
+                name = args[0]
+                val = args[1:] or True
+                # FIXME: numeric values?
+                definitions[name] = val
+            else:
+                raise SyntaxError("Unknown #command: %s" % cmd, pos)
+            continue # to next line
+
+        # and now for non-# lines
+        if not if_state[-1]:
+            continue # skip any code if current condition is not met
 
         if instructions == None: # not in block, reading mask
             # read mask: it consists of 00 f7 items, ? ?4 items, and "strings"
@@ -227,16 +277,19 @@ def parseBlock(f, pos):
         raise SyntaxError("Unexpected end of file", pos)
     return None, None
 
-def parsePatch(f):
+def parsePatch(f, definitions=None):
     """
-    Parses patch file
+    Parses patch file.
+    Definitions dictionary is used for #define and its companions
     """
     # list of masks and corresponding instruction listings
+    if definitions == None:
+        definitions = {}
     blocks = []
 
     pos = FilePos(f.name)
     while True:
-        mask, content = parseBlock(f, pos)
+        mask, content = parseBlock(f, pos, definitions)
         if not mask:
             break
         blocks.append((mask, content))
