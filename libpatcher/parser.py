@@ -172,6 +172,8 @@ def parseAsm(f, prev, pos):
         instr = parseInstruction(line, pos)
 
         instructions.append(instr)
+    else: # if reached end of file
+        raise SyntaxError("Unclosed block!", pos)
     return instructions
 
 def parseBlock(f, pos):
