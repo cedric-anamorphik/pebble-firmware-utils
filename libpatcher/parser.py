@@ -155,8 +155,8 @@ def parseAsm(f, prev, pos):
 
     instructions = []
     for lnum, line in enumerate(chain(prev, f), pos.getLnum()+1-len(prev)):
+        pos.setLine(lnum, line.strip())
         line = uncomment(line)
-        pos.setLine(lnum, line)
         # ignore empty lines
         if not line:
             continue
@@ -186,8 +186,8 @@ def parseBlock(f, pos):
     # current mask item (integer, number of bytes to skip)
     bskip = 0
     for lnum, line in enumerate(f, pos.getLnum()+1):
+        pos.setLine(lnum,line.strip())
         line = uncomment(line)
-        pos.setLine(lnum,line)
         if not line:
             continue
 
