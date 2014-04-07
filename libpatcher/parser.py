@@ -220,14 +220,6 @@ def parseBlock(f, pos, definitions):
         if not if_state[-1]:
             continue # skip any code if current condition is not met
 
-        # process #definitions
-        # FIXME: definitions in beginning of line will be "swallowed" by code above
-        for d in definitions:
-            if '#'+d in line: # FIXME: #var and #variable
-                line.replace('#'+d, definitions[d])
-            if '#{'+d+'}' in line:
-                line.replace('#{'+d+'}', definitions[d])
-
         if instructions == None: # not in block, reading mask
             # read mask: it consists of 00 f7 items, ? ?4 items, and "strings"
             tokens = line.split('"')
@@ -241,6 +233,14 @@ def parseBlock(f, pos, definitions):
                         bskip = 0
                     bstr += token
                 else:
+                    # process #definitions
+                    # FIXME: definitions in beginning of line will be "swallowed" by code above
+                    for d in definitions:
+                        if '#'+d in token: # FIXME: #var and #variable
+                            token = token.replace('#'+d, definitions[d])
+                        if '#{'+d+'}' in token:
+                            token = token.replace('#{'+d+'}', definitions[d])
+
                     ts = token.split()
                     for t in ts:
                         if len(t) == 2 and t.isalnum():
