@@ -255,7 +255,7 @@ def parsePatch(f):
     pos = FilePos(f.name)
     while True:
         mask, content = parseBlock(f, pos)
-        blocks.append(mask, content)
+        blocks.append((mask, content))
     # FIXME: catch exception
 
 if __name__ == "__main__":
