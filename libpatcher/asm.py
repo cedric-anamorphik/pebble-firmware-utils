@@ -338,3 +338,13 @@ for cond, val in {
     instruction('B'+cond, [Label()], 2, lambda(ctx,lbl):
                 (0b1101 << 12) + (val << 8) + (lbl.offset(ctx,9)>>1))
     # TODO: add .W versions?
+@instruction(['CBZ','CBNZ'], [Reg('LO'), Label()])
+def CBx(ctx, reg, lbl):
+    offset = lbl.offset(ctx, 7)
+    op = 1 if 'N' in ctx.opcode else 0
+    return ((0b1011 << 12) +
+            (op << 11) +
+            ((offset >> 5) << 9) +
+            (1 << 8) +
+            ((offset & 0b11111) << 3) +
+            reg)
