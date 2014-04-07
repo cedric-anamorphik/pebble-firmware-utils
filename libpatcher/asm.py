@@ -329,13 +329,12 @@ class DCB(Instruction):
 instruction('DCH', [Num(bits=16)], 2, lambda(ctx,num): num)
 instruction('DCD', [Num(bits=32)], 4, lambda(ctx,num): pack('<I', num))
 instruction('NOP', [], 2, 0xBF00)
-_Bxx_conds = {
+for cond, val in {
     'CC': 0x3, 'CS': 0x2, 'EQ': 0x0, 'GE': 0xA,
     'GT': 0xC, 'HI': 0x8, 'LE': 0xD, 'LS': 0x9,
     'LT': 0xB, 'MI': 0x4, 'NE': 0x1, 'PL': 0x5,
     'VC': 0x7, 'VS': 0x6,
-}
-for cond, val in _Bxx_conds.items():
+}.items():
     instruction('B'+cond, [Label()], 2, lambda(ctx,lbl):
                 (0b1101 << 12) + (val << 8) + (lbl.offset(ctx,9)>>1))
     # TODO: add .W versions?
