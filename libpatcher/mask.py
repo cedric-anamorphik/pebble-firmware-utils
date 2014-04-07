@@ -48,3 +48,9 @@ class Mask(object):
         if found:
             return pos
         return False
+    def getSize(self):
+        """
+        Returns size (in bytes) of the 'active' part of mask
+        (excluding its part before @, or covered by initial ?-s)
+        """
+        return sum([len(x) if type(x) is str else x for x in self.parts]) - self.offset
