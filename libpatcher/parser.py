@@ -197,10 +197,9 @@ def parseBlock(f, pos, definitions):
                 if not args:
                     raise SyntaxError("At least one argument required for #define", pos)
                 name = args[0]
-                val = args[1:] or True
-                if len(val) == 1:
-                    val = val[0]
-                # FIXME: numeric values?
+                val = True
+                if args[1:]:
+                    val = line.split(None, 2)[2] # remaining args as string
                 definitions[name] = val
             else:
                 raise SyntaxError("Unknown #command: %s" % cmd, pos)
