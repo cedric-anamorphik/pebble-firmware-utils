@@ -177,7 +177,7 @@ class Str(str, Argument):
 ###
 # Instructions
 
-class Instruction:
+class Instruction(object):
     """
     This class may represent either instruction definition (with masks instead of args)
     or real instruction (with concrete args and context).
@@ -189,6 +189,7 @@ class Instruction:
         self.mask = mask
         self.pos = pos
         self.ctx = None
+        self.original = None
     def match(self, opcode, args):
         """ Match this definition to given instruction """
         if not self.mask:
@@ -210,7 +211,9 @@ class Instruction:
     def instantiate(self, opcode, args, pos):
         if not self.mask:
             raise ValueError("This is not mask, cannot instantiate")
-        return Instruction(opcode, args, self.proc, mask=False, pos=pos)
+        ret = Instruction(opcode, args, self.proc, mask=False, pos=pos)
+        ret.original = self
+        return ret
     def setContext(self, ctx):
         self.ctx = ctx
     def getCode(self):
@@ -235,7 +238,10 @@ class Instruction:
         " pos is instruction's position in file "
         return self.pos
     def __repr__(self):
-        return "<%s %s>" % (self.opcode, ','.join([repr(x) for x in self.args]))
+        ret = "<%s %s>" % (self.opcode, ','.join([repr(x) for x in self.args]))
+        if self.original:
+            ret += "(mask:%s)" % self.original
+        return ret
 
 _instructions = []
 def instruction(opcode, args, size=2, proc=None):
