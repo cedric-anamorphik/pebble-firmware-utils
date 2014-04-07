@@ -201,6 +201,17 @@ def parseBlock(f, pos, definitions):
                 if args[1:]:
                     val = line.split(None, 2)[2] # remaining args as string
                 definitions[name] = val
+            elif cmd == "#include":
+                if not args:
+                    raise SyntaxError("#include requires an argument", pos)
+                arg = line.split(None, 1)[1] # all args as a string
+                import os.path
+                if not os.path.isabs(arg):
+                    arg = os.path.join(os.path.dirname(f.name), arg)
+                f = open(arg, 'r')
+                # TODO: add f to loading queue, or load it just now somehow
+                # But what to do with result?
+                raise SyntaxError("#include is not implemented yet...", pos)
             else:
                 raise SyntaxError("Unknown command: %s" % cmd, pos)
             continue # to next line
