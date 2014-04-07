@@ -3,6 +3,14 @@
 import asm
 from itertools import chain
 
+class SyntaxError(Exception):
+    def __init__(self, msg, f, line):
+        self.msg = msg
+        self.file = f
+        self.line = line
+    def __str__(self):
+        return "%s@%s: %s" % (self.file.name, self.line, self.msg)
+
 def uncomment(line):
     """ Removes comment, if any, from line. Also strips line """
     linewoc = '' # line without comment
@@ -113,23 +121,23 @@ def parseAsm(f, prev=()):
                     continue # skip - is it a good approach? allows both "MOV R0,R1" and "MOV R1 R1"
                 elif c == '[':
                     if br:
-                        raise SyntaxError("Nested [] are not supported")
+                        raise SyntaxError("Nested [] are not supported", f, line)
                     br = True
                     gargs = args
                     args = asm.List()
                 elif c == ']':
                     if not br:
-                        raise SyntaxError("Unmatched ]")
+                        raise SyntaxError("Unmatched ]", f, line)
                     gargs.append(args)
                     args = gargs
                     br = False
                 else:
-                    raise SyntaxError("Bad character: %c" % c)
+                    raise SyntaxError("Bad character: %c" % c, f, line)
         # now let's check that everything went clean
         if t:
-            raise SyntaxError("Unterminated string? %c" % t)
+            raise SyntaxError("Unterminated string? %c" % t, f, line)
         if br:
-            raise SyntaxError("Unmatched '['")
+            raise SyntaxError("Unmatched '['", f, line)
 
         # now we have a good instruction
         instructions.append((opcode, args))
