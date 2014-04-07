@@ -257,3 +257,7 @@ def parsePatch(f):
         mask, content = parseBlock(f, pos)
         blocks.append(mask, content)
     # FIXME: catch exception
+
+if __name__ == "__main__":
+    import sys
+    print parsePatch(open(sys.argv[0]))
