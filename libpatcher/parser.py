@@ -79,7 +79,10 @@ def parseInstruction(line, pos):
                 s += c
             else:
                 domore = True # need to process current character further
-                args.append(asm.Num(int(s, 0)))
+                try:
+                    args.append(asm.Num(s))
+                except ValueError:
+                    raise SyntaxError("Invalid number: %s" % s, pos)
                 s = ''
                 t = None
         elif t == 'l': # label or reg
