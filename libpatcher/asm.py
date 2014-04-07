@@ -339,7 +339,9 @@ for cond, val in {
 }.items():
     instruction('B'+cond, [Label()], 2, lambda(ctx,lbl):
                 (0b1101 << 12) + (val << 8) + (lbl.offset(ctx,9)>>1))
-    # TODO: add .W versions?
+    instruction('B'+cond+'.W', [Label()], 4, lambda(ctx,lbl):
+                ((0b11110 << 11) + (val << 6) + (lbl.offset(ctx,18) >> 12),
+                 (0b10000 << 11) + ((lbl.offset(ctx,18) & (2**11-1)) >> 1)))
 @instruction(['CBZ','CBNZ'], [Reg('LO'), Label()])
 def CBx(ctx, reg, lbl):
     offset = lbl.offset(ctx, 7)
