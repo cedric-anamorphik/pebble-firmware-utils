@@ -145,6 +145,21 @@ class Label(Argument):
             return context[self.name]
         except IndexError:
             raise LabelError
+class Str(str, Argument):
+    """ This represents _quoted_ string """
+    def __init__(self, val=None):
+        if val == None:
+            val = "String"
+            self.mask = True
+        else:
+            self.mask = False
+        return str.__init__(self, val)
+    def match(self, other):
+        if type(other) is not Str:
+            return False
+        if self.mask:
+            return True
+        return self == other
 
 ###
 # Instructions
@@ -243,7 +258,7 @@ class DCB(Instruction):
         if args:
             code = ''
             for a in args:
-                if type(a) is str: # FIXME: String?
+                if type(a) is Str:
                     code += a
                 elif type(a) is Num:
                     code += pack('<C', a)
