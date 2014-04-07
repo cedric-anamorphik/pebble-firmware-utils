@@ -202,7 +202,7 @@ def parseBlock(f, pos, definitions):
                     val = line.split(None, 2)[2] # remaining args as string
                 definitions[name] = val
             else:
-                raise SyntaxError("Unknown #command: %s" % cmd, pos)
+                raise SyntaxError("Unknown command: %s" % cmd, pos)
             continue # to next line
 
         # and now for non-# lines
@@ -282,11 +282,11 @@ def parseBlock(f, pos, definitions):
 def parsePatch(f, definitions=None):
     """
     Parses patch file.
-    Definitions dictionary is used for #define and its companions
+    Definitions dictionary is used for #define and its companions.
     """
-    # list of masks and corresponding instruction listings
     if definitions == None:
         definitions = {}
+    # list of masks and corresponding instruction listings
     blocks = []
 
     pos = FilePos(f.name)
