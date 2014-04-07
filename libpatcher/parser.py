@@ -15,20 +15,24 @@ class FilePos:
     def setLine(self, lnum, line):
         self.lnum = lnum
         self.line = line
+    def getLine(self):
+        return self.line
     def getLnum(self):
         return self.lnum
     def clone(self):
         " Useful for instructions to hold exact position "
         return FilePos(self.filename, self.lnum, self.line)
+    #def __repr__(self):
+    #    return "\"%s\"\n%s, line %s" % (self.line, self.filename, self.lnum+1)
     def __str__(self):
-        return "\t\"%s\"\n%s, line %s" % (self.line, self.filename, self.lnum+1)
+        return "%s, line %s" % (self.filename, self.lnum+1)
 
 class SyntaxError(Exception):
     def __init__(self, msg, pos):
         self.msg = msg
         self.pos = pos
     def __str__(self):
-        return "%s: %s" % (str(self.pos), self.msg)
+        return "%s: %s\n%s" % (str(self.pos), self.msg, self.pos.getLine())
 
 def uncomment(line):
     """ Removes comment, if any, from line. Also strips line """
@@ -147,6 +151,8 @@ def parseBlock(f, pos, definitions):
     # for #commands:
     if_state = [True] # this True should always be there
 
+    # mask's starting position
+    mpos = None
     # mask's tokens
     mask = []
     # mask offset (for @)
@@ -235,6 +241,8 @@ def parseBlock(f, pos, definitions):
             tokens = line.split('"')
             if len(tokens) % 2 == 0:
                 raise SyntaxError("Unterminated string", pos)
+            if not mpos:
+                mpos = pos.clone() # save starting position of mask
             is_str = False
             for tokennum, token in enumerate(tokens):
                 if is_str:
@@ -301,7 +309,7 @@ def parseBlock(f, pos, definitions):
                 remainder = line[1:]
                 if remainder:
                     print "Warning: spare characters after '}', will ignore: %s" % remainder
-                return (Mask(mask, mofs), instructions)
+                return (Mask(mask, mofs, mpos), instructions)
 
             instr = parseInstruction(line, pos)
             instructions.append(instr)

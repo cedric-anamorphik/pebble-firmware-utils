@@ -3,18 +3,20 @@ class AmbiguousMaskError(Exception):
 
 class Mask(object):
     "This class represents mask"
-    def __init__(self, parts, offset=0):
+    def __init__(self, parts, offset=0, pos=None):
         """
         parts: list of alternating strings and integers.
             strings mean parts which will be matched,
             integers means "skip N bytes".
         offset: how many bytes from matched beginning to skip
+        pos: parser.FilePos object describing block's (starting) position in file
         """
         self.parts = parts
         self.offset = offset
+        self.pos = pos
         # TODO: validate
     def __repr__(self):
-        return ','.join([repr(x) for x in self.parts])+" @"+str(self.offset)
+        return "Mask at %s: %s @%d" % (self.pos, ','.join([repr(x) for x in self.parts]), self.offset)
     def match(self, data):
         """
         Tries to match this mask to given data.
