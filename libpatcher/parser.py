@@ -76,7 +76,7 @@ def parseInstruction(line, pos):
             t=t[0]
         elif t == 'n': # number, maybe hex
             if c.isdigit() or c in 'xXbB':
-                s.append(c)
+                s += c
             else:
                 domore = True # need to process current character further
                 args.append(asm.Num(int(s, 0)))
