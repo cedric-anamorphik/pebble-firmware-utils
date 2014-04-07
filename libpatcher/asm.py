@@ -185,6 +185,7 @@ class Instruction(object):
     """
     This class may represent either instruction definition (with masks instead of args)
     or real instruction (with concrete args and context).
+    Instruction handler may access its current opcode via ctx.opcode field.
     """
     def __init__(self, opcode, args, proc, mask=True, pos=None):
         self.opcode = opcode
@@ -219,12 +220,13 @@ class Instruction(object):
         ret.original = self
         return ret
     def setContext(self, ctx):
+        # FIXME: replace with setAddr, etc?
         self.ctx = ctx
     def getCode(self):
-        if not self.ctx:
+        if not self.ctx: # FIXME: remove? (see above)
             raise ValueError("No context, cannot calculate code")
         if callable(self.proc):
-            code = self.proc(self.ctx, *self.args)
+            code = self.proc(self, *self.args)
         else:
             code = self.proc
         if type(code) is str:
