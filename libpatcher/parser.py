@@ -130,8 +130,10 @@ def parseInstruction(line, pos):
     if br:
         raise SyntaxError("Unmatched '['", pos)
 
-    # FIXME: convert and return ready instruction
-    return opcode, args
+    try:
+        return asm.findInstruction(opcode, args, pos)
+    except IndexError:
+        raise SyntaxError("Unknown instruction: %s %s" % (opcode, repr(args)), pos)
 
 def parseAsm(f, prev, pos):
     """
