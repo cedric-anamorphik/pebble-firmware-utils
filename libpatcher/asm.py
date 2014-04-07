@@ -202,14 +202,18 @@ class Instruction:
     def getCode(self):
         if not self.ctx:
             raise ValueError("No context, cannot calculate code")
-        code = self.proc(self.ctx, *self.args)
+        if callable(self.proc):
+            code = self.proc(self.ctx, *self.args)
+        else:
+            code = self.proc
         if type(code) is str:
             return code
         elif type(code) is int:
             return pack('<H', code)
         elif type(code) is tuple:
             return pack('<HH', code[0], code[1])
-        raise ValueError("Bad code: %s" % repr(code))
+        else:
+            raise ValueError("Bad code: %s" % repr(code))
     def getSize(self):
         """ default implementation; may be overriden by decorator """
         return self.size
@@ -219,6 +223,7 @@ def instruction(opcode, args, size=2, proc=None):
     """
     This is a function decorator for instruction definitions.
     It may also be used as a plain function, then you should pass it a function as proc arg.
+    Note that proc may also be in fact plain value, e.g. for "NOP" instruction.
     """
     def gethandler(proc):
         instr = Instruction(opcode, args, proc)
@@ -280,3 +285,4 @@ class DCB(Instruction):
         return self.code
 instruction('DCH', [Num(bits=16)], 2, lambda(ctx,num): num)
 instruction('DCD', [Num(bits=32)], 4, lambda(ctx,num): pack('<I', num))
+instruction('NOP', [], 2, 0xBF00)
