@@ -290,7 +290,7 @@ def BL(ctx, label):
 @instruct_class
 class DCB(Instruction):
     def __init__(self, args=None):
-        super(None, args, None)
+        Instruction.__init__(self, None, args, None)
         if args:
             code = ''
             for a in args:
