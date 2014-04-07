@@ -5,7 +5,7 @@ from itertools import chain
 
 class FilePos:
     " This holds current line info (filename, line text, line number) "
-    def __init__(self, filename, lnum=0, line=''):
+    def __init__(self, filename, lnum=-1, line=''):
         self.filename = filename
         self.lnum = lnum
         self.line = line
