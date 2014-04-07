@@ -4,6 +4,7 @@ __all__ = ['parseFile']
 
 import asm
 from itertools import chain
+from mask import Mask
 
 class FilePos:
     " This holds current line info (filename, line text, line number) "
@@ -146,8 +147,10 @@ def parseBlock(f, pos, definitions):
     # for #commands:
     if_state = [True] # this True should always be there
 
-    # current mask
+    # mask's tokens
     mask = []
+    # mask offset (in tokens)
+    mofs = 0
     # current mask item (bytestring)
     bstr = ''
     # current mask item (integer, number of bytes to skip)
@@ -233,7 +236,7 @@ def parseBlock(f, pos, definitions):
             if len(tokens) % 2 == 0:
                 raise SyntaxError("Unterminated string", pos)
             is_str = False
-            for tnum, token in enumerate(tokens):
+            for tokennum, token in enumerate(tokens):
                 if is_str:
                     if bskip:
                         mask.append(bskip)
@@ -268,6 +271,10 @@ def parseBlock(f, pos, definitions):
                                 mask.append(bstr)
                                 bstr = ''
                             bskip += count
+                        elif t == '@':
+                            if mofs:
+                                raise SyntaxError("Duplicate '@'", pos)
+                            mofs = len(mask)
                         elif t == '{':
                             if bstr:
                                 mask.append(bstr)
@@ -278,7 +285,7 @@ def parseBlock(f, pos, definitions):
                             if bskip:
                                 mask.append(bskip)
                                 bskip = 0
-                            line = '"'.join(tokens[tnum+1:]) # prepare remainder for next if
+                            line = '"'.join(tokens[tokennum+1:]) # prepare remainder for next if
                             instructions = [] # this will also break for's
                         else:
                             raise SyntaxError("Bad token: %s" % t, pos)
@@ -294,7 +301,7 @@ def parseBlock(f, pos, definitions):
                 remainder = line[1:]
                 if remainder:
                     print "Warning: spare characters after '}', will ignore: %s" % remainder
-                return (mask, instructions)
+                return (Mask(mask, mofs), instructions)
 
             instr = parseInstruction(line, pos)
             instructions.append(instr)
