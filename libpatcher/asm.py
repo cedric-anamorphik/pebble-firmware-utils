@@ -254,7 +254,7 @@ def BL(ctx, label):
 @instruct_class
 class DCB(Instruction):
     def __init__(self, args=None):
-        super('DCB', args, None)
+        super(None, args, None)
         if args:
             code = ''
             for a in args:
@@ -267,7 +267,7 @@ class DCB(Instruction):
             self.code = code
             self.size = len(code)
     def match(self, opcode, args):
-        return opcode in ['DCB']
+        return opcode in ['DCB', 'db']
     def instantiate(self, opcode, args):
         return DCB(args)
     def getCode(self):
