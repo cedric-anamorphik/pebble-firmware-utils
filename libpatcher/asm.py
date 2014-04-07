@@ -26,13 +26,13 @@ class Argument:
 
 class Num(int, Argument):
     """ Just remember initially specified value format """
-    def __new__(cls, val=None, bits=None, positive=False):
+    def __new__(cls, val=None, bits='any', positive=False):
         if type(val) == 'str':
             ret = int.__new__(cls, val, 0) # auto determine base
         elif val is None:
             ret = int.__new__(cls, 0)
             ret.bits = bits
-            if bits:
+            if bits != 'any':
                 ret.maximum = 1 << bits
             ret.positive = positive
             return ret
@@ -41,21 +41,22 @@ class Num(int, Argument):
         ret.initial = val
         # and for consistency with Reg:
         ret.val = ret
+        ret.bits = None
         return ret
     def __str__(self):
-        if 'bits' in self:
-            if self.bits:
+        if self.bits != None:
+            if self.bits != 'any': # numeric
                 return "%d-bits integer%s" % (self.bits,
                     ", positive" if self.positive else "")
-            return "%sinteger" % ("positive " if self.positive else "")
+            return "Integer%s" % (", positive" if self.positive else "")
         return self.initial
     def match(self, other):
         if type(other) is not Num:
             return False
-        if 'bits' in self:
+        if self.bits != None:
             if self.positive and other < 0:
                 return False
-            if self.bits and abs(other) >= self.maximum:
+            if self.bits != 'any' and abs(other) >= self.maximum:
                 return False
             return True
         return other == self
