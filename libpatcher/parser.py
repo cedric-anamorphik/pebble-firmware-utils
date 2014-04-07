@@ -166,7 +166,7 @@ def parsePatch(f):
         if len(tokens) % 2 == 0:
             raise SyntaxError("Unterminated string", f, line)
         is_str = False
-        for token in tokens:
+        for tnum, token in enumerate(tokens):
             if is_str:
                 if bskip:
                     mask.append(bskip)
@@ -192,10 +192,28 @@ def parsePatch(f):
                                 count = int(t[1:])
                             except ValueError:
                                 raise SyntaxError("Bad token: %s" % t, f, line)
-                        if bs:
+                        if bstr:
                             mask.append(bstr)
                             bstr = ''
                         bskip += count
+                    elif t == '{':
+                        if bstr:
+                            mask.append(bstr)
+                            bstr = ''
+                            if bskip:
+                                print mask
+                                print bstr
+                                print bskip
+                                raise SyntaxError("Internal error: both bstr and bskip used", f, line)
+                        if bskip:
+                            mask.append(bskip)
+                            bskip = 0
+                        remainder = '"'.join(tokens[tnum+1:])
+                        # debug:
+                        print remainder
+                        content = parseAsm(f, remainder)
+                        # TODO: save mask and content
+                        mask = []
                     else:
                         raise SyntaxError("Bad token: %s" % t, f, line)
             is_str = not is_str
