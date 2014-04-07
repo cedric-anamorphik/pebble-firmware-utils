@@ -1,4 +1,4 @@
-class DuplicateMaskError(Exception):
+class AmbiguousMaskError(Exception):
     "Thrown if mask was found more than 1 time"
 
 class Mask(object):
@@ -40,7 +40,7 @@ class Mask(object):
                         break
             else: # not breaked -> matched
                 if found: # was already found? -> duplicate match
-                    raise DuplicateMaskError(self)
+                    raise AmbiguousMaskError(self)
                 found = True
         # all occurances checked
         if found:
