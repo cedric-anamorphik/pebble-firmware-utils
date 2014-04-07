@@ -230,7 +230,7 @@ class Instruction:
         " pos is instruction's position in file "
         return self.pos
     def __repr__(self):
-        return "<Instruction: %s %s>" % (self.opcode, ','.join([repr(x) for x in self.args]))
+        return "<%s %s>" % (self.opcode, ','.join([repr(x) for x in self.args]))
 
 _instructions = []
 def instruction(opcode, args, size=2, proc=None):
