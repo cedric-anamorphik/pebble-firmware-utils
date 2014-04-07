@@ -45,7 +45,7 @@ def isNumber(token, bits):
 def parseNumber(token, bits):
     r = int(token, 0)
     if r >= (1<<bits):
-        raise ValueError("Number too large: %s" % token)
+        raise ValueError("Number too large: %s (max %d bits)" % (token, bits))
     return r
 def isLabel(token):
     return len(token) > 0 and (token[0].isalpha() or token[0] == '_')
@@ -159,7 +159,7 @@ class Jump(Instruction):
         reg: number of register to use (if CB*) or None (if B**)
         """
         self.dest = dest
-        if cond < 0 or cond > 0b1111:
+        if cond < -1 or cond > 0b1111:
             raise ValueError("Bad condition value %x!" % cond)
         self.cond = cond
         if reg and (reg < 0 or reg > 0b111):
@@ -169,11 +169,13 @@ class Jump(Instruction):
         # don't use getOffset here as we don't need to clip last 2 bits
         offset = self._getAddr(self.dest) - (self.pos+4)
         offset = offset >> 1
+        uncond = self.cond == -1 # unconditional, plain B
         usereg = self.reg != None
-        if abs(offset) >= 1<<(6 if usereg else 8):
-            raise ValueError("Offset %X exceeds maximum of %X!" %
-                             (offset, 1<<11))
-        if usereg:
+        if abs(offset) >= 1<<(10 if uncond else 6 if usereg else 8):
+            raise ValueError("Offset %X exceeds maximum!" % offset)
+        if uncond:
+            code = (0x1c << 11) + (offset)
+        elif usereg:
             code = ((0b1011 << 12)
                     + (self.cond << 11)
                     + (0 << 8)
@@ -192,6 +194,7 @@ class Bxx(Jump):
         'GT': 0xC, 'HI': 0x8, 'LE': 0xD, 'LS': 0x9,
         'LT': 0xB, 'MI': 0x4, 'NE': 0x1, 'PL': 0x5,
         'VC': 0x7, 'VS': 0x6,
+        '': -1, # for B instruction
     }
     codes = ['B'+x for x in _conds]
     def __init__(self, dest, cond):
@@ -207,6 +210,13 @@ class CBx(Jump):
                and isLabel(args[1])):
             raise ValueError("CBx: incorrect arguments")
         Jump.__init__(self, args[1], 0 if is_equal else 1, parseReg(args[0]))
+class BLX(Instruction):
+    def __init__(self, args):
+        if not (len(args) == 1 and isReg(args[0])):
+            raise ValueError("Invalid args: %s" % repr(args))
+        self.reg = parseReg(args[0])
+    def _getCodeN(self):
+        return (0b010001111 << 7) + self.reg
 class LongJump(Instruction):
     """ B.W or BL instruction (4-bytes) """
     def __init__(self, dest, bl):
@@ -472,17 +482,28 @@ class LDRSTR(Instruction):
                 rb, ro = args
             else:
                 raise ValueError("Illegal args count for LDR/STR, %s" % repr(args))
+        self.wide = False
         if datatype:
             if not datatype in ['B']:
                 raise ValueError("Unsupported datatype for LDR/STR, %s" % datatype)
             if rb in ['PC','SP']:
-                raise ValueError("Unsupported register for LDR/STR with datatype %s" % datatype)
+                if rb == 'SP' and isNumber(ro, 12):
+                    self.wide = True
+                else:
+                    raise ValueError("Unsupported register for LDR/STR with datatype %s" % datatype)
         self.b = 1 if datatype == 'B' else 0
         self.shift = {'':2,'H':1,'B':0}[datatype]
         self.rd = reg
         self.rb = rb
         self.ro = ro
         self.l = 1 if is_load else 0
+    def getCode(self):
+        if not self.wide:
+            return Instruction.getCode(self)
+        # T2 encoding for LDRB Rn,[SP,imm]
+        op1 = (0b111110001001 << 4) + self.rb
+        op2 = (self.rd << 12) + parseNumber(self.ro, 12)
+        return pack('<HH', op1, op2)
     def _getCodeN(self):
         rd = parseReg(self.rd, True)
         rb = parseReg(self.rb)
@@ -898,6 +919,8 @@ def patch_fw(args):
                     elif tokens[0] in ["B.W", "BL"]:
                         myassert(len(tokens) == 2, "%s keyword requires one argument" % tokens[0])
                         instr = LongJump(tokens[1], tokens[0] == "BL")
+                    elif tokens[0] in ["BLX"]:
+                        instr = BLX(tokens[1:])
                     else:
                         myassert(False, "Unknown instruction %s" % tokens[0])
                 except ValueError as e:
