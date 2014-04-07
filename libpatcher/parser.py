@@ -149,7 +149,7 @@ def parseBlock(f, pos, definitions):
 
     # mask's tokens
     mask = []
-    # mask offset (in tokens)
+    # mask offset (for @)
     mofs = 0
     # current mask item (bytestring)
     bstr = ''
@@ -274,7 +274,7 @@ def parseBlock(f, pos, definitions):
                         elif t == '@':
                             if mofs:
                                 raise SyntaxError("Duplicate '@'", pos)
-                            mofs = len(mask)
+                            mofs = sum([len(x) if type(x) is str else x for x in mask]) + len(bstr) + bskip
                         elif t == '{':
                             if bstr:
                                 mask.append(bstr)
