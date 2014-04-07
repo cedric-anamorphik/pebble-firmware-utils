@@ -1,4 +1,7 @@
 # This is a library of ARM/THUMB assembler instruction definitions
+__all__ = ['Num', 'List', 'Reg', 'Label', 'Str',
+           #'Argument', 'LabelError', 'Instruction',
+           'findInstruction']
 
 from struct import pack
 

@@ -1,4 +1,6 @@
 # This is a parser for assembler listings (?)
+__all__ = ['parseFile']
+           #'SyntaxError', 'FilePos'
 
 import asm
 from itertools import chain
