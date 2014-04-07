@@ -260,4 +260,4 @@ def parsePatch(f):
 
 if __name__ == "__main__":
     import sys
-    print parsePatch(open(sys.argv[0]))
+    print parsePatch(open(sys.argv[1]))
