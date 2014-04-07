@@ -36,7 +36,7 @@ def uncomment(line):
             if c == in_str:
                 in_str = ''
         else:
-            if c in '#;': # our comment characters
+            if c in ';': # our comment character
                 break
             elif c in '"\'':
                 in_str = c
@@ -160,7 +160,7 @@ def parseBlock(f, pos, definitions):
         if not line: # skip empty lines
             continue
 
-        if line[0] == '#': # FIXME: was stripped by uncomment
+        if line[0] == '#':
             tokens = line.split()
             cmd,args = tokens[0],tokens[1:]
             # these will not depend on if_state...
