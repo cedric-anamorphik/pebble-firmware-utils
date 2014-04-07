@@ -3,13 +3,24 @@
 import asm
 from itertools import chain
 
-class SyntaxError(Exception):
-    def __init__(self, msg, f, line):
-        self.msg = msg
-        self.file = f
+class FilePos:
+    " This holds current line info (filename, line text, line number) "
+    def __init__(self, filename):
+        self.filename = filename
+    def setLine(self, lnum, line):
+        self.lnum = lnum
         self.line = line
+    def getLnum(self):
+        return self.lnum
     def __str__(self):
-        return "%s%s: %s" % (self.file.name, ('@'+self.line) if self.line else '', self.msg)
+        return "%s\n%s@%s" % (self.line, self.filename, self.lnum)
+
+class SyntaxError(Exception):
+    def __init__(self, msg, pos):
+        self.msg = msg
+        self.pos = pos
+    def __str__(self):
+        return "%s: %s" % (str(self.pos), self.msg)
 
 def uncomment(line):
     """ Removes comment, if any, from line. Also strips line """
@@ -27,10 +38,10 @@ def uncomment(line):
         linewoc += c
     return linewoc.strip() # remove leading and trailing spaces
 
-def parseAsm(f, prev=()):
+def parseAsm(f, prev, pos):
     """
     Usage: pass it file after you encounter { (block beginning)
-    and optionally pass everything after that character as prev arg.
+    and pass everything after that character as prev arg (which may be empty).
     After it encounter }, it will return list of instructions:
         [
             ("opcode", [arg1,arg2...]),
@@ -39,10 +50,13 @@ def parseAsm(f, prev=()):
     """
     if prev:
         prev = (prev,) # to be iterable
+    else: # empty line, None, etc
+        prev = ()
 
     instructions = []
-    for line in chain(prev, f):
+    for lnum, line in enumerate(chain(prev, f), pos.getLnum()+1-len(prev)):
         line = uncomment(line)
+        pos.setLine(lnum, line)
 
         # ignore empty lines
         if not line:
@@ -121,7 +135,7 @@ def parseAsm(f, prev=()):
                     continue # skip - is it a good approach? allows both "MOV R0,R1" and "MOV R1 R1"
                 elif c == '[':
                     if br:
-                        raise SyntaxError("Nested [] are not supported", f, line)
+                        raise SyntaxError("Nested [] are not supported", pos)
                     br = True
                     gargs = args
                     args = asm.List()
@@ -132,18 +146,18 @@ def parseAsm(f, prev=()):
                     args = gargs
                     br = False
                 else:
-                    raise SyntaxError("Bad character: %c" % c, f, line)
+                    raise SyntaxError("Bad character: %c" % c, pos)
         # now let's check that everything went clean
         if t:
-            raise SyntaxError("Unterminated string? %c" % t, f, line)
+            raise SyntaxError("Unterminated string? %c" % t, pos)
         if br:
-            raise SyntaxError("Unmatched '['", f, line)
+            raise SyntaxError("Unmatched '['", pos)
 
         # now we have a good instruction
         instructions.append((opcode, args))
     return instructions
 
-def parseBlock(f):
+def parseBlock(f, pos):
     " Parses one mask from patch file. Returns results (mask and block contents) as tuple "
 
     # current mask
@@ -152,15 +166,16 @@ def parseBlock(f):
     bstr = ''
     # current mask item (integer, number of bytes to skip)
     bskip = 0
-    for line in f:
+    for lnum, line in enumerate(f, pos.getLnum()+1):
         line = uncomment(line)
+        pos.setLine(lnum,line)
         if not line:
             continue
 
         # read mask: it consists of 00 f7 items, ? ?4 items, and "strings"
         tokens = line.split('"')
         if len(tokens) % 2 == 0:
-            raise SyntaxError("Unterminated string", f, line)
+            raise SyntaxError("Unterminated string", pos)
         is_str = False
         for tnum, token in enumerate(tokens):
             if is_str:
@@ -178,7 +193,7 @@ def parseBlock(f):
                         try:
                             c = chr(int(t, 16))
                         except ValueError:
-                            raise SyntaxError("Bad token: %s" % t, f, line)
+                            raise SyntaxError("Bad token: %s" % t, pos)
                         bstr += c
                     elif t[0] == '?':
                         if len(t) == 1:
@@ -187,7 +202,7 @@ def parseBlock(f):
                             try:
                                 count = int(t[1:])
                             except ValueError:
-                                raise SyntaxError("Bad token: %s" % t, f, line)
+                                raise SyntaxError("Bad token: %s" % t, pos)
                         if bstr:
                             mask.append(bstr)
                             bstr = ''
@@ -200,21 +215,21 @@ def parseBlock(f):
                                 print mask
                                 print bstr
                                 print bskip
-                                raise SyntaxError("Internal error: both bstr and bskip used", f, line)
+                                raise SyntaxError("Internal error: both bstr and bskip used", pos)
                         if bskip:
                             mask.append(bskip)
                             bskip = 0
                         remainder = '"'.join(tokens[tnum+1:])
                         # debug:
                         print remainder
-                        content = parseAsm(f, remainder)
+                        content = parseAsm(f, remainder, pos)
                         # return and don't iterate over remaining tokens and t's
                         # (which are now completely unneeded)
                         return (mask, content)
                     else:
-                        raise SyntaxError("Bad token: %s" % t, f, line)
+                        raise SyntaxError("Bad token: %s" % t, pos)
             is_str = not is_str
-    raise SyntaxError("Unexpected end of file", f, None)
+    raise SyntaxError("Unexpected end of file", pos)
 
 def parsePatch(f):
     """
@@ -223,7 +238,8 @@ def parsePatch(f):
     # list of masks and corresponding instruction listings
     blocks = []
 
+    pos = FilePos(f)
     while True:
-        mask, content = parseBlock(f)
+        mask, content = parseBlock(f, pos)
         blocks.append(mask, content)
     # FIXME: catch exception
