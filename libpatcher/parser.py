@@ -234,8 +234,6 @@ def parseBlock(f, pos):
                             mask.append(bskip)
                             bskip = 0
                         remainder = '"'.join(tokens[tnum+1:])
-                        # debug:
-                        print remainder
                         content = parseAsm(f, remainder, pos)
                         # return and don't iterate over remaining tokens and t's
                         # (which are now completely unneeded)
