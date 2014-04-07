@@ -169,11 +169,12 @@ class Instruction:
     This class may represent either instruction definition (with masks instead of args)
     or real instruction (with concrete args and context).
     """
-    def __init__(self, opcode, args, proc, mask=True):
+    def __init__(self, opcode, args, proc, mask=True, pos=None):
         self.opcode = opcode
         self.args = args
         self.proc = proc
         self.mask = mask
+        self.pos = pos
         self.ctx = None
     def match(self, opcode, args):
         """ Match this definition to given instruction """
@@ -193,10 +194,10 @@ class Instruction:
             if not a.match(b):
                 return False
         return True
-    def instantiate(self, opcode, args):
+    def instantiate(self, opcode, args, pos):
         if not self.mask:
             raise ValueError("This is not mask, cannot instantiate")
-        return Instruction(opcode, args, self.proc, mask=False)
+        return Instruction(opcode, args, self.proc, mask=False, pos=pos)
     def setContext(self, ctx):
         self.ctx = ctx
     def getCode(self):
@@ -217,7 +218,10 @@ class Instruction:
     def getSize(self):
         """ default implementation; may be overriden by decorator """
         return self.size
-# list of instruction definitions
+    def getPos(self):
+        " pos is instruction's position in file "
+        return self.pos
+
 _instructions = []
 def instruction(opcode, args, size=2, proc=None):
     """
@@ -242,6 +246,20 @@ def instruct_class(c):
     _instructions.append(c())
     return c
 
+def findInstruction(opcode, args, pos):
+    """
+    This method tries to find matching instruction
+    for given opcode and args.
+    On success, it will instantiate that instruction with given pos (cloning that pos).
+    On failure, it will throw IndexError.
+    """
+    for i in _instructions:
+        if i.match(opcode, args):
+            return i.instantiate(opcode, args, pos.clone())
+    raise IndexError("Unsupported instruction: %s" % opcode)
+
+###
+# All the instruction definitions
 instruction('ADD', [Reg(hi=False), Num()])(lambda(c,rd,imm):
             (1 << 13) + (2 << 11) + (rd.val << 8) + imm)
 def _longJump(ctx, dest, bl):
