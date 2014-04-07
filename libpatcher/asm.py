@@ -2,23 +2,9 @@
 
 from struct import pack
 
-def isInstruction(str):
-    """
-    Returns True if str is a valid assembler instruction name
-    """
-    pass # TODO
-
-def makeInstruction(op, args):
-    """
-    Returns an Instruction subclass for given opcode and arguments.
-    May raise ValueError if opcodej
-    """
-    pass
-
 ###
 # Instruction argument types:
 # integer, list of arguments, register, label
-
 class Argument(object):
     def match(self, other):
         """ Matches this instance with given obj """
@@ -179,8 +165,7 @@ class Str(str, Argument):
         return self == other
 
 ###
-# Instructions
-
+# Instructions description
 class Instruction(object):
     """
     This class may represent either instruction definition (with masks instead of args)
