@@ -68,7 +68,12 @@ class List(list, Argument):
         if len(self) != len(other):
             return False
         for i,j in zip(self, other):
-            if not i.match(j):
+            if type(j) is not tuple:
+                j = tuple(j) # to be iterable
+            for jj in j:
+                if i.match(jj):
+                    break
+            else: # none matched
                 return False
         return True
 
