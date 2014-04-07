@@ -68,10 +68,10 @@ class List(list, Argument):
         if len(self) != len(other):
             return False
         for i,j in zip(self, other):
-            if type(j) is not tuple:
-                j = tuple(j) # to be iterable
-            for jj in j:
-                if i.match(jj):
+            if type(i) is not tuple:
+                i = (i,) # to be iterable
+            for ii in i:
+                if ii.match(j):
                     break
             else: # none matched
                 return False
@@ -209,9 +209,10 @@ class Instruction(object):
         # ... and args
         if len(self.args) != len(args):
             return False
-        for a,b in zip(self.args, args):
-            if not a.match(b):
-                return False
+        # __func__ to avoid type checking, as match() will excellently work
+        # on plain list.
+        if not List.match.__func__(self.args, args):
+            return False
         return True
     def instantiate(self, opcode, args, pos):
         if not self.mask:
