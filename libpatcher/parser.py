@@ -18,11 +18,20 @@ def parseFile(f, prev=()):
 
     instructions = []
     for line in chain(prev, f):
-        line = line.strip()
-
-        # remove comments - FIXME: what about # in strings?
-        if '#' in line:
-            line = line.split('#',1)[0].strip()
+        # remove comments
+        linewoc = '' # line without comment
+        in_str = ''
+        for c in line:
+            if in_str:
+                if c == in_str:
+                    in_str = ''
+            else:
+                if c in '#;': # our comment characters
+                    break
+                elif c in '"\'':
+                    in_str = c
+            linewoc += c
+        line = linewoc.strip() # remove trailing spaces
 
         # ignore empty lines
         if not line:
