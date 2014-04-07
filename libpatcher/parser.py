@@ -5,7 +5,7 @@ from itertools import chain
 
 class FilePos:
     " This holds current line info (filename, line text, line number) "
-    def __init__(self, filename, lnum=None, line=None):
+    def __init__(self, filename, lnum=0, line=''):
         self.filename = filename
         self.lnum = lnum
         self.line = line
@@ -18,7 +18,7 @@ class FilePos:
         " Useful for instructions to hold exact position "
         return FilePos(self.filename, self.lnum, self.line)
     def __str__(self):
-        return "%s\n%s@%s" % (self.line, self.filename, self.lnum)
+        return "\t\"%s\"\n%s, line %s" % (self.line, self.filename, self.lnum+1)
 
 class SyntaxError(Exception):
     def __init__(self, msg, pos):
