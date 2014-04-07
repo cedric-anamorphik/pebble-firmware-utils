@@ -220,11 +220,10 @@ def parseBlock(f, pos, definitions):
         if not if_state[-1]:
             continue # skip any code if current condition is not met
 
-        # process #{definitions} everywhere
-        # FIXME: definitions in beginning of line will be "swallowed" by code above
+        # process ${definitions} everywhere
         for d, v in definitions.items():
-            if type(v) is str and '#{'+d+'}' in line:
-                line = line.replace('#{'+d+'}', v)
+            if type(v) is str and '${'+d+'}' in line:
+                line = line.replace('${'+d+'}', v)
 
         if instructions == None: # not in block, reading mask
             # read mask: it consists of 00 f7 items, ? ?4 items, and "strings"
@@ -239,10 +238,10 @@ def parseBlock(f, pos, definitions):
                         bskip = 0
                     bstr += token
                 else:
-                    # process #definitions only outside of "strings"
+                    # process $definitions only outside of "strings"
                     for d, v in definitions.items():
-                        if type(v) is str and '#'+d in token: # FIXME: #var and #variable
-                            token = token.replace('#'+d, v)
+                        if type(v) is str and '$'+d in token: # FIXME: $var and $variable
+                            token = token.replace('$'+d, v)
 
                     ts = token.split()
                     for t in ts:
