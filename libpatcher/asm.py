@@ -92,7 +92,7 @@ class Reg(int, Argument):
     def is_reg(name):
         """ Checks whether string is valid register name """
         return name.upper() in _regs
-    def __init__(self, name=None, hi=None):
+    def __new__(cls, name=None, hi=None):
         """
         Usage: either Reg('name') or Reg(hi=True/False) or Reg()
         First is a plain register, others are masks
@@ -102,7 +102,7 @@ class Reg(int, Argument):
                 hi = True
             elif name == 'LO':
                 hi = False
-            self.mask = hi
+            mask = hi
             name = "%s register" % (
                 "High" if hi else
                 "Low" if hi == False else
@@ -110,8 +110,11 @@ class Reg(int, Argument):
             val = -1
         else:
             val = lookup(name)
-        self.name = name
-        return int.__init__(self)
+            mask = None
+        ret = int.__new__(cls, val)
+        ret.name = name
+        ret.mask = mask
+        return ret
     def __str__(self):
         return self.name
     def match(self, other):
@@ -260,7 +263,7 @@ def findInstruction(opcode, args, pos):
 
 ###
 # All the instruction definitions
-instruction('ADD', [Reg(hi=False), Num()])(lambda(c,rd,imm):
+instruction('ADD', [Reg("LO"), Num()])(lambda(c,rd,imm):
             (1 << 13) + (2 << 11) + (rd.val << 8) + imm)
 def _longJump(ctx, dest, bl):
     offset = dest.offset(ctx, 4)
