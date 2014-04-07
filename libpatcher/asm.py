@@ -310,7 +310,7 @@ def BL(ctx, label):
 @instruct_class
 class DCB(Instruction):
     def __init__(self, opcode=None, args=None, pos=None):
-        Instruction.__init__(self, opcode, args, None, pos)
+        Instruction.__init__(self, opcode, args, None, pos=pos)
         if args:
             code = ''
             for a in args:
@@ -330,6 +330,16 @@ class DCB(Instruction):
         return self.code
     def getSize(self):
         return len(self.code)
+@instruct_class
+class ALIGN(Instruction):
+    # TODO
+    opcode='ALIGN'
+    def instantiate(self, opcode, args, pos):
+        return ALIGN(opcode, args, None, pos=pos)
+    def getCode(self):
+        return '\x00\xBF'*(self.size/2)
+    def getSize(self):
+        return self.size
 instruction('DCH', [Num(bits=16)], 2, lambda(ctx,num): num)
 instruction('DCD', [Num(bits=32)], 4, lambda(ctx,num): pack('<I', num))
 instruction('NOP', [], 2, 0xBF00)
