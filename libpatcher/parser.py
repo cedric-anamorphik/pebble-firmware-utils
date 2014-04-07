@@ -136,7 +136,7 @@ def parseInstruction(line, pos):
     try:
         return asm.findInstruction(opcode, args, pos)
     except IndexError:
-        raise SyntaxError("Unknown instruction: %s %s" % (opcode, repr(args)), pos)
+        raise SyntaxError("Unknown instruction: %s %s" % (opcode, ','.join([repr(x) for x in args])), pos)
 
 def parseAsm(f, prev, pos):
     """
