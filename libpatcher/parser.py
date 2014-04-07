@@ -175,9 +175,9 @@ def parseBlock(f, pos, definitions):
                 for a in args:
                     if (("def" in cmd and a in definitions) or
                         ("val" in cmd and a in vals)):
-                        matched = not matched
+                        newstate = not newstate
                         break
-                if_state.append(matched)
+                if_state.append(newstate)
             elif cmd == "#else":
                 if len(if_state) <= 1:
                     raise SyntaxError("Unexpected #else", pos)
