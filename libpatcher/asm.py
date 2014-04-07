@@ -156,6 +156,10 @@ class Label(Argument):
             return context[self.name]
         except IndexError:
             raise LabelError
+    def offset(self, context, bits=None):
+        ofs = self.getAddress(context) - (context.getPosition()+4)
+        if bits and abs(ofs) >= (1<<bits):
+            raise LabelError("Offset is too far: %X" % ofs)
 class Str(str, Argument):
     """ This represents _quoted_ string """
     def __new__(cls, val=None):
