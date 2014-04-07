@@ -19,7 +19,14 @@ def parseFile(f, prev=()):
     instructions = []
     for line in chain(prev, f):
         line = line.strip()
-        # comments, empty lines..
+
+        # remove comments - FIXME: what about # in strings?
+        if '#' in line:
+            line = line.split('#',1)[0].strip()
+
+        # ignore empty lines
+        if not line:
+            continue
 
         # end of block?
         if line.startswith('}'):
