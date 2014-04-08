@@ -311,6 +311,14 @@ def parseBlock(f, pos, definitions):
                     print "Warning: spare characters after '}', will ignore: %s" % remainder
                 return (Mask(mask, mofs, mpos), instructions)
 
+            # plain labels:
+            label = line.split(None, 1)[0]
+            if label.endswith(':'): # really label
+                line = line.replace(label, '', 1).strip() # remove it
+                instructions.append(asm.LabelInstruction(label[:-1], pos))
+            if not line: # had only the label
+                continue
+
             instr = parseInstruction(line, pos)
             instructions.append(instr)
     if mask or bstr or bskip:
