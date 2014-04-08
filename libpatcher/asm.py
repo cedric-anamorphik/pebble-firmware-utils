@@ -173,7 +173,7 @@ class Instruction(object):
     """
     This class may represent either instruction definition (with masks instead of args)
     or real instruction (with concrete args and context).
-    Instruction handler may access its current opcode via ctx.opcode field.
+    Instruction handler may access its current opcode via self.opcode field.
     """
     def __init__(self, opcode, args, proc, mask=True, pos=None):
         self.opcode = opcode
@@ -283,8 +283,8 @@ def findInstruction(opcode, args, pos):
 # All the instruction definitions
 instruction('ADD', [Reg("LO"), Num()])(lambda(c,rd,imm):
             (1 << 13) + (2 << 11) + (rd.val << 8) + imm)
-def _longJump(ctx, dest, bl):
-    offset = dest.offset(ctx, 4)
+def _longJump(self, dest, bl):
+    offset = dest.offset(self, 4)
     offset = offset >> 1
     if abs(offset) >= 1<<22:
         raise ValueError("Offset %X exceeds maximum of %X!" %
@@ -296,11 +296,8 @@ def _longJump(ctx, dest, bl):
     hi = (hi_c << 11) + hi_o
     lo = (lo_c << 11) + lo_o
     return (hi,lo)
-instruction('BL', [Label()], 4, lambda(ctx,dest): _longJump(ctx,dest,True))
-instruction('B.W', [Label()], 4, lambda(ctx,dest): _longJump(ctx,dest,False))
-@instruction('BL', [Label()], 4)
-def BL(ctx, label):
-    pass
+instruction('BL', [Label()], 4, lambda(self,dest): _longJump(self,dest,True))
+instruction('B.W', [Label()], 4, lambda(self,dest): _longJump(self,dest,False))
 @instruct_class
 class DCB(Instruction):
     def __init__(self, opcode=None, args=None, pos=None):
@@ -335,8 +332,8 @@ class ALIGN(Instruction):
         return '\x00\xBF'*(self.size/2)
     def getSize(self):
         return self.size
-instruction('DCH', [Num(bits=16)], 2, lambda(ctx,num): num)
-instruction('DCD', [Num(bits=32)], 4, lambda(ctx,num): pack('<I', num))
+instruction('DCH', [Num(bits=16)], 2, lambda(self,num): num)
+instruction('DCD', [Num(bits=32)], 4, lambda(self,num): pack('<I', num))
 instruction('NOP', [], 2, 0xBF00)
 for cond, val in {
     'CC': 0x3, 'CS': 0x2, 'EQ': 0x0, 'GE': 0xA,
@@ -344,20 +341,20 @@ for cond, val in {
     'LT': 0xB, 'MI': 0x4, 'NE': 0x1, 'PL': 0x5,
     'VC': 0x7, 'VS': 0x6,
 }.items():
-    instruction('B'+cond, [Label()], 2, lambda(ctx,lbl):
-                (0b1101 << 12) + (val << 8) + (lbl.offset(ctx,9)>>1))
-    instruction('B'+cond+'.W', [Label()], 4, lambda(ctx,lbl):
-                ((0b11110 << 11) + (val << 6) + (lbl.offset(ctx,18) >> 12),
-                 (0b10000 << 11) + ((lbl.offset(ctx,18) & (2**11-1)) >> 1)))
+    instruction('B'+cond, [Label()], 2, lambda(self,lbl):
+                (0b1101 << 12) + (val << 8) + (lbl.offset(self,9)>>1))
+    instruction('B'+cond+'.W', [Label()], 4, lambda(self,lbl):
+                ((0b11110 << 11) + (val << 6) + (lbl.offset(self,18) >> 12),
+                 (0b10000 << 11) + ((lbl.offset(self,18) & (2**11-1)) >> 1)))
 @instruction(['CBZ','CBNZ'], [Reg('LO'), Label()])
-def CBx(ctx, reg, lbl):
-    offset = lbl.offset(ctx, 7)
-    op = 1 if 'N' in ctx.opcode else 0
+def CBx(self, reg, lbl):
+    offset = lbl.offset(self, 7)
+    op = 1 if 'N' in self.opcode else 0
     return ((0b1011 << 12) +
             (op << 11) +
             ((offset >> 5) << 9) +
             (1 << 8) +
             ((offset & 0b11111) << 3) +
             reg)
-instruction('B', [Label()], 2, lambda(ctx,lbl):
-            (0b11100 << 11) + lbl.offset(ctx, 12))
+instruction('B', [Label()], 2, lambda(self,lbl):
+            (0b11100 << 11) + lbl.offset(self, 12))
