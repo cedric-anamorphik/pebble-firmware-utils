@@ -211,10 +211,15 @@ class Instruction(object):
     def instantiate(self, opcode, args, pos):
         if not self.mask:
             raise ValueError("This is not mask, cannot instantiate")
-        ret = Instruction(opcode, args, self.proc, mask=False, pos=pos)
+        # this magic is to correctly call constructor of subclass
+        ret = self.__class__(opcode, args, self.proc, mask=False, pos=pos)
         if self.size != None:
             ret.size = self.size
-        ret.getSize = self.getSize
+        else:
+            # this magic is to correctly "replant" custom method to another
+            # instance
+            import types
+            ret.getSize = types.MethodType(self.getSize.__func__, ret)
         ret.original = self
         return ret
     def setAddr(self, addr):
@@ -357,8 +362,8 @@ class DCB(Instruction):
 @instruct_class
 class ALIGN(Instruction):
     # FIXME handle size properly
-    def __init__(self, opcode='ALIGN', args=[(Num(4),Num(2))], pos=None):
-        Instruction.__init__(self, opcode, args, None, pos=pos)
+    def __init__(self, opcode='ALIGN', args=[(Num(4),Num(2))], proc=None, mask=True, pos=None):
+        Instruction.__init__(self, opcode, args, proc, mask, pos)
         if pos: # not mask
             self.size = args[0]
     def getCode(self):
