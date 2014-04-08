@@ -4,6 +4,8 @@ class Block(object):
         self.mask = mask
         self.instructions = instructions
         self.context = {}
+    def __repr__(self):
+        return "<<<Block at\n%s:\n%s\n>>>" % (repr(self.mask), '\n'.join([repr(x) for x in self.instructions]))
     def getContext(self):
         " Returns block-local context dictionary "
         return self.context
