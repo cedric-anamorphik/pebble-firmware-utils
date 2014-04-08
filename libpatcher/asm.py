@@ -181,7 +181,7 @@ class Instruction(object):
         self.proc = proc
         self.mask = mask
         self.pos = pos
-        self.ctx = None
+        self.addr = None
         self.original = None
     def match(self, opcode, args):
         """ Match this definition to given instruction """
@@ -208,12 +208,17 @@ class Instruction(object):
         ret = Instruction(opcode, args, self.proc, mask=False, pos=pos)
         ret.original = self
         return ret
-    def setContext(self, ctx):
-        # FIXME: replace with setAddr, etc?
-        self.ctx = ctx
+    def setAddr(self, addr):
+        """
+        Sets memory address at which this particular instruction instance resides.
+        This is called somewhere after instantiate.
+        """
+        self.addr = addr
+    def getAddr(self):
+        return self.addr
     def getCode(self):
-        if not self.ctx: # FIXME: remove? (see above)
-            raise ValueError("No context, cannot calculate code")
+        if not self.addr:
+            raise ValueError("No address, cannot calculate code")
         if callable(self.proc):
             code = self.proc(self, *self.args)
         else:
@@ -326,8 +331,6 @@ class ALIGN(Instruction):
         Instruction.__init__(self, opcode, args, None, pos=pos)
         if pos: # not mask
             self.size = args[0]
-    def instantiate(self, opcode, args, pos):
-        return ALIGN(opcode, args, pos=pos)
     def getCode(self):
         return '\x00\xBF'*(self.size/2)
     def getSize(self):
