@@ -5,6 +5,7 @@ __all__ = ['parseFile']
 import asm
 from itertools import chain
 from mask import Mask
+from block import Block
 
 class FilePos:
     " This holds current line info (filename, line text, line number) "
@@ -309,7 +310,7 @@ def parseBlock(f, pos, definitions):
                 remainder = line[1:]
                 if remainder:
                     print "Warning: spare characters after '}', will ignore: %s" % remainder
-                return (Mask(mask, mofs, mpos), instructions)
+                return Block(Mask(mask, mofs, mpos), instructions)
 
             # plain labels:
             label = line.split(None, 1)[0]
@@ -323,7 +324,7 @@ def parseBlock(f, pos, definitions):
             instructions.append(instr)
     if mask or bstr or bskip:
         raise SyntaxError("Unexpected end of file", pos)
-    return None, None
+    return None
 
 def parseFile(f, definitions=None):
     """
@@ -337,13 +338,14 @@ def parseFile(f, definitions=None):
 
     pos = FilePos(f.name)
     while True:
-        mask, content = parseBlock(f, pos, definitions)
-        if not mask:
+        block = parseBlock(f, pos, definitions)
+        if not block:
             break
-        blocks.append((mask, content))
+        blocks.append(block)
     return blocks
 
 if __name__ == "__main__":
     import sys
     from pprint import pprint
-    pprint(parseFile(open(sys.argv[1])))
+    ret = parseFile(open(sys.argv[1]))
+    pprint(ret)
