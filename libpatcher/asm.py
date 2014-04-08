@@ -138,11 +138,11 @@ class Label(Argument):
         return (":%s"%self.name) if self.name else "Label"
     def match(self, other):
         return type(other) is Label
-    def getAddress(self, context):
+    def getAddress(self, instr):
         if not self.name:
             raise LabelError("This is a mask, not label!")
         try:
-            return context[self.name]
+            return instr.findLabel(self)
         except IndexError:
             raise LabelError
     def offset(self, context, bits=None):
@@ -216,6 +216,13 @@ class Instruction(object):
         self.addr = addr
     def getAddr(self):
         return self.addr
+    def setBlock(self, block):
+        self.block = block
+    def findLabel(self, label):
+        if label.name in self.block.getContext():
+            return self.block.getContext()[label.name]
+        # TODO: global context
+        raise LabelError("Label not found: %s" % repr(label))
     def getCode(self):
         if not self.addr:
             raise ValueError("No address, cannot calculate code")
@@ -243,6 +250,28 @@ class Instruction(object):
             ret += "(mask:%s)" % self.original
         return ret
 
+class LabelInstruction(Instruction):
+    """
+    This class represents an abstract label instruction. It has zero size.
+    It should be instantiated directly.
+    """
+    def __init__(self, name, pos, glob=False):
+        Instruction.__init__(self, None, [name], None, False, pos)
+        self.name = name
+        self.glob = glob
+    def setBlock(self, block):
+        self.block = block
+        if self.glob:
+            # TODO
+            raise ValueError("Not implemented yet")
+        else:
+            block.getContext()[self.name] = self.getAddr()
+    def getSize(self):
+        return 0
+    def getCode(self):
+        return ''
+    def __repr__(self):
+        return "LabelInstruction:%s" % self.name
 _instructions = []
 def instruction(opcode, args, size=2, proc=None):
     """
