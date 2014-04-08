@@ -183,6 +183,11 @@ class Instruction(object):
         self.pos = pos
         self.addr = None
         self.original = None
+    def __repr__(self):
+        ret = "<%s %s>" % (self.opcode, ','.join([repr(x) for x in self.args]))
+        if self.original:
+            ret += "(mask:%s)" % self.original
+        return ret
     def match(self, opcode, args):
         """ Match this definition to given instruction """
         if not self.mask:
@@ -244,11 +249,6 @@ class Instruction(object):
     def getPos(self):
         " pos is instruction's position in file "
         return self.pos
-    def __repr__(self):
-        ret = "<%s %s>" % (self.opcode, ','.join([repr(x) for x in self.args]))
-        if self.original:
-            ret += "(mask:%s)" % self.original
-        return ret
 
 class LabelInstruction(Instruction):
     """
@@ -259,6 +259,8 @@ class LabelInstruction(Instruction):
         Instruction.__init__(self, None, [name], None, False, pos)
         self.name = name
         self.glob = glob
+    def __repr__(self):
+        return "<label:%s>" % self.name
     def setBlock(self, block):
         self.block = block
         if self.glob:
@@ -270,8 +272,6 @@ class LabelInstruction(Instruction):
         return 0
     def getCode(self):
         return ''
-    def __repr__(self):
-        return "LabelInstruction:%s" % self.name
 _instructions = []
 def instruction(opcode, args, size=2, proc=None):
     """
