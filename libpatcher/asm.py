@@ -181,6 +181,7 @@ class Instruction(object):
         self.proc = proc
         self.mask = mask
         self.pos = pos
+        self.size = None
         self.addr = None
         self.original = None
     def __repr__(self):
@@ -211,6 +212,9 @@ class Instruction(object):
         if not self.mask:
             raise ValueError("This is not mask, cannot instantiate")
         ret = Instruction(opcode, args, self.proc, mask=False, pos=pos)
+        if self.size != None:
+            ret.size = self.size
+        ret.getSize = self.getSize
         ret.original = self
         return ret
     def setAddr(self, addr):

@@ -348,4 +348,6 @@ if __name__ == "__main__":
     import sys
     from pprint import pprint
     ret = parseFile(open(sys.argv[1]))
+    for b in ret:
+        b.bind(0x8010000)
     pprint(ret)
