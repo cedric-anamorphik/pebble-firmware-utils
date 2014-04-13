@@ -319,7 +319,7 @@ def findInstruction(opcode, args, pos):
 
 ###
 # All the instruction definitions
-instruction('ADD', [Reg("LO"), Num()])(lambda(c,rd,imm):
+instruction('ADD', [Reg("LO"), Num()], 2, lambda self,rd,imm:
             (1 << 13) + (2 << 11) + (rd.val << 8) + imm)
 def _longJump(self, dest, bl):
     offset = dest.offset(self, 4)
@@ -334,8 +334,8 @@ def _longJump(self, dest, bl):
     hi = (hi_c << 11) + hi_o
     lo = (lo_c << 11) + lo_o
     return (hi,lo)
-instruction('BL', [Label()], 4, lambda(self,dest): _longJump(self,dest,True))
-instruction('B.W', [Label()], 4, lambda(self,dest): _longJump(self,dest,False))
+instruction('BL', [Label()], 4, lambda self,dest: _longJump(self,dest,True))
+instruction('B.W', [Label()], 4, lambda self,dest: _longJump(self,dest,False))
 @instruct_class
 class DCB(Instruction):
     def __init__(self, opcode=None, args=None, pos=None):
@@ -370,8 +370,8 @@ class ALIGN(Instruction):
         return '\x00\xBF'*(self.size/2)
     def getSize(self):
         return self.size
-instruction('DCH', [Num(bits=16)], 2, lambda(self,num): num)
-instruction('DCD', [Num(bits=32)], 4, lambda(self,num): pack('<I', num))
+instruction('DCH', [Num(bits=16)], 2, lambda self,num: num)
+instruction('DCD', [Num(bits=32)], 4, lambda self,num: pack('<I', num))
 instruction('NOP', [], 2, 0xBF00)
 for cond, val in {
     'CC': 0x3, 'CS': 0x2, 'EQ': 0x0, 'GE': 0xA,
@@ -379,9 +379,9 @@ for cond, val in {
     'LT': 0xB, 'MI': 0x4, 'NE': 0x1, 'PL': 0x5,
     'VC': 0x7, 'VS': 0x6,
 }.items():
-    instruction('B'+cond, [Label()], 2, lambda(self,lbl):
+    instruction('B'+cond, [Label()], 2, lambda self,lbl:
                 (0b1101 << 12) + (val << 8) + (lbl.offset(self,9)>>1))
-    instruction('B'+cond+'.W', [Label()], 4, lambda(self,lbl):
+    instruction('B'+cond+'.W', [Label()], 4, lambda self,lbl:
                 ((0b11110 << 11) + (val << 6) + (lbl.offset(self,18) >> 12),
                  (0b10000 << 11) + ((lbl.offset(self,18) & (2**11-1)) >> 1)))
 @instruction(['CBZ','CBNZ'], [Reg('LO'), Label()])
@@ -394,5 +394,5 @@ def CBx(self, reg, lbl):
             (1 << 8) +
             ((offset & 0b11111) << 3) +
             reg)
-instruction('B', [Label()], 2, lambda(self,lbl):
+instruction('B', [Label()], 2, lambda self,lbl:
             (0b11100 << 11) + lbl.offset(self, 12))
