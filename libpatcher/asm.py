@@ -444,13 +444,14 @@ for cond, val in {
     Bcond_instruction(cond, val)
 @instruction(['CBZ','CBNZ'], [Reg('LO'), Label()])
 def CBx(self, reg, lbl):
-    offset = lbl.offset(self, 7)
+    lbl.off_range(self, 0, 126)
+    offset = lbl.offset(self, 7) >> 1
     op = 1 if 'N' in self.opcode else 0
     return ((0b1011 << 12) +
             (op << 11) +
             ((offset >> 5) << 9) +
             (1 << 8) +
-            ((offset & 0b11111) << 3) +
+            ((offset & (2**5-1)) << 3) +
             reg)
 instruction('B', [Label()], 2, lambda self,lbl:
             (0b11100 << 11) + (lbl.offset(self, 12)>>1))
