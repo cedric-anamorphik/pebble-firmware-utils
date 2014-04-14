@@ -18,7 +18,12 @@ class Mask(object):
         self.pos = pos
         # TODO: validate
     def __repr__(self):
-        return "Mask at %s: %s @%d" % (self.pos, ','.join([repr(x) for x in self.parts]), self.offset)
+        def str2hex(s):
+            if type(s) is int:
+                return "?%d" % s
+            else:
+                return ' '.join(["%02X" % ord(c) for c in s])
+        return "Mask at %s: %s @%d" % (self.pos, ','.join([str2hex(x) for x in self.parts]), self.offset)
     def match(self, data):
         """
         Tries to match this mask to given data.
