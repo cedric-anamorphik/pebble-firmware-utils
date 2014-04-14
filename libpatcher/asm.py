@@ -540,7 +540,7 @@ instruction('B', [Label()], 2, lambda self,lbl:
 @instruct_class
 class GlobalLabel(LabelInstruction):
     def __init__(self):
-        Instruction.__init__(self, "global", [Label()], None)
+        Instruction.__init__(self, ["global","proc"], [Label()], None)
     def instantiate(self, opcode, args, pos):
         label = args[0]
         return LabelInstruction(label, pos, glob=True)
