@@ -16,7 +16,7 @@ def op(instr, addr=0, context={}):
     block = Block(None, [i])
     block.bind(addr)
     context['self'] = addr # add fake "self" label for our instruction
-    context['next4'] = addr+4
+    context['next'] = addr+4
     block.context.update(context) # append our "fake" labels
     return i.getCode()
 
@@ -30,6 +30,8 @@ def test_BL_self():
     eq_(op('BL self'), '\xFF\xF7\xFE\xFF')
 def test_BW_self():
     eq_(op('B.W self'), '\xFF\xF7\xFE\xBF')
+def test_BW_next():
+    eq_(op('B.W next'), '\x00\xF0\x00\xB8')
 def test_DCH_0x1234():
     assert op('DCH 0x1234') == '\x34\x12'
 @raises(ParseError)
@@ -45,9 +47,9 @@ def test_BEQ_self():
     eq_(op('BEQ self'), '\xFE\xD0')
 def test_BNE_W_self():
     eq_(op('BNE.W self'), '\x7F\xF4\xFE\xAF')
-def test_CBZ_R3_next4():
-    eq_(op('CBZ R3, next4'), '\x03\xB1')
-def test_CBNZ_R7_next4():
-    eq_(op('CBNZ R7, next4'), '\x07\xB9')
+def test_CBZ_R3_next():
+    eq_(op('CBZ R3, next'), '\x03\xB1')
+def test_CBNZ_R7_next():
+    eq_(op('CBNZ R7, next'), '\x07\xB9')
 def test_B_self():
     eq_(op('B self'), '\xFE\xE7')
