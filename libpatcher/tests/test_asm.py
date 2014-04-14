@@ -42,5 +42,7 @@ def test_BCC_self():
     eq_(op('BCC self'), '\xFE\xD3')
 def test_BEQ_self():
     eq_(op('BEQ self'), '\xFE\xD0')
+def test_BNE_W_self():
+    eq_(op('BNE.W self'), '\x7F\xF4\xFE\xAF')
 def test_B_self():
     eq_(op('B self'), '\xFE\xE7')
