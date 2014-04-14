@@ -149,6 +149,11 @@ class Label(Argument):
         ofs = self.getAddress(instr) - (instr.getAddr()+4)
         if bits and abs(ofs) >= (1<<bits):
             raise LabelError("Offset is too far: %X" % ofs)
+        if ofs < 0:
+            if not bits:
+                print "Warning: negative offset and no bitlength provided!"
+                bits = ofs.bit_length()
+            ofs = (1<<bits) + ofs
         return ofs
 class Str(str, Argument):
     """ This represents _quoted_ string """
