@@ -88,6 +88,10 @@ class Num(int, Argument):
                 return (val >> shift) & (2**bits-1)
             if type(other) is not Num:
                 return False
+            if abs(other) > 2**32-1:
+                return False # too large
+            if other < 0:
+                other += 2**32 # convert to positive
             try:
                 val = encode(other)
             except ValueError:
