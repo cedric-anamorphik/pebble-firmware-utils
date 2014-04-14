@@ -3,7 +3,7 @@ __all__ = ['Num', 'List', 'Reg', 'Label', 'Str',
            #'Argument', 'LabelError', 'Instruction',
            'findInstruction']
 
-from struct import pack
+from struct import pack,unpack
 
 ###
 # Instruction argument types:
@@ -567,6 +567,6 @@ class ValInstruction(NullInstruction):
         self.block = block
         # get value...
         addr = self.getAddr()-0x8010000 # FIXME: codebase
-        value = unpack('<I', self.block.patch.data[addr:addr+4])[0]
+        value = unpack('<I', self.block.patch.binary[addr:addr+4])[0]
         # ...and store it at patch level
         block.patch.context[self.name] = value
