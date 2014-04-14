@@ -26,11 +26,9 @@ def test_ADD_R1_1():
 #def test_MOV_R0_2C():
 #    assert op('MOV R0,0x2C') == '\x2c\x20'
 def test_BL_self():
-    # FIXME: what is the right code?
-    eq_(op('BL self'), '\xFF\xF7\xFE\x00')
+    eq_(op('BL self'), '\xFF\xF7\xFE\xFF')
 def test_BW_self():
-    # FIXME: what is the right code?
-    eq_(op('B.W self'), '\xFF\xF7\xFE\x00')
+    eq_(op('B.W self'), '\xFF\xF7\xFE\xBF')
 def test_DCH_0x1234():
     assert op('DCH 0x1234') == '\x34\x12'
 @raises(ParseError)
@@ -40,7 +38,7 @@ def test_DCD_0xDEADBEEF():
     assert op('DCD 0xDEADBEEF') == '\xEF\xBE\xAD\xDE'
 def test_NOP():
     assert op('NOP') == '\x00\xBF'
-def test_local_label_with_BCC():
-    op('BCC self')
+def test_BCC_self():
+    eq_(op('BCC self'), '\x00\x00')
 def test_B_self():
     eq_(op('B self'), '\xFE\xE7')
