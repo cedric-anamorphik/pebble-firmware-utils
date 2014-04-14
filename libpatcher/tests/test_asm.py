@@ -1,6 +1,7 @@
 from libpatcher.asm import *
 from libpatcher.parser import *
 from libpatcher.parser import parseBlock, parseInstruction
+from libpatcher.block import *
 from nose.tools import *
 
 def op(instr, addr=0, context={}):
@@ -12,10 +13,8 @@ def op(instr, addr=0, context={}):
     assert i
     if addr < 0x8010000:
         addr += 0x8010000
-    i.setAddr(addr)
-    block = [i]
-    #FIXME: block.context = context
-    i.setBlock(block)
+    block = Block(None, [i])
+    block.bind(addr)
     return i.getCode()
 
 def test_ADD_R1_1():
