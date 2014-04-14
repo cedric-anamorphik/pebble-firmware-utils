@@ -147,7 +147,10 @@ def parseInstruction(line, pos):
         raise SyntaxError("Unknown instruction: %s %s" % (opcode, ','.join([repr(x) for x in args])), pos)
 
 def parseBlock(f, pos, definitions):
-    " Parses one mask from patch file. Returns results (mask and block contents) as tuple "
+    """
+    Parses one mask from patch file.
+    Returns results (mask and block contents) as tuple
+    """
 
     # for #commands:
     if_state = [True] # this True should always be there
