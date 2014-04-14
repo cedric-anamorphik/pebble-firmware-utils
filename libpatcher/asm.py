@@ -397,4 +397,4 @@ def CBx(self, reg, lbl):
             ((offset & 0b11111) << 3) +
             reg)
 instruction('B', [Label()], 2, lambda self,lbl:
-            (0b11100 << 11) + lbl.offset(self, 12))
+            (0b11100 << 11) + (lbl.offset(self, 12)>>1))
