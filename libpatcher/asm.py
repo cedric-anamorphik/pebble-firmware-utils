@@ -166,6 +166,10 @@ class Label(Argument):
         Doesn't test maximum width, so consider using off_max!
         Maximum supported offset width is 32 bits.
         """
+        if bits+shift > 32:
+            raise ValueError("off_s doesn't support "
+                             "offset width more than 32 bits! "
+                             "bits=%s, shift=%s" % (bits,shift))
         ofs = self.offset(instr, 32) # 32 for negative offsets to be 1-padded
         return (ofs >> shift) & (2**bits-1)
     def off_max(self, instr, bits):
