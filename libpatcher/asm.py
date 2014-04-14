@@ -320,7 +320,7 @@ def findInstruction(opcode, args, pos):
 ###
 # All the instruction definitions
 instruction('ADD', [Reg("LO"), Num()], 2, lambda self,rd,imm:
-            (1 << 13) + (2 << 11) + (rd.val << 8) + imm)
+            (1 << 13) + (2 << 11) + (rd << 8) + imm)
 def _longJump(self, dest, bl):
     offset = dest.offset(self, 4)
     offset = offset >> 1
