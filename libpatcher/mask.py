@@ -48,6 +48,7 @@ class Mask(object):
                     else:
                         break
             else: # not breaked -> matched
+                print found
                 if found: # was already found? -> duplicate match
                     raise AmbiguousMaskError(self)
                 found = True

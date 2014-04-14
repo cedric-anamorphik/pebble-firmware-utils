@@ -23,7 +23,7 @@ class Block(object):
             # if position was not calculated yet
             # or if bin/codebase provided and not same as were saved
             if binary is None:
-                raise ValueError("No position nor binary provided")
+                raise ValueError("No saved position and binary not provided")
             self.position = self.mask.match(binary) + codebase
             self._binary, self._codebase = binary, codebase
         return self.position
