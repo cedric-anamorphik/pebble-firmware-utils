@@ -377,17 +377,20 @@ class ALIGN(Instruction):
 instruction('DCH', [Num(bits=16)], 2, lambda self,num: pack('<H', num))
 instruction('DCD', [Num(bits=32)], 4, lambda self,num: pack('<I', num))
 instruction('NOP', [], 2, 0xBF00)
+def Bcond_instruction(cond, val):
+    print cond,val
+    instruction('B'+cond, [Label()], 2, lambda self,lbl:
+                (0b1101 << 12) + (val << 8) + (lbl.offset(self,9)>>1))
+    instruction('B'+cond+'.W', [Label()], 4, lambda self,lbl:
+                ((0b11110 << 11) + (val << 6) + (lbl.offset(self,18) >> 12),
+                 (0b10000 << 11) + ((lbl.offset(self,18) & (2**11-1)) >> 1)))
 for cond, val in {
     'CC': 0x3, 'CS': 0x2, 'EQ': 0x0, 'GE': 0xA,
     'GT': 0xC, 'HI': 0x8, 'LE': 0xD, 'LS': 0x9,
     'LT': 0xB, 'MI': 0x4, 'NE': 0x1, 'PL': 0x5,
     'VC': 0x7, 'VS': 0x6,
 }.items():
-    instruction('B'+cond, [Label()], 2, lambda self,lbl:
-                (0b1101 << 12) + (val << 8) + (lbl.offset(self,9)>>1))
-    instruction('B'+cond+'.W', [Label()], 4, lambda self,lbl:
-                ((0b11110 << 11) + (val << 6) + (lbl.offset(self,18) >> 12),
-                 (0b10000 << 11) + ((lbl.offset(self,18) & (2**11-1)) >> 1)))
+    Bcond_instruction(cond, val)
 @instruction(['CBZ','CBNZ'], [Reg('LO'), Label()])
 def CBx(self, reg, lbl):
     offset = lbl.offset(self, 7)
