@@ -50,7 +50,7 @@ class Num(int, Argument):
             return True
         return other == self
     def part(self, bits, shift=0):
-        return (self << shift) & (2**bits-1)
+        return (self >> shift) & (2**bits-1)
     class ThumbExpandable(Argument):
         """ Number compatible with ThumbExpandImm function """
         def __init__(self, bits=12):
