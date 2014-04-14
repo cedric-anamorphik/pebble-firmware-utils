@@ -82,12 +82,16 @@ def parseInstruction(line, pos):
         elif t in ['"\\', "'\\"]: # state: backslash in quoted string
             s += c
             t=t[0]
-        elif t == 'n': # number, maybe hex
+        elif t == 'n': # number, maybe 0xHEX or 0bBINARY or 0octal
             if c.isdigit() or c in 'aAbBcCdDeEfFxX':
                 s += c
             else:
                 domore = True # need to process current character further
                 try:
+                    # for consistency with old version's behaviour,
+                    # treat all numeric 'db' arguments as hexadecimal
+                    if opcode == "db":
+                        s = "0x"+s
                     args.append(asm.Num(s))
                 except ValueError:
                     raise ParseError("Invalid number: %s" % s, pos)
