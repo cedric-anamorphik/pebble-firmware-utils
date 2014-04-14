@@ -146,6 +146,13 @@ class Label(Argument):
         except IndexError:
             raise LabelError
     def offset(self, instr, bits=None):
+        """
+        Returns offset from given instruction to this label.
+        bits - maximum bit-width for offset;
+            if offset doesn't fit that width,
+            LabelError will be raised.
+        This method is intended to be used one time, in non-lambda procs.
+        """
         ofs = self.getAddress(instr) - (instr.getAddr()+4)
         if bits and abs(ofs) >= (1<<bits):
             raise LabelError("Offset is too far: %X" % ofs)
@@ -155,6 +162,24 @@ class Label(Argument):
                 bits = ofs.bit_length()
             ofs = (1<<bits) + ofs
         return ofs
+    def off_s(self, instr, bits, shift):
+        """
+        Returns `bits' bits of offset, starting from `shift' bit.
+        To be used in lambdas.
+        Doesn't test maximum width, so consider using off_max!
+        Maximum supported offset width is 32 bits.
+        """
+        ofs = self.offset(instr, 32) # 32 for negative offsets to be 1-padded
+        return (ofs >> shift) & (2**bits-1)
+    def off_max(self, instr, bits):
+        """
+        Tests if offset from given instruction to this label
+        fits in `bits' bits.
+        Returns 0 on success, for usage in lambdas.
+        Raises LabelError on failure.
+        """
+        self.offset(instr, bits)
+        return 0
 class Str(str, Argument):
     """ This represents _quoted_ string """
     def __new__(cls, val=None):
