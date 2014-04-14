@@ -49,6 +49,56 @@ class Num(int, Argument):
                 return False
             return True
         return other == self
+    class ThumbExpandable(Argument):
+        """ Number compatible with ThumbExpandImm function """
+        def __init__(self, bits=12):
+            self.bits = bits
+        def __repr__(self):
+            return "ThumbExpandable integer for %s bits"
+        def match(self, other):
+            def encode(n):
+                " Encodes n to thumb-form or raises ValueError if impossible "
+                # 11110 i 0 0010 S 1111   0 imm3 rd4 imm8
+                if n <= 0xFF: # 1 byte
+                    return n
+                b1 = n >> 24
+                b2 = (n >> 16) & 0xFF
+                b3 = (n >> 8) & 0xFF
+                b4 = n & 0xFF
+                if b1 == b2 == b3 == b4:
+                    return (0b11 << 8) + b1
+                if b1 == 0 and b3 == 0:
+                    return (0b01 << 8) + b2
+                if b2 == 0 and b4 == 0:
+                    return (0b10 << 8) + b1
+                # rotating scheme
+                def rol(n, ofs):
+                    return ((n << ofs) & 0xFFFFFFFF) | (n >> (32-ofs))
+                    # maybe buggy for x >= 1<<32,
+                    # but we will not have such values -
+                    # see parseNumber above for explanation
+                print hex(n)
+                for i in range(0b1000, 32): # lower values will cause autodetermining to fail
+                    val = rol(n, i)
+                    print i,hex(val)
+                    if (val & 0xFFFFFF00) == 0 and (val & 0xFF) == 0x80 + (val & 0x7F): # correct
+                        return ((i << 7) & 0xFFF) + (val & 0x7F)
+                print n, val
+                raise ValueError
+            def the(bits, shift):
+                return (val >> shift) & (2**bits-1)
+            if type(other) is not Num:
+                return False
+            try:
+                val = encode(other)
+            except ValueError:
+                return False
+            other.theval = val
+            other.the = the
+            other.imm8 = val & (2**8-1)
+            other.imm3 = (val >> 8) & (2**3-1)
+            other.i = val >> 11
+            return True
 
 class List(list, Argument):
     def match(self, other):
