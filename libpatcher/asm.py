@@ -290,7 +290,10 @@ class Instruction(object):
     def findLabel(self, label):
         if label.name in self.block.getContext():
             return self.block.getContext()[label.name]
-        # TODO: global context
+        if label.name in self.block.patch.context:
+            return self.block.patch.context[label.name]
+        if label.name in self.block.patch.library.context:
+            return self.block.patch.library.context[label.name]
         raise LabelError("Label not found: %s" % repr(label))
     def getCode(self):
         if not self.addr:
