@@ -4,13 +4,14 @@ class Block(object):
         self.patch = patch
         self.mask = mask
         self.instructions = instructions
-        self.context = {}
+        self._context = {}
         self.position = None # to cache mask.match() result
     def __repr__(self):
         return "<<<Block at\n%s:\n%s\n>>>" % (repr(self.mask), '\n'.join([repr(x) for x in self.instructions]))
-    def getContext(self):
-        " Returns block-local context dictionary "
-        return self.context
+    @property
+    def context(self):
+        " Block-local context dictionary "
+        return self._context
     def getMask(self):
         return self.mask
     def getPosition(self, binary=None):

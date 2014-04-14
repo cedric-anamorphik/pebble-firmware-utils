@@ -341,8 +341,8 @@ class Instruction(object):
     def setBlock(self, block):
         self.block = block
     def findLabel(self, label):
-        if label.name in self.block.getContext():
-            return self.block.getContext()[label.name]
+        if label.name in self.block.context:
+            return self.block.context[label.name]
         if label.name in self.block.patch.context:
             return self.block.patch.context[label.name]
         if label.name in self.block.patch.library.context:
@@ -386,7 +386,7 @@ class LabelInstruction(Instruction):
         if self.glob:
             block.patch.context[self.name] = self.getAddr()
         else:
-            block.getContext()[self.name] = self.getAddr()
+            block.context[self.name] = self.getAddr()
     def getSize(self):
         return 0
     def getCode(self):
