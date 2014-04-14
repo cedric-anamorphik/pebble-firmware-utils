@@ -145,6 +145,8 @@ class Label(Argument):
             return instr.findLabel(self)
         except IndexError:
             raise LabelError
+    def _getOffset(self, instr):
+        return self.getAddress(instr) - (instr.getAddr()+4)
     def offset(self, instr, bits):
         """
         Returns offset from given instruction to this label.
@@ -153,7 +155,7 @@ class Label(Argument):
             LabelError will be raised.
         This method is intended to be used one time, in non-lambda procs.
         """
-        ofs = self.getAddress(instr) - (instr.getAddr()+4)
+        ofs = self._getOffset(instr)
         if abs(ofs) >= (1<<bits):
             raise LabelError("Offset is too far: %X" % ofs)
         if ofs < 0:
@@ -180,6 +182,26 @@ class Label(Argument):
         Raises LabelError on failure.
         """
         self.offset(instr, bits)
+        return 0
+    def off_pos(self, instr):
+        """
+        Validates that offset from given instruction to this label
+        is positive.
+        Returns 0 on success, for usage in lambdas.
+        """
+        if self._getOffset(instr) < 0:
+            raise LabelError("Negative offset not allowed here")
+        return 0
+    def off_range(self, instr, min, max):
+        """
+        Tests if offset from given instruction to this label
+        fits given range.
+        Returns 0 on success, for usage in lambdas.
+        Raises LabelError on failure.
+        """
+        ofs = self._getOffset(instr)
+        if ofs < min or ofs > max:
+            raise LabelError("Offset %X doesn't fit range %X..%X" % (ofs, min, max))
         return 0
 class Str(str, Argument):
     """ This represents _quoted_ string """
