@@ -224,9 +224,10 @@ def parseBlock(f, pos, definitions, patch):
                 if not os.path.isabs(arg):
                     arg = os.path.join(os.path.dirname(f.name), arg)
                 f = open(arg, 'r')
-                # TODO: add f to loading queue, or load it just now somehow
-                # But what to do with result?
-                raise ParseError("#include is not implemented yet...", pos)
+                # parse this file into this patch's library patch.
+                # If this is already library patch,
+                # its library property will return itself.
+                parseFile(f, definitions, patch=patch.library)
             else:
                 raise ParseError("Unknown command: %s" % cmd, pos)
             continue # to next line
