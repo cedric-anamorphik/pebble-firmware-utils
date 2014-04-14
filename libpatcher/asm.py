@@ -384,8 +384,7 @@ class LabelInstruction(Instruction):
     def setBlock(self, block):
         self.block = block
         if self.glob:
-            # TODO
-            raise ValueError("Not implemented yet")
+            block.patch.context[self.name] = self.getAddr()
         else:
             block.getContext()[self.name] = self.getAddr()
     def getSize(self):
