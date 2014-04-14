@@ -434,7 +434,7 @@ instruction(['MOV','MOVS'], [Reg(), Reg()], 2, lambda self,rd,rm:
             (0b1000110 << 8) + ((rd>>3) << 7) + (rm << 3) + ((rd&0b111) << 0))
 instruction(['MOV','MOVS'], [Reg("LO"), Num(bits=8)], 2, lambda self,rd,imm:
             (1 << 13) + (rd << 8) + imm)
-instruction(['MOV','MOV.W','MOVW','MOVS','MOVS.W'], [Reg(), Num.ThumbExpandable()], 4, lambda self,rd,imm:
+instruction(['MOV','MOV.W','MOVS','MOVS.W'], [Reg(), Num.ThumbExpandable()], 4, lambda self,rd,imm:
             (
                 (0b11110 << 11) +
                 (imm.the(1,11) << 10) +
@@ -444,6 +444,16 @@ instruction(['MOV','MOV.W','MOVW','MOVS','MOVS.W'], [Reg(), Num.ThumbExpandable(
                 (imm.the(3,8) << 12) +
                 (rd << 8) +
                 (imm.the(8,0) << 0)
+            ))
+instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16)], 4, lambda self,rd,imm:
+            (
+                (0b11110 << 11) +
+                (imm.part(1, 11) << 10) +
+                (0b1001 << 6) +
+                (imm.part(4, 12)),
+                (imm.part(3, 8) << 12) +
+                (rd << 8) +
+                (imm.part(8))
             ))
 def _longJump(self, dest, bl):
     offset = dest.offset(self, 23)

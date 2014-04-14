@@ -30,10 +30,14 @@ def test_ADD_R1_1():
 #    assert op('ADD R3,R0,R2') == '\x83\x18'
 def test_MOV_R0_2C():
     eq_(op('MOV R0,0x2C'), '\x2c\x20')
-def test_MOV_R0_R5():
-    eq_(op('MOV R0,R5'), '\x28\x46')
+def test_MOVS_R0_R5():
+    eq_(op('MOVS R0,R5'), '\x28\x46')
 def test_MOVW_R1_0xFF000():
     eq_(op('MOV.W R1,0xFF000'),'\x4F\xF4\x7F\x21')
+def test_MOV_R2_50000():
+    eq_(op('MOV R2,50000'),'\x4C\xF2\x50\x31')
+def test_MOV_R2_m50000():
+    eq_(op('MOV R2,-50000'),'\x4F\xF4\x7F\x21')
 def test_BL_self():
     eq_(op('BL self'), '\xFF\xF7\xFE\xFF')
 def test_BW_self():
