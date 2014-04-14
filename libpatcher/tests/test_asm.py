@@ -4,7 +4,7 @@ from libpatcher.parser import parseBlock, parseInstruction
 from libpatcher.block import *
 from nose.tools import *
 
-def op(instr, addr=0, context={}):
+def op_gen(instr, addr=0, context={}):
     pos = FilePos('test_asm.pbp',0)
     if type(instr) is str:
         i = parseInstruction(instr, pos)
@@ -18,7 +18,9 @@ def op(instr, addr=0, context={}):
     context['self'] = addr # add fake "self" label for our instruction
     context['next'] = addr+4
     block.context.update(context) # append our "fake" labels
-    return i.getCode()
+    return i
+def op(instr, addr=0, context={}):
+    return op_gen(instr, addr, context).getCode()
 
 def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
@@ -53,3 +55,5 @@ def test_CBNZ_R7_next():
     eq_(op('CBNZ R7, next'), '\x07\xB9')
 def test_B_self():
     eq_(op('B self'), '\xFE\xE7')
+def test_global_label():
+    instr = op_gen('global label')
