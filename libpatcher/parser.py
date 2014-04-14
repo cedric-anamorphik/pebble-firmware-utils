@@ -113,7 +113,7 @@ def parseInstruction(line, pos):
             raise ValueError("Internal error: illegal type state %s" % t)
 
         if domore: # current character was not processed yet
-            if c.isdigit():
+            if c.isdigit() or c == '-':
                 s += c
                 t = 'n'
             elif c.isalpha() or c == '_':
