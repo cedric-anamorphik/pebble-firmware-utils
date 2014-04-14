@@ -16,6 +16,8 @@ def op(instr, addr=0, context={}):
     block = Block(None, [i])
     block.bind(addr)
     context['self'] = addr # add fake "self" label for our instruction
+    context['next2'] = addr+2
+    context['next4'] = addr+4
     block.context.update(context) # append our "fake" labels
     return i.getCode()
 
@@ -44,5 +46,7 @@ def test_BEQ_self():
     eq_(op('BEQ self'), '\xFE\xD0')
 def test_BNE_W_self():
     eq_(op('BNE.W self'), '\x7F\xF4\xFE\xAF')
+def test_CBZ_R3_self():
+    eq_(op('CBZ R3, next4'), '\x03\xB1')
 def test_B_self():
     eq_(op('B self'), '\xFE\xE7')
