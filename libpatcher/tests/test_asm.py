@@ -43,9 +43,12 @@ def test_MOVS_R0_R5():
 def test_MOVW_R1_0xFF000():
     eq_(op('MOV.W R1,0xFF000'),'\x4F\xF4\x7F\x21')
 def test_MOV_R2_50000():
-    eq_(op('MOV R2,50000'),'\x4C\xF2\x50\x31')
+    eq_(op('MOV R2,50000'),'\x4C\xF2\x50\x32')
 def test_MOV_R2_m50000():
     eq_(op('MOV R2,-50000'),'\x4F\xF4\x7F\x21')
+@raises(ParseError)
+def test_MOVW_R1_m1_fails():
+    print op('MOVW R1,-1')
 def test_BL_self():
     eq_(op('BL self'), '\xFF\xF7\xFE\xFF')
 def test_BW_self():

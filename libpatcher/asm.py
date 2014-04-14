@@ -445,7 +445,7 @@ instruction(['MOV','MOV.W','MOVS','MOVS.W'], [Reg(), Num.ThumbExpandable()], 4, 
                 (rd << 8) +
                 (imm.the(8,0) << 0)
             ))
-instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16)], 4, lambda self,rd,imm:
+instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16, positive=True)], 4, lambda self,rd,imm:
             (
                 (0b11110 << 11) +
                 (imm.part(1, 11) << 10) +
