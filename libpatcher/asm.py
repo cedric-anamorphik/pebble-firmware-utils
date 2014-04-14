@@ -77,13 +77,10 @@ class Num(int, Argument):
                     # maybe buggy for x >= 1<<32,
                     # but we will not have such values -
                     # see parseNumber above for explanation
-                print hex(n)
                 for i in range(0b1000, 32): # lower values will cause autodetermining to fail
                     val = rol(n, i)
-                    print i,hex(val)
                     if (val & 0xFFFFFF00) == 0 and (val & 0xFF) == 0x80 + (val & 0x7F): # correct
                         return ((i << 7) & 0xFFF) + (val & 0x7F)
-                print n, val
                 raise ValueError
             def the(bits, shift):
                 return (val >> shift) & (2**bits-1)
