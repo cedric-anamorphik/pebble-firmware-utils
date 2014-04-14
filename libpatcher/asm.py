@@ -370,7 +370,16 @@ class Instruction(object):
         " pos is instruction's position in patch file "
         return self.pos
 
-class LabelInstruction(Instruction):
+class NullInstruction(Instruction):
+    """
+    This class represents instruction with no code.
+    It is intended to be subclassed.
+    """
+    def getSize(self):
+        return 0
+    def getCode(self):
+        return ''
+class LabelInstruction(NullInstruction):
     """
     This class represents an abstract label instruction. It has zero size.
     It should be instantiated directly.
@@ -387,10 +396,6 @@ class LabelInstruction(Instruction):
             block.patch.context[self.name] = self.getAddr()
         else:
             block.context[self.name] = self.getAddr()
-    def getSize(self):
-        return 0
-    def getCode(self):
-        return ''
 _instructions = []
 def instruction(opcode, args, size=2, proc=None):
     """
