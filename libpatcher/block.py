@@ -19,3 +19,8 @@ class Block(object):
             i.setAddr(addr)
             addr += i.getSize()
             i.setBlock(self) # it may in return update our context, so call after setAddr
+    def getCode(self):
+        """
+        Calculstes and returns binary code of this whole block.
+        """
+        return sum([i.getCode() for i in self.instructions])
