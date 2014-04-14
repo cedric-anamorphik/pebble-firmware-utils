@@ -324,7 +324,7 @@ class LabelInstruction(Instruction):
         self.name = name
         self.glob = glob
     def __repr__(self):
-        return "<label:%s>" % self.name
+        return "<%slabel:%s>" % ("global " if self.glob else "", self.name)
     def setBlock(self, block):
         self.block = block
         if self.glob:
@@ -455,3 +455,10 @@ def CBx(self, reg, lbl):
             reg)
 instruction('B', [Label()], 2, lambda self,lbl:
             (0b11100 << 11) + (lbl.offset(self, 12)>>1))
+@instruct_class
+class GlobalLabel(LabelInstruction):
+    def __init__(self):
+        Instruction.__init__(self, "global", [Label()], None)
+    def instantiate(self, opcode, args, pos):
+        label = args[0]
+        return LabelInstruction(label, pos, glob=True)
