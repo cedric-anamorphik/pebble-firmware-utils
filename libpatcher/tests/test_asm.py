@@ -28,8 +28,12 @@ def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
 #def test_ADD_R3_R0_R2():
 #    assert op('ADD R3,R0,R2') == '\x83\x18'
-#def test_MOV_R0_2C():
-#    assert op('MOV R0,0x2C') == '\x2c\x20'
+def test_MOV_R0_2C():
+    eq_(op('MOV R0,0x2C'), '\x2c\x20')
+def test_MOV_R0_R5():
+    eq_(op('MOV R0,R5'), '\x28\x46')
+def test_MOVW_R1_0xFF000():
+    eq_(op('MOV.W R1,0xFF000'),'\x4F\xF4\x7F\x21')
 def test_BL_self():
     eq_(op('BL self'), '\xFF\xF7\xFE\xFF')
 def test_BW_self():

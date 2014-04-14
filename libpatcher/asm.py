@@ -429,6 +429,23 @@ def findInstruction(opcode, args, pos):
 # All the instruction definitions
 instruction('ADD', [Reg("LO"), Num()], 2, lambda self,rd,imm:
             (1 << 13) + (2 << 11) + (rd << 8) + imm)
+instruction('MOV', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
+            (0 << 6) + (rm << 3) + rd)
+instruction(['MOV','MOVS'], [Reg(), Reg()], 2, lambda self,rd,rm:
+            (0b1000110 << 8) + ((rd>>3) << 7) + (rm << 3) + ((rd&0b111) << 0))
+instruction(['MOV','MOVS'], [Reg("LO"), Num(bits=8)], 2, lambda self,rd,imm:
+            (1 << 13) + (rd << 8) + imm)
+instruction(['MOV','MOV.W','MOVW','MOVS','MOVS.W'], [Reg(), Num.ThumbExpandable()], 4, lambda self,rd,imm:
+            (
+                (0b11110 << 11) +
+                (imm.the(1,11) << 10) +
+                (0b10 << 5) +
+                ((1 if 'S' in self.opcode else 0) << 4) +
+                (0b1111 << 0),
+                (imm.the(3,8) << 12) +
+                (rd << 8) +
+                (imm.the(8,0) << 0)
+            ))
 def _longJump(self, dest, bl):
     offset = dest.offset(self, 23)
     offset = offset >> 1
