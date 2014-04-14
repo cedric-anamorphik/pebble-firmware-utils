@@ -34,7 +34,7 @@ class Mask(object):
         found = False
         while pos != -1:
             pos2 = pos
-            for p in parts[1:]:
+            for p in self.parts[1:]:
                 if type(p) is int:
                     pos2 += p
                 else:
