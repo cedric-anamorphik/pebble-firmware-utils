@@ -407,8 +407,12 @@ def Bcond_instruction(cond, val):
     instruction('B'+cond, [Label()], 2, lambda self,lbl:
                 (0b1101 << 12) + (val << 8) + (lbl.offset(self,9)>>1))
     instruction('B'+cond+'.W', [Label()], 4, lambda self,lbl:
-                ((0b11110 << 11) + (val << 6) + (lbl.offset(self,18) >> 12),
-                 (0b10000 << 11) + ((lbl.offset(self,18) & (2**11-1)) >> 1)))
+                (lbl.off_max(self, 19) + # test for maximum
+
+                 (0b11110 << 11) + (lbl.off_s(self,1,18) << 10) +
+                    (val << 6) + (lbl.off_s(self,6,12) >> 0),
+
+                 (0b10101 << 11) + (lbl.off_s(self,11,1) >> 0)))
 for cond, val in {
     'CC': 0x3, 'CS': 0x2, 'EQ': 0x0, 'GE': 0xA,
     'GT': 0xC, 'HI': 0x8, 'LE': 0xD, 'LS': 0x9,
