@@ -330,9 +330,9 @@ def findInstruction(opcode, args, pos):
 instruction('ADD', [Reg("LO"), Num()], 2, lambda self,rd,imm:
             (1 << 13) + (2 << 11) + (rd << 8) + imm)
 def _longJump(self, dest, bl):
-    offset = dest.offset(self, 23)
+    offset = dest.offset(self, 22)
     offset = offset >> 1
-    hi_o = (offset >> 11) & (2**11-1)
+    hi_o = (offset >> 11) & (2**10-1)
     lo_o = (offset >> 0)  & (2**11-1)
     hi_c = 0b11110
     lo_c = 0b11111 if bl else 0b10111
