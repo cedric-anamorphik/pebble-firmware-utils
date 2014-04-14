@@ -55,7 +55,7 @@ class Mask(object):
             pos = data.find(self.parts[0], pos+1)
         # all occurances checked
         if found is not False:
-            return found
+            return found + self.offset
         raise MaskNotFoundError(self)
     def getSize(self):
         """
