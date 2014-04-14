@@ -15,6 +15,8 @@ def op(instr, addr=0, context={}):
         addr += 0x8010000
     block = Block(None, [i])
     block.bind(addr)
+    context['self'] = addr # add fake "self" label for our instruction
+    block.context.update(context) # append our "fake" labels
     return i.getCode()
 
 def test_ADD_R1_1():
@@ -38,7 +40,7 @@ def test_DCD_0xDEADBEEF():
     assert op('DCD 0xDEADBEEF') == '\xEF\xBE\xAD\xDE'
 def test_NOP():
     assert op('NOP') == '\x00\xBF'
-def test_BCC_works():
-    op('BCC label')
+def test_local_label_with_BCC():
+    op('BCC self')
 def test_B_works():
-    op('B label')
+    op('B self')
