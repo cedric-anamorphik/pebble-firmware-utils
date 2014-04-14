@@ -1,0 +1,36 @@
+; this is a test patch
+
+#define hello world
+#ifndef hello
+"NoH"
+#else
+"H"
+ #ifval world
+ "W"
+ #else
+ "NoW"
+ #endif
+#endif
+
+00 bf 00 bf @ "String" ?3 ? ? 00 14
+13 13 {
+	ADD R0, 4
+}
+
+;#include test.pbp
+
+20 47 93 e8
+{
+	DCB "Hello" 'world' 0 0x4
+	DCH 1579
+	DCD 0x10034
+	NOP
+	home:
+	B.W nowhere
+	nowhere: BL werewerewe
+	BCC home
+	CBZ R4, home
+	ALIGN 4
+	B none
+	; it should warn if block is unclosed
+}
