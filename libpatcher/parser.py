@@ -1,6 +1,6 @@
 # This is a parser for assembler listings (?)
 __all__ = ['parseFile']
-           #'SyntaxError', 'FilePos'
+           #'ParseError', 'FilePos'
 
 import asm
 from itertools import chain
@@ -28,7 +28,7 @@ class FilePos:
     def __str__(self):
         return "%s, line %s" % (self.filename, self.lnum+1)
 
-class SyntaxError(Exception):
+class ParseError(Exception):
     def __init__(self, msg, pos):
         self.msg = msg
         self.pos = pos
@@ -90,7 +90,7 @@ def parseInstruction(line, pos):
                 try:
                     args.append(asm.Num(s))
                 except ValueError:
-                    raise SyntaxError("Invalid number: %s" % s, pos)
+                    raise ParseError("Invalid number: %s" % s, pos)
                 s = ''
                 t = None
         elif t == 'l': # label or reg
@@ -123,28 +123,28 @@ def parseInstruction(line, pos):
                 continue # skip - is it a good approach? allows both "MOV R0,R1" and "MOV R1 R1"
             elif c == '[':
                 if br:
-                    raise SyntaxError("Nested [] are not supported", pos)
+                    raise ParseError("Nested [] are not supported", pos)
                 br = True
                 gargs = args
                 args = asm.List()
             elif c == ']':
                 if not br:
-                    raise SyntaxError("Unmatched ]", f, line)
+                    raise ParseError("Unmatched ]", f, line)
                 gargs.append(args)
                 args = gargs
                 br = False
             else:
-                raise SyntaxError("Bad character: %c" % c, pos)
+                raise ParseError("Bad character: %c" % c, pos)
     # now let's check that everything went clean
     if t:
-        raise SyntaxError("Unterminated string? %c" % t, pos)
+        raise ParseError("Unterminated string? %c" % t, pos)
     if br:
-        raise SyntaxError("Unmatched '['", pos)
+        raise ParseError("Unmatched '['", pos)
 
     try:
         return asm.findInstruction(opcode, args, pos)
     except IndexError:
-        raise SyntaxError("Unknown instruction: %s %s" % (opcode, ','.join([repr(x) for x in args])), pos)
+        raise ParseError("Unknown instruction: %s %s" % (opcode, ','.join([repr(x) for x in args])), pos)
 
 def parseBlock(f, pos, definitions):
     """
@@ -181,7 +181,7 @@ def parseBlock(f, pos, definitions):
             # these will not depend on if_state...
             if cmd in ["#ifdef", "#ifndef", "#ifval", "#ifnval"]:
                 if not args:
-                    raise SyntaxError("%s requires at least one argument" % cmd, pos)
+                    raise ParseError("%s requires at least one argument" % cmd, pos)
                 newstate = 'n' in cmd # False for 'ifdef', etc.
                 if "val" in cmd:
                     vals = definitions.values()
@@ -196,13 +196,13 @@ def parseBlock(f, pos, definitions):
                 continue
             elif cmd == "#else":
                 if len(if_state) <= 1:
-                    raise SyntaxError("Unexpected #else", pos)
+                    raise ParseError("Unexpected #else", pos)
                 if_state[-1] = not if_state[-1]
                 continue
             elif cmd == "#endif":
                 if_state.pop() # remove latest state
                 if not if_state:
-                    raise SyntaxError("Unmatched #endif", pos)
+                    raise ParseError("Unmatched #endif", pos)
                 continue
             # ...now check if_state...
             if not if_state[-1]:
@@ -210,7 +210,7 @@ def parseBlock(f, pos, definitions):
             # ...and following will depend on it
             if cmd == "#define":
                 if not args:
-                    raise SyntaxError("At least one argument required for #define", pos)
+                    raise ParseError("At least one argument required for #define", pos)
                 name = args[0]
                 val = True
                 if args[1:]:
@@ -218,7 +218,7 @@ def parseBlock(f, pos, definitions):
                 definitions[name] = val
             elif cmd == "#include":
                 if not args:
-                    raise SyntaxError("#include requires an argument", pos)
+                    raise ParseError("#include requires an argument", pos)
                 arg = line.split(None, 1)[1] # all args as a string
                 import os.path
                 if not os.path.isabs(arg):
@@ -226,9 +226,9 @@ def parseBlock(f, pos, definitions):
                 f = open(arg, 'r')
                 # TODO: add f to loading queue, or load it just now somehow
                 # But what to do with result?
-                raise SyntaxError("#include is not implemented yet...", pos)
+                raise ParseError("#include is not implemented yet...", pos)
             else:
-                raise SyntaxError("Unknown command: %s" % cmd, pos)
+                raise ParseError("Unknown command: %s" % cmd, pos)
             continue # to next line
 
         # and now for non-# lines
@@ -244,7 +244,7 @@ def parseBlock(f, pos, definitions):
             # read mask: it consists of 00 f7 items, ? ?4 items, and "strings"
             tokens = line.split('"')
             if len(tokens) % 2 == 0:
-                raise SyntaxError("Unterminated string", pos)
+                raise ParseError("Unterminated string", pos)
             if not mpos:
                 mpos = pos.clone() # save starting position of mask
             is_str = False
@@ -269,7 +269,7 @@ def parseBlock(f, pos, definitions):
                             try:
                                 c = chr(int(t, 16))
                             except ValueError:
-                                raise SyntaxError("Bad token: %s" % t, pos)
+                                raise ParseError("Bad token: %s" % t, pos)
                             bstr += c
                         elif t[0] == '?':
                             if len(t) == 1:
@@ -278,14 +278,14 @@ def parseBlock(f, pos, definitions):
                                 try:
                                     count = int(t[1:])
                                 except ValueError:
-                                    raise SyntaxError("Bad token: %s" % t, pos)
+                                    raise ParseError("Bad token: %s" % t, pos)
                             if bstr:
                                 mask.append(bstr)
                                 bstr = ''
                             bskip += count
                         elif t == '@':
                             if mofs:
-                                raise SyntaxError("Duplicate '@'", pos)
+                                raise ParseError("Duplicate '@'", pos)
                             mofs = sum([len(x) if type(x) is str else x for x in mask]) + len(bstr) + bskip
                         elif t == '{':
                             if bstr:
@@ -293,14 +293,14 @@ def parseBlock(f, pos, definitions):
                                 bstr = ''
                                 if bskip:
                                     print mask,bstr,bskip
-                                    raise SyntaxError("Internal error: both bstr and bskip used", pos)
+                                    raise ParseError("Internal error: both bstr and bskip used", pos)
                             if bskip:
                                 mask.append(bskip)
                                 bskip = 0
                             line = '"'.join(tokens[tokennum+1:]) # prepare remainder for next if
                             instructions = [] # this will also break for's
                         else:
-                            raise SyntaxError("Bad token: %s" % t, pos)
+                            raise ParseError("Bad token: %s" % t, pos)
                         if instructions != None: # if entered block
                             break
                 is_str = not is_str
@@ -326,7 +326,7 @@ def parseBlock(f, pos, definitions):
             instr = parseInstruction(line, pos)
             instructions.append(instr)
     if mask or bstr or bskip:
-        raise SyntaxError("Unexpected end of file", pos)
+        raise ParseError("Unexpected end of file", pos)
     return None
 
 def parseFile(f, definitions=None):
