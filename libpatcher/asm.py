@@ -145,7 +145,7 @@ class Label(Argument):
             return instr.findLabel(self)
         except IndexError:
             raise LabelError
-    def offset(self, instr, bits=None):
+    def offset(self, instr, bits):
         """
         Returns offset from given instruction to this label.
         bits - maximum bit-width for offset;
@@ -154,12 +154,9 @@ class Label(Argument):
         This method is intended to be used one time, in non-lambda procs.
         """
         ofs = self.getAddress(instr) - (instr.getAddr()+4)
-        if bits and abs(ofs) >= (1<<bits):
+        if abs(ofs) >= (1<<bits):
             raise LabelError("Offset is too far: %X" % ofs)
         if ofs < 0:
-            if not bits:
-                print "Warning: negative offset and no bitlength provided!"
-                bits = ofs.bit_length()
             ofs = (1<<bits) + ofs
         return ofs
     def off_s(self, instr, bits, shift):
