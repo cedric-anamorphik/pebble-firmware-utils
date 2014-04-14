@@ -35,3 +35,11 @@ def test_DCH_0x1234():
 @raises(ParseError)
 def test_DCH_too_large():
     op('DCH 0x12345')
+def test_DCD_0xDEADBEEF():
+    assert op('DCD 0xDEADBEEF') == '\xEF\xBE\xAD\xDE'
+def test_NOP():
+    assert op('NOP') == '\x00\xBF'
+def test_BCC_works():
+    op('BCC label')
+def test_B_works():
+    op('B label')
