@@ -1,5 +1,6 @@
 from libpatcher.asm import *
-from libpatcher.parser import FilePos, ParseError, parseBlock, parseInstruction
+from libpatcher.parser import *
+from libpatcher.parser import parseBlock, parseInstruction
 from nose.tools import *
 
 def op(instr, addr=0, context={}):

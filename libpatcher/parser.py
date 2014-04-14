@@ -1,6 +1,5 @@
 # This is a parser for assembler listings (?)
-__all__ = ['parseFile']
-           #'ParseError', 'FilePos'
+__all__ = ['parseFile', 'ParseError', 'FilePos']
 
 import asm
 from itertools import chain
