@@ -2,7 +2,7 @@
 class Block(object):
     def __init__(self, patch, mask, instructions):
         self.patch = patch
-        self.mask = mask
+        self._mask = mask
         self.instructions = instructions
         self._context = {}
         self.position = None # to cache mask.match() result
@@ -12,8 +12,9 @@ class Block(object):
     def context(self):
         " Block-local context dictionary "
         return self._context
-    def getMask(self):
-        return self.mask
+    @property
+    def mask(self):
+        return self._mask
     def getPosition(self, binary=None):
         """
         Returns position of this block's mask in given binary file.
