@@ -145,10 +145,11 @@ class Label(Argument):
             return instr.findLabel(self)
         except IndexError:
             raise LabelError
-    def offset(self, context, bits=None):
-        ofs = self.getAddress(context) - (context.getPosition()+4)
+    def offset(self, instr, bits=None):
+        ofs = self.getAddress(instr) - (instr.getAddr()+4)
         if bits and abs(ofs) >= (1<<bits):
             raise LabelError("Offset is too far: %X" % ofs)
+        return ofs
 class Str(str, Argument):
     """ This represents _quoted_ string """
     def __new__(cls, val=None):
@@ -229,6 +230,7 @@ class Instruction(object):
         """
         self.addr = addr
     def getAddr(self):
+        " Returns memory address for this instruction "
         return self.addr
     def setBlock(self, block):
         self.block = block
@@ -256,7 +258,7 @@ class Instruction(object):
         """ default implementation; may be overriden by decorator """
         return self.size
     def getPos(self):
-        " pos is instruction's position in file "
+        " pos is instruction's position in patch file "
         return self.pos
 
 class LabelInstruction(Instruction):
