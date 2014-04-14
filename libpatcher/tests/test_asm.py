@@ -24,6 +24,14 @@ def op_gen(instr, addr=0, context={}):
 def op(instr, addr=0, context={}):
     return op_gen(instr, addr, context).getCode()
 
+def eq_(a,b):
+    def unhex(s):
+        return ' '.join(["%02X"%ord(c) for c in s])
+    if type(a) is str:
+        a = unhex(a)
+    if type(b) is str:
+        b = unhex(b)
+    assert a==b, "%s != %s" % (a,b)
 def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
 #def test_ADD_R3_R0_R2():
