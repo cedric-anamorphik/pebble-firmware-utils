@@ -154,7 +154,6 @@ class Label(Argument):
                 print "Warning: negative offset and no bitlength provided!"
                 bits = ofs.bit_length()
             ofs = (1<<bits) + ofs
-        print hex(ofs),bits
         return ofs
 class Str(str, Argument):
     """ This represents _quoted_ string """
