@@ -39,8 +39,8 @@ def test_DCD_0xDEADBEEF():
 def test_NOP():
     assert op('NOP') == '\x00\xBF'
 def test_BCC_self():
-    eq_(op('BCC self'), '\xFE\xD2')
+    eq_(op('BCC self'), '\xFE\xD3')
 def test_BEQ_self():
-    eq_(op('BEQ self'), '\xFE\xCF')
+    eq_(op('BEQ self'), '\xFE\xD0')
 def test_B_self():
     eq_(op('B self'), '\xFE\xE7')
