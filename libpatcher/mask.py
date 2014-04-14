@@ -1,3 +1,5 @@
+class MaskNotFoundError(Exception):
+    "Thrown if mask was not found"
 class AmbiguousMaskError(Exception):
     "Thrown if mask was found more than 1 time"
 
@@ -47,10 +49,12 @@ class Mask(object):
         # all occurances checked
         if found:
             return pos
-        return False
+        raise MaskNotFoundError(self)
     def getSize(self):
         """
         Returns size (in bytes) of the 'active' part of mask
         (excluding its part before @, or covered by initial ?-s)
         """
         return sum([len(x) if type(x) is str else x for x in self.parts]) - self.offset
+    def getPos(self):
+        return self.pos
