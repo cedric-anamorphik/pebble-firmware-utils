@@ -154,6 +154,7 @@ class Label(Argument):
                 print "Warning: negative offset and no bitlength provided!"
                 bits = ofs.bit_length()
             ofs = (1<<bits) + ofs
+        print hex(ofs),bits
         return ofs
 class Str(str, Argument):
     """ This represents _quoted_ string """
@@ -329,13 +330,10 @@ def findInstruction(opcode, args, pos):
 instruction('ADD', [Reg("LO"), Num()], 2, lambda self,rd,imm:
             (1 << 13) + (2 << 11) + (rd << 8) + imm)
 def _longJump(self, dest, bl):
-    offset = dest.offset(self, 4)
+    offset = dest.offset(self, 23)
     offset = offset >> 1
-    if abs(offset) >= 1<<22:
-        raise ValueError("Offset %X exceeds maximum of %X!" %
-                            (offset, 1<<22))
-    hi_o = (offset >> 11) & 0b11111111111
-    lo_o = (offset >> 0)  & 0b11111111111
+    hi_o = (offset >> 11) & (2**11-1)
+    lo_o = (offset >> 0)  & (2**11-1)
     hi_c = 0b11110
     lo_c = 0b11111 if bl else 0b10111
     hi = (hi_c << 11) + hi_o
