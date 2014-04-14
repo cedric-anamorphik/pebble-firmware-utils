@@ -5,4 +5,6 @@ from pprint import pprint
 
 def test_file():
     f = open('tests/test.pbp')
-    pprint(parseFile(f, libpatch=Patch('library')).blocks)
+    patch = parseFile(f, libpatch=Patch('library'))
+    print patch
+    pprint(patch.blocks)
