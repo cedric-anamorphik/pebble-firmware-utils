@@ -21,16 +21,12 @@ def op(instr, addr=0, context={}):
 
 def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
-@nottest
-def test_ADD_R3_R0_R2():
-    assert op('ADD R3,R0,R2') == '\x83\x18'
-@nottest
-def test_MOV_R0_2C():
-    assert op('MOV R0,0x2C') == '\x2c\x20'
-@nottest
+#def test_ADD_R3_R0_R2():
+#    assert op('ADD R3,R0,R2') == '\x83\x18'
+#def test_MOV_R0_2C():
+#    assert op('MOV R0,0x2C') == '\x2c\x20'
 def test_BL_self():
-    code = "label: BL label"
-    assert False, "Not implemented yet"
+    assert op('BL self') == '\x00\x00\x00\x00'
 def test_DCH_0x1234():
     assert op('DCH 0x1234') == '\x34\x12'
 @raises(ParseError)
