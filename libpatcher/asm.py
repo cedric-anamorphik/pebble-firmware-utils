@@ -549,3 +549,24 @@ class GlobalLabel(LabelInstruction):
     def instantiate(self, opcode, args, pos):
         label = args[0]
         return LabelInstruction(label, pos, glob=True)
+@instruct_class
+class ValInstruction(NullInstruction):
+    """
+    This class represents "val" instruction. It has zero size.
+    It stores 4bytes integer at its position on setBlock.
+    """
+    def __init__(self, pos=None, name=None):
+        Instruction.__init__(self, "val", [Label()], None, True, pos)
+        self.name = name
+    def __repr__(self):
+        return "<%slabel:%s>" % ("global " if self.glob else "", self.name)
+    def instantiate(self, opcode, args, pos):
+        name = args[0]
+        return ValInstruction(pos, name)
+    def setBlock(self, block):
+        self.block = block
+        # get value...
+        addr = self.getAddr()-0x8010000 # FIXME: codebase
+        value = unpack('<I', self.block.patch.data[addr:addr+4])[0]
+        # ...and store it at patch level
+        block.patch.context[self.name] = value
