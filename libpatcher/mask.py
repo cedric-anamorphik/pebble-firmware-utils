@@ -48,10 +48,11 @@ class Mask(object):
                     else:
                         break
             else: # not breaked -> matched
-                print found
                 if found: # was already found? -> duplicate match
                     raise AmbiguousMaskError(self)
                 found = True
+            # and find next occurance:
+            pos = data.find(self.parts[0], pos+1)
         # all occurances checked
         if found:
             return pos
