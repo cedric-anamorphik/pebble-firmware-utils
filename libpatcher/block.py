@@ -24,8 +24,8 @@ class Block(object):
             # or if bin/codebase provided and not same as were saved
             if binary is None:
                 raise ValueError("No saved position and binary not provided")
-            self.position = self.mask.match(binary) + codebase
-            self._binary, self._codebase = binary, codebase
+            self.position = self.mask.match(binary)
+            self._binary = binary
         return self.position
     def bind(self, addr):
         """
