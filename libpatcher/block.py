@@ -1,6 +1,7 @@
 # This module holds Block class
 class Block(object):
-    def __init__(self, mask, instructions):
+    def __init__(self, patch, mask, instructions):
+        self.patch = patch
         self.mask = mask
         self.instructions = instructions
         self.context = {}

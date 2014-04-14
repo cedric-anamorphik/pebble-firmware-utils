@@ -5,6 +5,7 @@ import asm
 from itertools import chain
 from mask import Mask
 from block import Block
+from patch import Patch
 
 class FilePos:
     " This holds current line info (filename, line text, line number) "
@@ -145,7 +146,7 @@ def parseInstruction(line, pos):
     except IndexError:
         raise ParseError("Unknown instruction: %s %s" % (opcode, ','.join([repr(x) for x in args])), pos)
 
-def parseBlock(f, pos, definitions):
+def parseBlock(f, pos, definitions, patch):
     """
     Parses one mask from patch file.
     Returns results (mask and block contents) as tuple
@@ -312,7 +313,7 @@ def parseBlock(f, pos, definitions):
                 remainder = line[1:]
                 if remainder:
                     print "Warning: spare characters after '}', will ignore: %s" % remainder
-                return Block(Mask(mask, mofs, mpos), instructions)
+                return Block(patch, Mask(mask, mofs, mpos), instructions)
 
             # plain labels:
             label = line.split(None, 1)[0]
@@ -328,23 +329,28 @@ def parseBlock(f, pos, definitions):
         raise ParseError("Unexpected end of file", pos)
     return None
 
-def parseFile(f, definitions=None):
+def parseFile(f, definitions=None, patch=None, libpatch=None):
     """
     Parses patch file.
     Definitions dictionary is used for #define and its companions.
+    If patch was not provided, it will be created,
+    in which case libpatch (patch for includes) must be provided.
     """
     if definitions == None:
         definitions = {}
-    # list of masks and corresponding instruction listings
-    blocks = []
+    if not patch:
+        if not libpatch:
+            raise ValueError("Neither patch nor libpatch were provided")
+        patch = Patch(f.name, libpatch)
 
     pos = FilePos(f.name)
     while True:
-        block = parseBlock(f, pos, definitions)
+        block = parseBlock(f, pos, definitions, patch)
         if not block:
             break
-        blocks.append(block)
-    return blocks
+        patch.blocks.append(block)
+
+    return patch
 
 if __name__ == "__main__":
     import sys

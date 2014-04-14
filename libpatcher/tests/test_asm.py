@@ -2,6 +2,7 @@ from libpatcher.asm import *
 from libpatcher.parser import *
 from libpatcher.parser import parseBlock, parseInstruction
 from libpatcher.block import *
+from libpatcher.patch import Patch
 from nose.tools import *
 
 def op_gen(instr, addr=0, context={}):
@@ -13,7 +14,8 @@ def op_gen(instr, addr=0, context={}):
     assert i
     if addr < 0x8010000:
         addr += 0x8010000
-    block = Block(None, [i])
+    mock_patch = Patch('test_patch')
+    block = Block(mock_patch, None, [i])
     block.bind(addr)
     context['self'] = addr # add fake "self" label for our instruction
     context['next'] = addr+4
