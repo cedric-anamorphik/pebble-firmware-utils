@@ -5,14 +5,23 @@ class Patch(object):
     with all its blocks and its global context.
     It may also represent aggregation of #included ("library") patchfiles.
     """
-    def __init__(self, name, library=None, blocks=[]):
+    def __init__(self, name, library=None):
+        """
+        library: if not provided, will link to self
+        """
         self.name = name
-        self.blocks = blocks
-        self._library = library
+        self._blocks = []
+        self._library = library or self
         self._is_bound = False
         self._context = {}
     def __repr__(self):
         return "<patch:%s, %s blocks>" % (self.name, len(self.blocks))
+    @property
+    def blocks(self):
+        """
+        Collection of blocks for this patch
+        """
+        return self._blocks
     @property
     def library(self):
         """
