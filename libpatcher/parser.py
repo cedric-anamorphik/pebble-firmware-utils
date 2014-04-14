@@ -83,7 +83,7 @@ def parseInstruction(line, pos):
             s += c
             t=t[0]
         elif t == 'n': # number, maybe hex
-            if c.isdigit() or c in 'xXbB':
+            if c.isdigit() or c in 'aAbBcCdDeEfFxX':
                 s += c
             else:
                 domore = True # need to process current character further
