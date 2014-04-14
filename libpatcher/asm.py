@@ -332,7 +332,7 @@ def _longJump(self, dest, bl):
     hi_o = (offset >> 11) & 0b11111111111
     lo_o = (offset >> 0)  & 0b11111111111
     hi_c = 0b11110
-    lo_c = 0b11111 if self.bl else 0b10111
+    lo_c = 0b11111 if bl else 0b10111
     hi = (hi_c << 11) + hi_o
     lo = (lo_c << 11) + lo_o
     return (hi,lo)
