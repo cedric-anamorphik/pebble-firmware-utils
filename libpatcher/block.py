@@ -41,4 +41,4 @@ class Block(object):
         """
         Calculstes and returns binary code of this whole block.
         """
-        return sum([i.getCode() for i in self.instructions])
+        return ''.join([i.getCode() for i in self.instructions])
