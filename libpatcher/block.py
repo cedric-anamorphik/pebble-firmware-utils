@@ -1,4 +1,6 @@
 # This module holds Block class
+from asm import LabelInstruction
+
 class Block(object):
     def __init__(self, patch, mask, instructions):
         self.patch = patch
@@ -7,7 +9,12 @@ class Block(object):
         self._context = {}
         self.position = None # to cache mask.match() result
     def __repr__(self):
-        return "<<<Block at\n%s:\n%s\n>>>" % (repr(self.mask), '\n'.join([repr(x) for x in self.instructions]))
+        name=""
+        if len(self.instructions) > 0:
+            instr = self.instructions[0]
+            if type(instr) is LabelInstruction and instr.glob:
+                name = " "+instr.name
+        return "<<<Block%s at\n%s:\n%s\n>>>" % (name, repr(self.mask), '\n'.join([repr(x) for x in self.instructions]))
     @property
     def context(self):
         " Block-local context dictionary "
