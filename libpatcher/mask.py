@@ -1,6 +1,6 @@
 class MaskNotFoundError(Exception):
     "Thrown if mask was not found"
-class AmbiguousMaskError(Exception):
+class AmbiguousMaskError(MaskNotFoundError):
     "Thrown if mask was found more than 1 time"
 
 class Mask(object):
