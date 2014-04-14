@@ -5,6 +5,7 @@ from libpatcher.block import *
 from libpatcher.patch import Patch
 from nose.tools import *
 
+mock_patch = Patch('test_patch', binary="test_bin")
 def op_gen(instr, addr=0, context={}):
     pos = FilePos('test_asm.pbp',0)
     if type(instr) is str:
@@ -14,7 +15,6 @@ def op_gen(instr, addr=0, context={}):
     assert i
     if addr < 0x8010000:
         addr += 0x8010000
-    mock_patch = Patch('test_patch', binary="test_bin")
     block = Block(mock_patch, None, [i])
     block.bind(addr)
     context['self'] = addr # add fake "self" label for our instruction
@@ -79,3 +79,6 @@ def test_B_self():
     eq_(op('B self'), '\xFE\xE7')
 def test_global_label():
     instr = op_gen('global label')
+def test_val():
+    instr = op_gen('val name')
+    print mock_patch.context['name']
