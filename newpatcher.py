@@ -23,7 +23,7 @@ def patch_fw(args):
 
     # this is a library patch,
     # which will hold all #included blocks
-    library = Patch("#library")
+    library = Patch("#library", binary=data)
 
     # this is for #defined and pre#defined values
     definitions = {}

@@ -5,11 +5,16 @@ class Patch(object):
     with all its blocks and its global context.
     It may also represent aggregation of #included ("library") patchfiles.
     """
-    def __init__(self, name, library=None):
+    def __init__(self, name, library=None, binary=None):
         """
         library: if not provided, will link to self
+        binary: reference to original binary data;
+            must be provided if there is no library
         """
         self.name = name
+        if not binary and not library:
+            raise ValueError("Neither binary nor library provided")
+        self.binary = binary or library.binary
         self._blocks = []
         self._library = library or self
         self._is_bound = False

@@ -14,7 +14,7 @@ def op_gen(instr, addr=0, context={}):
     assert i
     if addr < 0x8010000:
         addr += 0x8010000
-    mock_patch = Patch('test_patch')
+    mock_patch = Patch('test_patch', binary="test_bin")
     block = Block(mock_patch, None, [i])
     block.bind(addr)
     context['self'] = addr # add fake "self" label for our instruction
