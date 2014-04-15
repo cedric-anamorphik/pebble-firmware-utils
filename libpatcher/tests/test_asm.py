@@ -104,5 +104,7 @@ def test_STR_R3_SP_4():
     eq_(op('STR R3,[SP,4]'), '\x01\x93')
 def test_SUB_R2_0x12():
     eq_(op('SUB R2,0x12'), '\x12\x3A')
+def test_SUB_R4_R6_R4():
+    eq_(op('SUB R4,R6,R4'), '\x34\x1B')
 def test_UXTB_R5_R4():
     eq_(op('UXTB R5,R4'), '\xE5\xB2')

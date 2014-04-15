@@ -620,5 +620,9 @@ instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10)],[Reg("SP")])], 2, lamb
             (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst)>1 else 0))
 instruction(['SUBS','SUB'], [Reg("LO"), Num(bits=8)], 2, lambda self,rn,imm:
             (0b111 << 11) + (rn << 8) + imm)
+instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO"),Reg("LO")], 2, lambda self,rd,rn,rm:
+            (0b1101 << 9) + (rm << 6) + (rn << 3) + rd)
+instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
+            (0b1101 << 9) + (rm << 6) + (rd << 3) + rd)
 instruction('UXTB', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
             (0b1011001011 << 6) + (rm << 3) + rd)
