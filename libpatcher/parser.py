@@ -80,6 +80,8 @@ def parseInstruction(line, pos):
             else:
                 s += c
         elif t in ['"\\', "'\\"]: # state: backslash in quoted string
+            c = c.replace('r','\r')
+            c = c.replace('n','\n')
             s += c
             t=t[0]
         elif t in ['n','ns']: # number, maybe 0xHEX or 0bBINARY or 0octal, or numshift
