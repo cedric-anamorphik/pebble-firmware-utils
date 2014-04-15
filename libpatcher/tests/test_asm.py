@@ -38,11 +38,11 @@ def test_BW_self():
     eq_(op('B.W self'), '\xFF\xF7\xFE\xBF')
 def test_BW_next():
     eq_(op('B.W next'), '\x00\xF0\x00\xB8')
-def test_DCH_0x1234():
-    assert op('DCH 0x1234') == '\x34\x12'
+def test_DCW_0x1234():
+    assert op('DCW 0x1234') == '\x34\x12'
 @raises(ParseError)
-def test_DCH_too_large():
-    op('DCH 0x12345')
+def test_DCW_too_large():
+    op('DCW 0x12345')
 def test_DCD_0xDEADBEEF():
     assert op('DCD 0xDEADBEEF') == '\xEF\xBE\xAD\xDE'
 def test_NOP():

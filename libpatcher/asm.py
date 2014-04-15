@@ -508,7 +508,7 @@ class ALIGN(Instruction):
         return '\x00\xBF'*(self.size/2)
     def getSize(self):
         return self.size
-instruction('DCH', [Num(bits=16)], 2, lambda self,num: pack('<H', num))
+instruction('DCW', [Num(bits=16)], 2, lambda self,num: pack('<H', num))
 instruction('DCD', [Num(bits=32)], 4, lambda self,num: pack('<I', num))
 instruction('DCD', [Label()], 4, lambda self,lbl: pack('<I', lbl.getAddress(self)))
 instruction('NOP', [], 2, 0xBF00)
