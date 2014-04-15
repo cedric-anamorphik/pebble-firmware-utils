@@ -118,6 +118,10 @@ def test_STR_R5_R2():
     eq_(op('STR R5,[R2]'), '\x15\x60')
 def test_STR_R8_SP_0x34():
     eq_(op('STR R8,[SP,0x34]'), '\xCD\xF8\x34\x80')
+def test_STRB_R6_R4_6():
+    eq_(op('STRB R6,[R4,6]'), '\xA6\x71')
+def test_STRB_R3_SP_3():
+    eq_(op('STRB R3,[SP,3]'), '\x8D\xF8\x03\x30')
 def test_SUB_R2_0x12():
     eq_(op('SUB R2,0x12'), '\x12\x3A')
 def test_SUB_R4_R6_R4():
