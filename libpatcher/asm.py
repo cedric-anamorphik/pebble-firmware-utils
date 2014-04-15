@@ -187,6 +187,8 @@ class LabelError(Exception):
 class Label(Argument):
     def __init__(self, name=None):
         self.name = name
+        # This is used by parser for constructions like DCD someProc+1
+        self.shift = 0
     def __repr__(self):
         return (":%s"%self.name) if self.name else "Label"
     def match(self, other):
@@ -195,7 +197,7 @@ class Label(Argument):
         if not self.name:
             raise LabelError("This is a mask, not label!")
         try:
-            return instr.findLabel(self)
+            return instr.findLabel(self) + self.shift
         except IndexError:
             raise LabelError
     def _getOffset(self, instr):
