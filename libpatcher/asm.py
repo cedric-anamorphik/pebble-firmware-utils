@@ -226,10 +226,10 @@ class Label(Argument):
                 raise LabelError("Negative offset not allowed here: %X" % ofs)
             ofs = (1<<(bits+shift)) + ofs
         if bits > 0:
-            rem = ofs & (2**bits-1)
+            rem = ofs & (2**shift-1)
             if rem:
                 raise LabelError("Spare bits in offset %X: %X" % (ofs, rem))
-            ofs = ofs >> bits
+            ofs = ofs >> shift
         return ofs
     def off_s(self, instr, bits, shift):
         """
