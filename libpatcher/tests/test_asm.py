@@ -102,6 +102,8 @@ def test_LDR_R3_next():
     eq_(op('LDR R3, next'), '\x00\x4B')
 def test_LDR_R5_R3():
     eq_(op('LDR R5,[R3]'), '\x1D\x68')
+def test_LDR_R12_SP_0x24():
+    eq_(op('LDR R12,[SP,0x24]'), '\xDD\xF8\x24\xC0')
 def test_LDRB_R3_R3():
     eq_(op('LDRB R3,[R3]'), '\x1B\x78')
 def test_MUL_R3_R7():
