@@ -200,21 +200,36 @@ class Label(Argument):
             return instr.findLabel(self) + self.shift
         except IndexError:
             raise LabelError
-    def _getOffset(self, instr):
-        return self.getAddress(instr) - (instr.getAddr()+4)
-    def offset(self, instr, bits):
+    def _getOffset(self, instr, align=False):
+        pc = instr.getAddr() + 4
+        if align:
+            pc = pc & 0xfffffffc
+        return self.getAddress(instr) - pc
+    def offset(self, instr, bits, shift=0, positive=False, align=False):
         """
         Returns offset from given instruction to this label.
         bits - maximum bit-width for offset;
             if offset doesn't fit that width,
             LabelError will be raised.
+        shift - how many bits to cut off from the end
+            (they are added to Bits on checking);
+            these bits must be 0.
+        positive - if offset must be positive
+        align - if we should use 4-aligned offset (as for LDR) instead of plain
         This method is intended to be used one time, in non-lambda procs.
         """
-        ofs = self._getOffset(instr)
-        if abs(ofs) >= (1<<bits):
+        ofs = self._getOffset(instr, align)
+        if abs(ofs) >= (1<<(bits+shift)):
             raise LabelError("Offset is too far: %X" % ofs)
         if ofs < 0:
-            ofs = (1<<bits) + ofs
+            if positive:
+                raise LabelError("Negative offset not allowed here: %X" % ofs)
+            ofs = (1<<(bits+shift)) + ofs
+        if bits > 0:
+            rem = ofs & (2**bits-1)
+            if rem:
+                raise LabelError("Spare bits in offset %X: %X" % (ofs, rem))
+            ofs = ofs >> bits
         return ofs
     def off_s(self, instr, bits, shift):
         """
