@@ -223,14 +223,18 @@ def parseBlock(f, pos, definitions, patch):
             if not if_state[-1]:
                 continue # #define must only work if this is met
             # ...and following will depend on it
-            if cmd == "#define":
+            if cmd in ["#define", "#default"]: # default is like define but will not override already set value
                 if not args:
                     raise ParseError("At least one argument required for #define", pos)
                 name = args[0]
                 val = True
                 if args[1:]:
                     val = line.split(None, 2)[2] # remaining args as string
-                definitions[name] = val
+                # always set for #define, and only if unset / just True if #default
+                if cmd == "#define" \
+                        or name not in definitions \
+                        or definitions[name] == True:
+                    definitions[name] = val
             elif cmd == "#include":
                 if not args:
                     raise ParseError("#include requires an argument", pos)
