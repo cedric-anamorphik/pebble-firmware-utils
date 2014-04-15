@@ -404,6 +404,19 @@ def instruction(opcode, args, size=2, proc=None):
     Note that proc may also be in fact plain value, e.g. for "NOP" instruction.
     """
     def gethandler(proc):
+        # Replace all [lists] with List instances, recursing tuples
+        def replace(args):
+            for n,a in enumerate(args):
+                print n,type(a),a
+                if type(a) is list:
+                    print a
+                    args[n] = List()
+                    [args[n].append(k) for k in a]
+                elif type(a) is tuple:
+                    args[n] = tuple(replace(list(a)))
+            return args
+        replace(args)
+
         instr = Instruction(opcode, args, proc)
         if callable(size):
             instr.getSize = size
