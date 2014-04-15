@@ -220,15 +220,15 @@ class Label(Argument):
         """
         ofs = self._getOffset(instr, align)
         if abs(ofs) >= (1<<(bits+shift)):
-            raise LabelError("Offset is too far: %X" % ofs)
+            raise LabelError("Offset is too far: 0x%X" % ofs)
         if ofs < 0:
             if positive:
-                raise LabelError("Negative offset not allowed here: %X" % ofs)
+                raise LabelError("Negative offset not allowed here: 0x%X" % ofs)
             ofs = (1<<(bits+shift)) + ofs
         if bits > 0:
             rem = ofs & (2**shift-1)
             if rem:
-                raise LabelError("Spare bits in offset %X: %X" % (ofs, rem))
+                raise LabelError("Spare bits in offset 0x%X: %X" % (ofs, rem))
             ofs = ofs >> shift
         return ofs
     def off_s(self, instr, bits, shift):
