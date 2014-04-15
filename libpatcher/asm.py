@@ -463,6 +463,9 @@ instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16, positive=True)], 4, lam
                 (rd << 8) +
                 (imm.part(8))
             ))
+instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
+            (0b1001 << 11) + (rt << 8) + (lbl.offset(self,10) >> 2)
+            + lbl.off_pos(self))
 def _longJump(self, dest, bl):
     offset = dest.offset(self, 23)
     offset = offset >> 1
