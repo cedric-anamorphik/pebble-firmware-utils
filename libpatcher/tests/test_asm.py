@@ -74,6 +74,8 @@ def test_ADD_R1_1():
 #    eq_(op('ADD R3,R0,R2'), '\x83\x18')
 def test_ADD_R7_SP_12():
     eq_(op('ADD R7,SP,12'), '\x03\xAF')
+def test_ADR_R2_next():
+    eq_(op('ADR R2,next'), '\x00\xA2')
 def test_MOV_R0_2C():
     eq_(op('MOV R0,0x2C'), '\x2c\x20')
 def test_MOVS_R0_R5():
