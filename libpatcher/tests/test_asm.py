@@ -67,7 +67,7 @@ def test_val():
 def test_DCD_name():
     eq_(op('DCD name'), 'test')
 def test_DCD_name_p_1():
-    eq_(op('DCD name+1'), 'tesu')
+    eq_(op('DCD name+1'), 'uest')
 def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
 #def test_ADD_R3_R0_R2():
