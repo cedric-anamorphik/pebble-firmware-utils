@@ -35,24 +35,24 @@ class Mask(object):
         if type(self.parts[0]) is int:
             self.offset += self.parts[0]
             del self.parts[0]
-        pos = data.find(self.parts[0])
+        pos1 = data.find(self.parts[0])
         found = False
-        while pos != -1:
-            pos2 = pos
+        while pos1 != -1:
+            pos = pos1+len(self.parts[0])
             for p in self.parts[1:]:
                 if type(p) is int:
-                    pos2 += p
+                    pos += p
                 else:
-                    if p == data[pos2:pos2+len(p)]:
-                        pos2 += len(p)
+                    if p == data[pos:pos+len(p)]:
+                        pos += len(p)
                     else:
                         break
             else: # not breaked -> matched
                 if found is not False: # was already found? -> duplicate match
                     raise AmbiguousMaskError(self)
-                found = pos
+                found = pos1
             # and find next occurance:
-            pos = data.find(self.parts[0], pos+1)
+            pos1 = data.find(self.parts[0], pos1+1)
         # all occurances checked
         if found is not False:
             return found + self.offset
