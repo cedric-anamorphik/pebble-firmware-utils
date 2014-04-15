@@ -463,6 +463,11 @@ instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16, positive=True)], 4, lam
                 (rd << 8) +
                 (imm.part(8))
             ))
+instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"),Num(bits=7)])], 2, lambda self,rt,lst:
+            (0b01101 << 11) +
+            (((lst[1]>>2) if len(lst)>1 else 0) << 6) +
+            (lst[0] << 3) +
+            rt)
 instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
             (0b1001 << 11) + (rt << 8) + (lbl.offset(self,10) >> 2)
             + lbl.off_pos(self))

@@ -52,6 +52,8 @@ def test_MOVW_R1_m1_fails():
     print op('MOVW R1,-1')
 def test_LDR_R3_next():
     eq_(op('LDR R3, next'), '\x00\x4B')
+def test_LDR_R5_R3():
+    eq_(op('LDR R5,[R3]'), '\x1D\x68')
 def test_BL_self():
     eq_(op('BL self'), '\xFF\xF7\xFE\xFF')
 def test_BW_self():
