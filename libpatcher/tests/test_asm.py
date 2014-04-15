@@ -94,9 +94,9 @@ def test_LDR_R3_next():
     eq_(op('LDR R3, next'), '\x00\x4B')
 def test_LDR_R5_R3():
     eq_(op('LDR R5,[R3]'), '\x1D\x68')
-def test_SDR_R3_SP():
+def test_STR_R3_SP():
     eq_(op('STR R3,[SP]'), '\x00\x93')
-def test_SDR_R3_SP_4():
+def test_STR_R3_SP_4():
     eq_(op('STR R3,[SP,4]'), '\x01\x93')
 def test_UXTB_R5_R4():
     eq_(op('UXTB R5,R4'), '\xE5\xB2')
