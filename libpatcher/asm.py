@@ -494,6 +494,7 @@ class ALIGN(Instruction):
         return self.size
 instruction('DCH', [Num(bits=16)], 2, lambda self,num: pack('<H', num))
 instruction('DCD', [Num(bits=32)], 4, lambda self,num: pack('<I', num))
+instruction('DCD', [Label()], 4, lambda self,lbl: pack('<I', lbl.getAddress(self)))
 instruction('NOP', [], 2, 0xBF00)
 def Bcond_instruction(cond, val):
     instruction('B'+cond, [Label()], 2, lambda self,lbl:

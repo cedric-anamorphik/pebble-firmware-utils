@@ -60,10 +60,12 @@ def test_CBNZ_R7_next():
 def test_B_self():
     eq_(op('B self'), '\xFE\xE7')
 def test_global_label():
-    instr = op_gen('global label')
+    instr = op_gen('global globlabel')
 def test_val():
     eq_(op('val name'), '')
     eq_(mock_patch.context['name'], 0x74736574) # integer representation of 'test'
+def test_DCD_name():
+    eq_(op('DCD name'), 'test')
 def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
 #def test_ADD_R3_R0_R2():
