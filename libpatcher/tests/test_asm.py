@@ -66,6 +66,8 @@ def test_val():
     eq_(mock_patch.context['name'], 0x74736574) # integer representation of 'test'
 def test_DCD_name():
     eq_(op('DCD name'), 'test')
+def test_DCD_name_p_1():
+    eq_(op('DCD name+1'), 'tesu')
 def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
 #def test_ADD_R3_R0_R2():
