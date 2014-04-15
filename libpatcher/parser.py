@@ -82,17 +82,21 @@ def parseInstruction(line, pos):
         elif t in ['"\\', "'\\"]: # state: backslash in quoted string
             s += c
             t=t[0]
-        elif t == 'n': # number, maybe 0xHEX or 0bBINARY or 0octal
+        elif t in ['n','ns']: # number, maybe 0xHEX or 0bBINARY or 0octal, or numshift
             if c.isdigit() or c in 'aAbBcCdDeEfFxX':
                 s += c
             else:
                 domore = True # need to process current character further
+                # for consistency with old version's behaviour,
+                # treat all numeric 'db' arguments as hexadecimal
+                if opcode == "db":
+                    s = "0x"+s
                 try:
-                    # for consistency with old version's behaviour,
-                    # treat all numeric 'db' arguments as hexadecimal
-                    if opcode == "db":
-                        s = "0x"+s
-                    args.append(asm.Num(s))
+                    if t == 'ns': # numshift for label
+                        # args[-1] must exist and be label, or else t would not be 'ns'
+                        args[-1].shift = int(s, 0)
+                    else: # regular number
+                        args.append(asm.Num(s))
                 except ValueError:
                     raise ParseError("Invalid number: %s" % s, pos)
                 s = ''
@@ -119,6 +123,11 @@ def parseInstruction(line, pos):
             elif c.isalpha() or c == '_':
                 s += c
                 t = 'l' # label
+            elif c == '+': # shift-value for label
+                if args and type(args[-1]) is asm.Label:
+                    t = 'ns' # number,shift
+                else:
+                    raise ParseError("Unexpected +", pos)
             elif c in "'\"": # quoted str
                 t = c
             elif c.isspace(): # including last \n
