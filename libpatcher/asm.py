@@ -385,7 +385,7 @@ class LabelInstruction(NullInstruction):
     It should be instantiated directly.
     """
     def __init__(self, name, pos, glob=False):
-        Instruction.__init__(self, None, [name], None, False, pos)
+        Instruction.__init__(self, None, [Label(name)], None, False, pos)
         self.name = name
         self.glob = glob
     def __repr__(self):
@@ -547,7 +547,7 @@ class GlobalLabel(LabelInstruction):
     def __init__(self):
         Instruction.__init__(self, ["global","proc"], [Label()], None)
     def instantiate(self, opcode, args, pos):
-        label = args[0]
+        label = args[0].name
         return LabelInstruction(label, pos, glob=True)
 @instruct_class
 class ValInstruction(NullInstruction):
@@ -561,7 +561,7 @@ class ValInstruction(NullInstruction):
     def __repr__(self):
         return "<%slabel:%s>" % ("global " if self.glob else "", self.name)
     def instantiate(self, opcode, args, pos):
-        name = args[0]
+        name = args[0].name
         return ValInstruction(pos, name)
     def setBlock(self, block):
         self.block = block
