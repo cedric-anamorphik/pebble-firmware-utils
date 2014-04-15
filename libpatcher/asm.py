@@ -410,7 +410,6 @@ def instruction(opcode, args, size=2, proc=None):
         def replace(args):
             for n,a in enumerate(args):
                 if type(a) is list:
-                    print a
                     args[n] = List()
                     [args[n].append(k) for k in a]
                 elif type(a) is tuple:
