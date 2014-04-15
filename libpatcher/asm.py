@@ -228,7 +228,8 @@ class Label(Argument):
         if bits > 0:
             rem = ofs & (2**shift-1)
             if rem:
-                raise LabelError("Spare bits in offset 0x%X: %X" % (ofs, rem))
+                # FIXME
+                print LabelError("Spare bits in offset 0x%X: %X" % (ofs, rem))
             ofs = ofs >> shift
         return ofs
     def off_s(self, instr, bits, shift):
