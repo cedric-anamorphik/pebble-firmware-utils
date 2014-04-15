@@ -610,5 +610,7 @@ instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"),Num(bits=7)])], 2, lambd
             rt)
 instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
             (0b1001 << 11) + (rt << 8) + lbl.offset(self,8,shift=2,positive=True,align=True))
+instruction('STR', [Reg("LO"), [Reg("SP"), Num(bits=10)]], 2, lambda self,rt,lst:
+            (0b10010 << 11) + (rt << 8) + (lst[1] >> 2))
 instruction('UXTB', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
             (0b1011001011 << 6) + (rm << 3) + rd)
