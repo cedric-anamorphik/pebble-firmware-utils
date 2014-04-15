@@ -500,7 +500,7 @@ class DCB(Instruction):
         return len(self.code)
 @instruct_class
 class ALIGN(Instruction):
-    # FIXME support ALIGN 2?
+    # TODO support ALIGN 2?
     def __init__(self, opcode='ALIGN', args=[(Num(4),Num(4))], proc=None, mask=True, pos=None):
         Instruction.__init__(self, opcode, args, proc, mask, pos)
         if pos: # not mask
@@ -511,7 +511,9 @@ class ALIGN(Instruction):
         else:
             return '\x00\xBF'#*(self.size/2)
     def getSize(self):
-        return self.size
+        if self.getAddr() is None:
+            raise ValueError("No address, cannot determine size")
+        return 0 if self.getAddr() % 4 == 0 else 2
 instruction('DCW', [Num(bits=16)], 2, lambda self,num: pack('<H', num))
 instruction('DCD', [Num(bits=32)], 4, lambda self,num: pack('<I', num))
 instruction('DCD', [Label()], 4, lambda self,lbl: pack('<I', lbl.getAddress(self)))
