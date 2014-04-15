@@ -50,4 +50,7 @@ class Block(object):
         """
         Calculstes and returns binary code of this whole block.
         """
+        for i in self.instructions:
+            if len(i.getCode()) != i.getSize():
+                raise AssertionError("Internal check failed: instruction length mismatch for %s" % repr(i))
         return ''.join([i.getCode() for i in self.instructions])
