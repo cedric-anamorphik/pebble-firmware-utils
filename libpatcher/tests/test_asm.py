@@ -104,6 +104,8 @@ def test_LDR_R5_R3():
     eq_(op('LDR R5,[R3]'), '\x1D\x68')
 def test_LDRB_R3_R3():
     eq_(op('LDRB R3,[R3]'), '\x1B\x78')
+def test_MUL_R3_R7():
+    eq_(op('MUL R3,R7'), '\x7b\x43')
 def test_STR_R3_SP():
     eq_(op('STR R3,[SP]'), '\x00\x93')
 def test_STR_R3_SP_4():
