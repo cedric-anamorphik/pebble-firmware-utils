@@ -78,6 +78,10 @@ def test_ADR_R2_next():
     eq_(op('ADR R2,next'), '\x00\xA2')
 def test_CMP_R3_0xF():
     eq_(op('CMP R3,0xF'), '\x0F\x2B')
+def test_CMP_R2_R12():
+    eq_(op('CMP R2,R12'), '\x62\x45')
+def test_CMP_R0_R1():
+    eq_(op('CMP R0,R1'), '\x88\x42')
 def test_MOV_R0_2C():
     eq_(op('MOV R0,0x2C'), '\x2c\x20')
 def test_MOVS_R0_R5():
