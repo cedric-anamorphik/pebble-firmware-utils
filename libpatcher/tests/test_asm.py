@@ -32,28 +32,6 @@ def eq_(a,b):
     if type(b) is str:
         b = unhex(b)
     assert a==b, "%s != %s" % (a,b)
-def test_ADD_R1_1():
-    assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
-#def test_ADD_R3_R0_R2():
-#    assert op('ADD R3,R0,R2') == '\x83\x18'
-def test_MOV_R0_2C():
-    eq_(op('MOV R0,0x2C'), '\x2c\x20')
-def test_MOVS_R0_R5():
-    eq_(op('MOVS R0,R5'), '\x28\x46')
-def test_MOVW_R1_0xFF000():
-    eq_(op('MOV.W R1,0xFF000'),'\x4F\xF4\x7F\x21')
-def test_MOV_R2_50000():
-    eq_(op('MOV R2,50000'),'\x4C\xF2\x50\x32')
-@raises(ParseError)
-def test_MOV_R2_m50000_fails():
-    eq_(op('MOV R2,-50000'),'\x4F\xF4\x7F\x21')
-@raises(ParseError)
-def test_MOVW_R1_m1_fails():
-    print op('MOVW R1,-1')
-def test_LDR_R3_next():
-    eq_(op('LDR R3, next'), '\x00\x4B')
-def test_LDR_R5_R3():
-    eq_(op('LDR R5,[R3]'), '\x1D\x68')
 def test_BL_self():
     eq_(op('BL self'), '\xFF\xF7\xFE\xFF')
 def test_BW_self():
@@ -86,3 +64,25 @@ def test_global_label():
 def test_val():
     eq_(op('val name'), '')
     eq_(mock_patch.context['name'], 0x74736574) # integer representation of 'test'
+def test_ADD_R1_1():
+    assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
+#def test_ADD_R3_R0_R2():
+#    assert op('ADD R3,R0,R2') == '\x83\x18'
+def test_MOV_R0_2C():
+    eq_(op('MOV R0,0x2C'), '\x2c\x20')
+def test_MOVS_R0_R5():
+    eq_(op('MOVS R0,R5'), '\x28\x46')
+def test_MOVW_R1_0xFF000():
+    eq_(op('MOV.W R1,0xFF000'),'\x4F\xF4\x7F\x21')
+def test_MOV_R2_50000():
+    eq_(op('MOV R2,50000'),'\x4C\xF2\x50\x32')
+@raises(ParseError)
+def test_MOV_R2_m50000_fails():
+    eq_(op('MOV R2,-50000'),'\x4F\xF4\x7F\x21')
+@raises(ParseError)
+def test_MOVW_R1_m1_fails():
+    print op('MOVW R1,-1')
+def test_LDR_R3_next():
+    eq_(op('LDR R3, next'), '\x00\x4B')
+def test_LDR_R5_R3():
+    eq_(op('LDR R5,[R3]'), '\x1D\x68')

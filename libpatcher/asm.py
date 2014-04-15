@@ -407,7 +407,6 @@ def instruction(opcode, args, size=2, proc=None):
         # Replace all [lists] with List instances, recursing tuples
         def replace(args):
             for n,a in enumerate(args):
-                print n,type(a),a
                 if type(a) is list:
                     print a
                     args[n] = List()
@@ -447,43 +446,6 @@ def findInstruction(opcode, args, pos):
 
 ###
 # All the instruction definitions
-instruction('ADD', [Reg("LO"), Num()], 2, lambda self,rd,imm:
-            (1 << 13) + (2 << 11) + (rd << 8) + imm)
-instruction('MOV', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
-            (0 << 6) + (rm << 3) + rd)
-instruction(['MOV','MOVS'], [Reg(), Reg()], 2, lambda self,rd,rm:
-            (0b1000110 << 8) + ((rd>>3) << 7) + (rm << 3) + ((rd&0b111) << 0))
-instruction(['MOV','MOVS'], [Reg("LO"), Num(bits=8)], 2, lambda self,rd,imm:
-            (1 << 13) + (rd << 8) + imm)
-instruction(['MOV','MOV.W','MOVS','MOVS.W'], [Reg(), Num.ThumbExpandable()], 4, lambda self,rd,imm:
-            (
-                (0b11110 << 11) +
-                (imm.the(1,11) << 10) +
-                (0b10 << 5) +
-                ((1 if 'S' in self.opcode else 0) << 4) +
-                (0b1111 << 0),
-                (imm.the(3,8) << 12) +
-                (rd << 8) +
-                (imm.the(8,0) << 0)
-            ))
-instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16, positive=True)], 4, lambda self,rd,imm:
-            (
-                (0b11110 << 11) +
-                (imm.part(1, 11) << 10) +
-                (0b1001 << 6) +
-                (imm.part(4, 12)),
-                (imm.part(3, 8) << 12) +
-                (rd << 8) +
-                (imm.part(8))
-            ))
-instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"),Num(bits=7)])], 2, lambda self,rt,lst:
-            (0b01101 << 11) +
-            (((lst[1]>>2) if len(lst)>1 else 0) << 6) +
-            (lst[0] << 3) +
-            rt)
-instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
-            (0b1001 << 11) + (rt << 8) + (lbl.offset(self,10) >> 2)
-            + lbl.off_pos(self))
 def _longJump(self, dest, bl):
     offset = dest.offset(self, 23)
     offset = offset >> 1
@@ -591,3 +553,40 @@ class ValInstruction(NullInstruction):
         value = unpack('<I', self.block.patch.binary[addr:addr+4])[0]
         # ...and store it at patch level
         block.patch.context[self.name] = value
+instruction('ADD', [Reg("LO"), Num()], 2, lambda self,rd,imm:
+            (1 << 13) + (2 << 11) + (rd << 8) + imm)
+instruction('MOV', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
+            (0 << 6) + (rm << 3) + rd)
+instruction(['MOV','MOVS'], [Reg(), Reg()], 2, lambda self,rd,rm:
+            (0b1000110 << 8) + ((rd>>3) << 7) + (rm << 3) + ((rd&0b111) << 0))
+instruction(['MOV','MOVS'], [Reg("LO"), Num(bits=8)], 2, lambda self,rd,imm:
+            (1 << 13) + (rd << 8) + imm)
+instruction(['MOV','MOV.W','MOVS','MOVS.W'], [Reg(), Num.ThumbExpandable()], 4, lambda self,rd,imm:
+            (
+                (0b11110 << 11) +
+                (imm.the(1,11) << 10) +
+                (0b10 << 5) +
+                ((1 if 'S' in self.opcode else 0) << 4) +
+                (0b1111 << 0),
+                (imm.the(3,8) << 12) +
+                (rd << 8) +
+                (imm.the(8,0) << 0)
+            ))
+instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16, positive=True)], 4, lambda self,rd,imm:
+            (
+                (0b11110 << 11) +
+                (imm.part(1, 11) << 10) +
+                (0b1001 << 6) +
+                (imm.part(4, 12)),
+                (imm.part(3, 8) << 12) +
+                (rd << 8) +
+                (imm.part(8))
+            ))
+instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"),Num(bits=7)])], 2, lambda self,rt,lst:
+            (0b01101 << 11) +
+            (((lst[1]>>2) if len(lst)>1 else 0) << 6) +
+            (lst[0] << 3) +
+            rt)
+instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
+            (0b1001 << 11) + (rt << 8) + (lbl.offset(self,10) >> 2)
+            + lbl.off_pos(self))
