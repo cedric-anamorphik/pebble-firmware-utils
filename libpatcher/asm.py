@@ -605,5 +605,4 @@ instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"),Num(bits=7)])], 2, lambd
             (lst[0] << 3) +
             rt)
 instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
-            (0b1001 << 11) + (rt << 8) + (lbl.offset(self,10) >> 2)
-            + lbl.off_pos(self))
+            (0b1001 << 11) + (rt << 8) + lbl.offset(self,8,shift=2,positive=True,align=True))
