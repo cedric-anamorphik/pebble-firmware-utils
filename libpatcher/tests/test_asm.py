@@ -71,7 +71,9 @@ def test_DCD_name_p_1():
 def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
 #def test_ADD_R3_R0_R2():
-#    assert op('ADD R3,R0,R2') == '\x83\x18'
+#    eq_(op('ADD R3,R0,R2'), '\x83\x18')
+def test_ADD_R7_SP_12():
+    eq_(op('ADD R7,SP,12'), '\x03\xAF')
 def test_MOV_R0_2C():
     eq_(op('MOV R0,0x2C'), '\x2c\x20')
 def test_MOVS_R0_R5():
