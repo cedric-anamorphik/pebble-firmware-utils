@@ -80,5 +80,5 @@ def test_B_self():
 def test_global_label():
     instr = op_gen('global label')
 def test_val():
-    instr = op_gen('val name')
-    print mock_patch.context['name']
+    eq_(op('val name'), '')
+    eq_(mock_patch.context['name'], 0x74736574) # integer representation of 'test'
