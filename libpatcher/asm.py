@@ -590,9 +590,8 @@ instruction('ADR', [Reg("LO"), Label()], 2, lambda self,rd,lbl:
             (0b10100 << 11) + (rd << 8) + lbl.offset(self, 8, 2, True, True))
 instruction('CMP', [Reg("LO"), Num(bits=8)], 2, lambda self,rn,imm:
             (0b101 << 11) + (rn << 8) + imm)
-# FIXME: temporary disabled for tests compatibility with old patcher
-#instruction('CMP', [Reg("LO"), Reg("LO")], 2, lambda self,rn,rm:
-#            (1 << 14) + (0b101 << 7) + (rm << 3) + rn)
+instruction('CMP', [Reg("LO"), Reg("LO")], 2, lambda self,rn,rm:
+            (1 << 14) + (0b101 << 7) + (rm << 3) + rn)
 instruction('CMP', [Reg(), Reg()], 2, lambda self,rn,rm:
             (1 << 14) + (0b101 << 8) + ((rn>>3)<<7) + (rm << 3) + (rn&0b111))
 instruction('MOVS', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
