@@ -580,6 +580,8 @@ instruction('ADD', [Reg("LO"), Reg("SP"), Num(bits=10)], 2, lambda self,rd,sp,im
             (0b10101 << 11) + (rd << 8) + (imm >> 2))
 instruction('ADR', [Reg("LO"), Label()], 2, lambda self,rd,lbl:
             (0b10100 << 11) + (rd << 8) + lbl.offset(self, 8, 2, True, True))
+instruction('CMP', [Reg("LO"), Num(bits=8)], 2, lambda self,rn,imm:
+            (0b101 << 11) + (rn << 8) + imm)
 instruction('MOVS', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
             (0 << 6) + (rm << 3) + rd)
 instruction(['MOV','MOVS'], [Reg(), Reg()], 2, lambda self,rd,rm:
