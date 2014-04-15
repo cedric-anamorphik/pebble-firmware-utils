@@ -499,13 +499,16 @@ class DCB(Instruction):
         return len(self.code)
 @instruct_class
 class ALIGN(Instruction):
-    # FIXME handle size properly
-    def __init__(self, opcode='ALIGN', args=[(Num(4),Num(2))], proc=None, mask=True, pos=None):
+    # FIXME support ALIGN 2?
+    def __init__(self, opcode='ALIGN', args=[(Num(4),Num(4))], proc=None, mask=True, pos=None):
         Instruction.__init__(self, opcode, args, proc, mask, pos)
         if pos: # not mask
             self.size = args[0]
     def getCode(self):
-        return '\x00\xBF'*(self.size/2)
+        if self.getAddr() % 4 == 0:
+            return ''
+        else:
+            return '\x00\xBF'#*(self.size/2)
     def getSize(self):
         return self.size
 instruction('DCW', [Num(bits=16)], 2, lambda self,num: pack('<H', num))
