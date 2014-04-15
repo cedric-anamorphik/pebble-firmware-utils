@@ -644,6 +644,12 @@ instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10)],[Reg("SP")])], 2, lamb
             (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst)>1 else 0))
 instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7)],[Reg("LO")])], 2, lambda self,rt,lst:
             (0b11 << 13) + (((lst[1] if len(lst)>1 else 0)>>2)<<6) + (lst[0]<<3) + rt)
+instruction(['STR.W','STR'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])], 4, lambda self,rt,lst:
+            ((0b11111 << 11) +
+             (0b1100 << 4) +
+             lst[0],
+             (rt << 12) +
+             (lst[1] if len(lst) > 1 else 0)))
 instruction(['SUBS','SUB'], [Reg("LO"), Num(bits=8)], 2, lambda self,rn,imm:
             (0b111 << 11) + (rn << 8) + imm)
 instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO"),Reg("LO")], 2, lambda self,rd,rn,rm:
