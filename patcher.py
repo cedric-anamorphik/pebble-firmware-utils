@@ -30,6 +30,7 @@ def patch_fw(args):
     for d in args.define:
         if '=' in d:
             name,val = d.split('=', 1)
+            definitions[name] = val
         else:
             definitions[d] = True
 
