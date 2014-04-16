@@ -161,14 +161,11 @@ def parseInstruction(line, pos):
     except IndexError:
         raise ParseError("Unknown instruction: %s %s" % (opcode, ','.join([repr(x) for x in args])), pos)
 
-def parseBlock(f, pos, definitions, patch):
+def parseBlock(f, pos, definitions, if_state, patch):
     """
     Parses one mask from patch file.
     Returns results (mask and block contents) as tuple
     """
-
-    # for #commands:
-    if_state = [True] # this True should always be there
 
     # mask's starting position
     mpos = None
@@ -365,9 +362,12 @@ def parseFile(f, definitions=None, patch=None, libpatch=None):
             raise ValueError("Neither patch nor libpatch were provided")
         patch = Patch(f.name, libpatch)
 
+    # for #commands:
+    if_state = [True] # this True should always remain there
+
     pos = FilePos(f.name)
     while True:
-        block = parseBlock(f, pos, definitions, patch)
+        block = parseBlock(f, pos, definitions, if_state, patch)
         if not block:
             break
         patch.blocks.append(block)
