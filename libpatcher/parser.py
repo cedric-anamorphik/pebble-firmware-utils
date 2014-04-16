@@ -275,7 +275,9 @@ def parseBlock(f, pos, definitions, patch):
                         bskip = 0
                     bstr += token
                 else:
-                    # process $definitions only outside of "strings"
+                    # process $definitions only outside of "strings" and
+                    # outside of {blocks}
+                    # FIXME: $definitions inside of {blocks} [and in "strings"?]
                     for d, v in definitions.items():
                         if type(v) is str and '$'+d in token: # FIXME: $var and $variable
                             token = token.replace('$'+d, v)
