@@ -223,6 +223,15 @@ class RegList(List): # list of registers
             if i != j:
                 return False
         return True
+    def lomask(self):
+        """ Returns low registers bitmask for this RegList """
+        if self.mask:
+            raise ValueError("This is mask!")
+        m = 0
+        for r in self:
+            if r < 8:
+                m += 2**(r-1)
+        return m
 class LabelError(Exception):
     """
     This exception is raised when label requested is not found in given context.
