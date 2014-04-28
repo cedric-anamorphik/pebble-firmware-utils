@@ -218,7 +218,7 @@ class RegList(List): # list of registers
                 oc.remove(Reg('LR')) # to avoid loreg test failure
             elif m.lr == False and Reg('LR') in o:
                 return False
-            else # None = nobody cares; avoid loreg failure
+            else: # None = nobody cares; avoid loreg failure
                 oc.remove(Reg('LR'))
             if m.sp:
                 if not Reg('SP') in o:
