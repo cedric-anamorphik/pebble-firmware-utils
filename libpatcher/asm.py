@@ -180,12 +180,13 @@ class Reg(int, Argument):
         return self == other
 
 class RegList(List): # list of registers
-    def __init__(self, lo=None, lr=None, sp=None):
+    def __init__(self, lo=None, pc=None, lr=None, sp=None):
         self.src = []
         self.mask = False
         if lo or lr or sp:
             self.mask = True
             self.lo = lo
+            self.pc = pc
             self.lr = lr
             self.sp = sp
     def __repr__(self):
@@ -212,6 +213,14 @@ class RegList(List): # list of registers
         if self.mask or other.mask:
             m,o = (self,other) if self.mask else (other,self)
             oc = list(o) # other's clone, to clean it up
+            if m.pc:
+                if not Reg('PC') in o:
+                    return False
+                oc.remove(Reg('PC')) # to avoid loreg test failure
+            elif m.pc == False and Reg('PC') in o:
+                return False
+            elif Reg('PC') in oc: # None = nobody cares; avoid loreg failure
+                oc.remove(Reg('PC'))
             if m.lr:
                 if not Reg('LR') in o:
                     return False
