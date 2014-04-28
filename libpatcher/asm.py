@@ -180,12 +180,13 @@ class Reg(int, Argument):
         return self == other
 
 class RegList(List): # list of registers
-    def __init__(self, lo=None, pc=False, lr=False, sp=False):
+    def __init__(self, lo=None, lcount=8, pc=False, lr=False, sp=False):
         self.src = []
         self.mask = False
         if lo or pc or lr or sp:
             self.mask = True
             self.lo = lo
+            self.lcount = lcount # count of lo regs for matching
             self.pc = pc
             self.lr = lr
             self.sp = sp
@@ -237,9 +238,9 @@ class RegList(List): # list of registers
                 return False
             elif Reg('SP') in oc:
                 oc.remove(Reg('SP'))
-            if m.lo and oc and max(oc) > 7:
+            if m.lo and oc and max(oc) >= self.lcount:
                 return False
-            elif m.lo == False and oc and min(oc) < 8:
+            elif m.lo == False and oc and min(oc) < self.lcount:
                 return False
             return True
         if len(self) != len(other):
@@ -254,7 +255,7 @@ class RegList(List): # list of registers
             raise ValueError("This is mask!")
         m = 0
         for r in self:
-            if r < 8:
+            if r < self.lcount:
                 m += 2**r
         return m
 class LabelError(Exception):
