@@ -200,6 +200,17 @@ class RegList(List): # list of registers
         else: # plain register
             super(RegList, self).append(Reg(s))
         self.src.append(s)
+    def match(self, other):
+        if type(other) is not RegList:
+            return False
+        if len(self) == 0 or len(other) == 0:
+            return True # empty means mask
+        if len(self) != len(other):
+            return False
+        for i,j in zip(self,other):
+            if i != j:
+                return False
+        return True
 class LabelError(Exception):
     """
     This exception is raised when label requested is not found in given context.
