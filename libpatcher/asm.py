@@ -735,6 +735,10 @@ instruction('PUSH', [RegList(lo=True, lcount=13, lr=None)], 4, lambda self,rl:
 instruction('POP', [RegList(lo=True, pc=None)], 2, lambda self,rl:
             (0xb<<12) + (1 << 11) + (0x2<<9) +
             (rl.has('PC') << 8) + rl.lomask())
+instruction('POP', [RegList(lo=True, lcount=13, lr=None, pc=None)], 4, lambda self,rl:
+            (0b1110100010111101,
+             (rl.has('PC')<<15) + (rl.has('LR')<<14) +
+             rl.lomask(13)))
 instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10)],[Reg("SP")])], 2, lambda self,rt,lst:
             (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst)>1 else 0))
 instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7)],[Reg("LO")])], 2, lambda self,rt,lst:
