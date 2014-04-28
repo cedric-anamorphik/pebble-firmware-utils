@@ -183,10 +183,10 @@ class RegList(List): # list of registers
     def __init__(self, lo=None, lcount=8, pc=False, lr=False, sp=False):
         self.src = []
         self.mask = False
+        self.lcount = lcount # count of lo regs for matching
         if lo or pc or lr or sp:
             self.mask = True
             self.lo = lo
-            self.lcount = lcount # count of lo regs for matching
             self.pc = pc
             self.lr = lr
             self.sp = sp
@@ -249,6 +249,12 @@ class RegList(List): # list of registers
             if i != j:
                 return False
         return True
+    def has(self, reg):
+        if type(reg) is str:
+            reg = Reg(reg)
+        if reg in self:
+            return 1
+        return 0
     def lomask(self):
         """ Returns low registers bitmask for this RegList """
         if self.mask:
@@ -721,11 +727,14 @@ instruction(['MULS', 'MUL'], [Reg("LO"),Reg("LO")], 2, lambda self,rd,rm:
             (1<<14) + (0b1101 << 6) + (rm << 3) + rd)
 instruction('PUSH', [RegList(lo=True, lr=None)], 2, lambda self,rl:
             (0b1011010<<9) +
-            ((1 if Reg('LR') in rl else 0) << 8) +
+            (rl.has('LR') << 8) +
             rl.lomask())
+instruction('PUSH', [RegList(lo=True, lcount=13, lr=None)], 4, lambda self,rl:
+            (0b1110100100101101,
+             (rl.has('LR') << 14) + rl.lomask()))
 instruction('POP', [RegList(lo=True, pc=None)], 2, lambda self,rl:
             (0xb<<12) + (1 << 11) + (0x2<<9) +
-            ((1 if Reg('PC') in rl else 0) << 8) + rl.lomask())
+            (rl.has('PC') << 8) + rl.lomask())
 instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10)],[Reg("SP")])], 2, lambda self,rt,lst:
             (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst)>1 else 0))
 instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7)],[Reg("LO")])], 2, lambda self,rt,lst:
