@@ -104,15 +104,26 @@ def parseInstruction(line, pos):
                 s = ''
                 t = None
         elif t == 'l': # label or reg
-            if c.isalnum() or c == '_':
+            if c.isalnum() or c == '_' or (c == '-' and asm.Reg.is_reg(s)):
                 s += c
             else:
                 domore = True
-                if asm.Reg.is_reg(s):
-                    a = asm.Reg(s)
-                else:
-                    a = asm.Label(s)
-                args.append(a)
+                if '-' in s: # registers range
+                    ss = s.split('-')
+                    if len(ss) != 2 or not asm.Reg.is_reg(ss[1]):
+                        raise ParseError("Invalid register range: %s" % s, pos)
+                    ra = asm.Reg(ss[0])
+                    rb = asm.Reg(ss[1])
+                    if ra >= rb:
+                        raise ParseError("Unordered register range: %s" % s, pos)
+                    for i in range(ra, rb+1):
+                        args.append(asm.Reg('R%d' % i))
+                else: # register or label
+                    if asm.Reg.is_reg(s):
+                        a = asm.Reg(s)
+                    else:
+                        a = asm.Label(s)
+                    args.append(a)
                 s = ''
                 t = None
         else:
