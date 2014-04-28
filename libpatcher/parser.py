@@ -155,7 +155,7 @@ def parseInstruction(line, pos):
                 args = asm.List()
             elif c == ']':
                 if not br:
-                    raise ParseError("Unmatched ]", f, line)
+                    raise ParseError("Unmatched ]", pos)
                 gargs.append(args)
                 args = gargs
                 br = False
