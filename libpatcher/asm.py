@@ -180,10 +180,10 @@ class Reg(int, Argument):
         return self == other
 
 class RegList(List): # list of registers
-    def __init__(self, lo=None, pc=None, lr=None, sp=None):
+    def __init__(self, lo=None, pc=False, lr=False, sp=False):
         self.src = []
         self.mask = False
-        if lo or lr or sp:
+        if lo or pc or lr or sp:
             self.mask = True
             self.lo = lo
             self.pc = pc
@@ -718,9 +718,12 @@ instruction('LDRB', [Reg("LO"), ([Reg("LO"), Num(bits=5)],[Reg("LO")])], 2, lamb
             (0b1111 << 11) + ((lst[1] if len(lst) > 1 else 0) << 6) + (lst[0] << 3) + rt)
 instruction(['MULS', 'MUL'], [Reg("LO"),Reg("LO")], 2, lambda self,rd,rm:
             (1<<14) + (0b1101 << 6) + (rm << 3) + rd)
-instruction('PUSH', [RegList(lo=True, sp=False)], 2, lambda self,rl:
+instruction('PUSH', [RegList(lo=True, lr=None)], 2, lambda self,rl:
             (0xb<<12) + (0x2<<9) +
             ((1 if Reg('LR') in rl else 0) << 9) + rl.lomask())
+instruction('POP', [RegList(lo=True, pc=None)], 2, lambda self,rl:
+            (0xb<<12) + (1 << 11) + (0x2<<9) +
+            ((1 if Reg('PC') in rl else 0) << 9) + rl.lomask())
 instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10)],[Reg("SP")])], 2, lambda self,rt,lst:
             (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst)>1 else 0))
 instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7)],[Reg("LO")])], 2, lambda self,rt,lst:
