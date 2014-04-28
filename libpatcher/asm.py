@@ -255,7 +255,7 @@ class RegList(List): # list of registers
         m = 0
         for r in self:
             if r < 8:
-                m += 2**(r-1)
+                m += 2**r
         return m
 class LabelError(Exception):
     """
