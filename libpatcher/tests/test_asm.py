@@ -111,13 +111,13 @@ def test_LDRB_R3_R3():
 def test_MUL_R3_R7():
     eq_(op('MUL R3,R7'), '\x7b\x43')
 def test_PUSH_R3_LR():
-    eq_(op('PUSH R3,LR'), '\x08\xb5')
+    eq_(op('PUSH {R3,LR}'), '\x08\xb5')
 def test_PUSH_R4_R8_LR():
-    eq_(op('PUSH R4-R8,LR'), '\x2d\xe9\xf0\x41')
+    eq_(op('PUSH {R4-R8,LR}'), '\x2d\xe9\xf0\x41')
 def test_POP_R4_R8_PC():
-    eq_(op('POP R4-R8,PC'), '\xbd\xe8\xf0\x81')
+    eq_(op('POP {R4-R8,PC}'), '\xbd\xe8\xf0\x81')
 def test_POP_R3_R7_PC():
-    eq_(op('POP R3-R7,PC'), '\xF8\xBD')
+    eq_(op('POP {R3-R7,PC}'), '\xF8\xBD')
 def test_STR_R3_SP():
     eq_(op('STR R3,[SP]'), '\x00\x93')
 def test_STR_R3_SP_4():
