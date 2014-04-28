@@ -255,13 +255,13 @@ class RegList(List): # list of registers
         if reg in self:
             return 1
         return 0
-    def lomask(self):
+    def lomask(self, lcount=8):
         """ Returns low registers bitmask for this RegList """
         if self.mask:
             raise ValueError("This is mask!")
         m = 0
         for r in self:
-            if r < self.lcount:
+            if r < lcount:
                 m += 2**r
         return m
 class LabelError(Exception):
@@ -731,7 +731,7 @@ instruction('PUSH', [RegList(lo=True, lr=None)], 2, lambda self,rl:
             rl.lomask())
 instruction('PUSH', [RegList(lo=True, lcount=13, lr=None)], 4, lambda self,rl:
             (0b1110100100101101,
-             (rl.has('LR') << 14) + rl.lomask()))
+             (rl.has('LR') << 14) + rl.lomask(13)))
 instruction('POP', [RegList(lo=True, pc=None)], 2, lambda self,rl:
             (0xb<<12) + (1 << 11) + (0x2<<9) +
             (rl.has('PC') << 8) + rl.lomask())
