@@ -67,7 +67,8 @@ class Patch(object):
             bpos = block.getPosition(binary)
             code = block.getCode()
             if len(code) > block.mask.getSize() and not ignore:
-                raise PatchingError("Code length exceeds mask length!")
+                raise PatchingError("Code length %d exceeds mask length %d! Mask at %s" %
+                                    (len(code), block.mask.getSize(), block.mask.pos))
             binary = binary[0:bpos] + code + binary[bpos+len(code):]
         if len(binary) != oldlen:
             raise AssertionError("Internal check failed: length mismatch, %d != %d" % (len(binary),oldlen))
