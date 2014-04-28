@@ -180,8 +180,13 @@ class Reg(int, Argument):
         return self == other
 
 class RegList(List): # list of registers
-    def __init__(self):
+    def __init__(self, lo=None, lr=None, sp=None):
         self.src = []
+        if lo or lr or sp:
+            self.mask = True
+            self.lo = lo
+            self.lr = lr
+            self.sp = sp
     def __repr__(self):
         return '{%s}' % ','.join(self.src)
     def append(self, s, pos):
@@ -203,8 +208,15 @@ class RegList(List): # list of registers
     def match(self, other):
         if type(other) is not RegList:
             return False
-        if len(self) == 0 or len(other) == 0:
-            return True # empty means mask
+        if self.mask or other.mask:
+            m,o = (self,other) if self.mask else (other,self)
+            if m.lr and not Reg('LR') in o:
+                return False
+            if m.sp and not Reg('SP') in o:
+                return False
+            if m.lo and max(o) > 7:
+                return False
+            return True
         if len(self) != len(other):
             return False
         for i,j in zip(self,other):
