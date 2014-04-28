@@ -180,7 +180,7 @@ class Reg(int, Argument):
         return self == other
 
 class RegList(List): # list of registers
-    def __init__(self, lo=False, lr=False, sp=False):
+    def __init__(self, lo=None, lr=None, sp=None):
         self.src = []
         self.mask = False
         if lo or lr or sp:
@@ -189,8 +189,6 @@ class RegList(List): # list of registers
             self.lr = lr
             self.sp = sp
     def __repr__(self):
-        if self.mask:
-            return '{lo:%d, lr:%d, sp:%d}' % (self.lo,self.lr,self.sp)
         return '{%s}' % ','.join(self.src)
     def append(self, s, pos):
         if type(s) is not str:
@@ -218,11 +216,21 @@ class RegList(List): # list of registers
                 if not Reg('LR') in o:
                     return False
                 oc.remove(Reg('LR')) # to avoid loreg test failure
+            elif m.lr == False and Reg('LR') in o:
+                return False
+            else # None = nobody cares; avoid loreg failure
+                oc.remove(Reg('LR'))
             if m.sp:
                 if not Reg('SP') in o:
                     return False
                 oc.remove(Reg('SP'))
-            if m.lo and max(oc) > 7:
+            elif m.sp == False and Reg('SP') in o:
+                return False
+            else:
+                oc.remove(Reg('SP'))
+            if m.lo and oc and max(oc) > 7:
+                return False
+            elif m.lo == False and oc and min(oc) < 8:
                 return False
             return True
         if len(self) != len(other):
