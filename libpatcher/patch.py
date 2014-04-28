@@ -1,4 +1,7 @@
 # This module holds Patch class
+class PatchingError(Exception):
+    pass
+
 class Patch(object):
     """
     This class represents one patch file,
@@ -51,7 +54,7 @@ class Patch(object):
             raise ValueError("Already bound")
         for block in self.blocks:
             block.bind(block.getPosition(binary) + codebase)
-    def apply(self, binary, codebase = 0x8010000):
+    def apply(self, binary, codebase = 0x8010000, ignore=False):
         """
         Applies all blocks from this patch to given binary,
         and returns resulting patched binary.
@@ -63,6 +66,8 @@ class Patch(object):
         for block in self.blocks:
             bpos = block.getPosition(binary)
             code = block.getCode()
+            if len(code) > block.mask.getSize() and not ignore:
+                raise PatchingError("Code length exceeds mask length!")
             binary = binary[0:bpos] + code + binary[bpos+len(code):]
         if len(binary) != oldlen:
             raise AssertionError("Internal check failed: length mismatch, %d != %d" % (len(binary),oldlen))

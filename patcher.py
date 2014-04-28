@@ -16,6 +16,8 @@ def parse_args():
                         help="Print debug information while patching")
     parser.add_argument("-D", "--define", action="append", default=[],
                         help="Add some #define'd constant. Usage: either -D constant or -D name=val")
+    parser.add_argument("-i", "--ignore-length", action="store_true",
+                        help="Don't check for mask length when overwriting block (dangerous!")
     return parser.parse_args()
 
 def patch_fw(args):
@@ -49,7 +51,7 @@ def patch_fw(args):
     print "Applying patches:"
     for p in patches:
         print p
-        data = p.apply(data)
+        data = p.apply(data, ignore=args.ignore_length)
     print "Saving..."
     args.output.write(data)
     args.output.close()
