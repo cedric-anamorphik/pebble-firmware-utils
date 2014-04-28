@@ -729,13 +729,13 @@ instruction('PUSH', [RegList(lo=True, lr=None)], 2, lambda self,rl:
             (0b1011010<<9) +
             (rl.has('LR') << 8) +
             rl.lomask())
-instruction('PUSH', [RegList(lo=True, lcount=13, lr=None)], 4, lambda self,rl:
+instruction(['PUSH','PUSH.W'], [RegList(lo=True, lcount=13, lr=None)], 4, lambda self,rl:
             (0b1110100100101101,
              (rl.has('LR') << 14) + rl.lomask(13)))
 instruction('POP', [RegList(lo=True, pc=None)], 2, lambda self,rl:
             (0xb<<12) + (1 << 11) + (0x2<<9) +
             (rl.has('PC') << 8) + rl.lomask())
-instruction('POP', [RegList(lo=True, lcount=13, lr=None, pc=None)], 4, lambda self,rl:
+instruction(['POP','POP.W'], [RegList(lo=True, lcount=13, lr=None, pc=None)], 4, lambda self,rl:
             (0b1110100010111101,
              (rl.has('PC')<<15) + (rl.has('LR')<<14) +
              rl.lomask(13)))
