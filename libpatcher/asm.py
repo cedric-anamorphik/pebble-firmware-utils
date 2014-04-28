@@ -179,6 +179,91 @@ class Reg(int, Argument):
                 return True
         return self == other
 
+class RegList(List): # list of registers
+    def __init__(self, lo=None, lcount=8, pc=False, lr=False, sp=False):
+        self.src = []
+        self.mask = False
+        self.lcount = lcount # count of lo regs for matching
+        if lo or pc or lr or sp:
+            self.mask = True
+            self.lo = lo
+            self.pc = pc
+            self.lr = lr
+            self.sp = sp
+    def __repr__(self):
+        return '{%s}' % ','.join(self.src)
+    def append(self, s, pos):
+        if type(s) is not str:
+            raise ValueError(s)
+        if '-' in s: # registers range
+            ss = s.split('-')
+            if len(ss) != 2:
+                raise ParseError("Invalid register range: %s" % s, pos)
+            ra = Reg(ss[0])
+            rb = Reg(ss[1])
+            if ra >= rb:
+                raise ParseError("Unordered register range: %s" % s, pos)
+            for i in range(ra, rb+1):
+                super(RegList, self).append(Reg('R%d' % i))
+        else: # plain register
+            super(RegList, self).append(Reg(s))
+        self.src.append(s)
+    def match(self, other):
+        if type(other) is not RegList:
+            return False
+        if self.mask or other.mask:
+            m,o = (self,other) if self.mask else (other,self)
+            oc = list(o) # other's clone, to clean it up
+            if m.pc:
+                if not Reg('PC') in o:
+                    return False
+                oc.remove(Reg('PC')) # to avoid loreg test failure
+            elif m.pc == False and Reg('PC') in o:
+                return False
+            elif Reg('PC') in oc: # None = nobody cares; avoid loreg failure
+                oc.remove(Reg('PC'))
+            if m.lr:
+                if not Reg('LR') in o:
+                    return False
+                oc.remove(Reg('LR')) # to avoid loreg test failure
+            elif m.lr == False and Reg('LR') in o:
+                return False
+            elif Reg('LR') in oc: # None = nobody cares; avoid loreg failure
+                oc.remove(Reg('LR'))
+            if m.sp:
+                if not Reg('SP') in o:
+                    return False
+                oc.remove(Reg('SP'))
+            elif m.sp == False and Reg('SP') in o:
+                return False
+            elif Reg('SP') in oc:
+                oc.remove(Reg('SP'))
+            if m.lo and oc and max(oc) >= self.lcount:
+                return False
+            elif m.lo == False and oc and min(oc) < self.lcount:
+                return False
+            return True
+        if len(self) != len(other):
+            return False
+        for i,j in zip(self,other):
+            if i != j:
+                return False
+        return True
+    def has(self, reg):
+        if type(reg) is str:
+            reg = Reg(reg)
+        if reg in self:
+            return 1
+        return 0
+    def lomask(self, lcount=8):
+        """ Returns low registers bitmask for this RegList """
+        if self.mask:
+            raise ValueError("This is mask!")
+        m = 0
+        for r in self:
+            if r < lcount:
+                m += 2**r
+        return m
 class LabelError(Exception):
     """
     This exception is raised when label requested is not found in given context.
@@ -640,6 +725,20 @@ instruction('LDRB', [Reg("LO"), ([Reg("LO"), Num(bits=5)],[Reg("LO")])], 2, lamb
             (0b1111 << 11) + ((lst[1] if len(lst) > 1 else 0) << 6) + (lst[0] << 3) + rt)
 instruction(['MULS', 'MUL'], [Reg("LO"),Reg("LO")], 2, lambda self,rd,rm:
             (1<<14) + (0b1101 << 6) + (rm << 3) + rd)
+instruction('PUSH', [RegList(lo=True, lr=None)], 2, lambda self,rl:
+            (0b1011010<<9) +
+            (rl.has('LR') << 8) +
+            rl.lomask())
+instruction(['PUSH','PUSH.W'], [RegList(lo=True, lcount=13, lr=None)], 4, lambda self,rl:
+            (0b1110100100101101,
+             (rl.has('LR') << 14) + rl.lomask(13)))
+instruction('POP', [RegList(lo=True, pc=None)], 2, lambda self,rl:
+            (0xb<<12) + (1 << 11) + (0x2<<9) +
+            (rl.has('PC') << 8) + rl.lomask())
+instruction(['POP','POP.W'], [RegList(lo=True, lcount=13, lr=None, pc=None)], 4, lambda self,rl:
+            (0b1110100010111101,
+             (rl.has('PC')<<15) + (rl.has('LR')<<14) +
+             rl.lomask(13)))
 instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10)],[Reg("SP")])], 2, lambda self,rt,lst:
             (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst)>1 else 0))
 instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7)],[Reg("LO")])], 2, lambda self,rt,lst:
