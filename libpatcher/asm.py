@@ -180,14 +180,17 @@ class Reg(int, Argument):
         return self == other
 
 class RegList(List): # list of registers
-    def __init__(self, lo=None, lr=None, sp=None):
+    def __init__(self, lo=False, lr=False, sp=False):
         self.src = []
+        self.mask = False
         if lo or lr or sp:
             self.mask = True
             self.lo = lo
             self.lr = lr
             self.sp = sp
     def __repr__(self):
+        if self.mask:
+            return '{lo:%d, lr:%d, sp:%d}' % (self.lo,self.lr,self.sp)
         return '{%s}' % ','.join(self.src)
     def append(self, s, pos):
         if type(s) is not str:
@@ -210,11 +213,16 @@ class RegList(List): # list of registers
             return False
         if self.mask or other.mask:
             m,o = (self,other) if self.mask else (other,self)
-            if m.lr and not Reg('LR') in o:
-                return False
-            if m.sp and not Reg('SP') in o:
-                return False
-            if m.lo and max(o) > 7:
+            oc = list(o) # other's clone, to clean it up
+            if m.lr:
+                if not Reg('LR') in o:
+                    return False
+                oc.remove(Reg('LR')) # to avoid loreg test failure
+            if m.sp:
+                if not Reg('SP') in o:
+                    return False
+                oc.remove(Reg('SP'))
+            if m.lo and max(oc) > 7:
                 return False
             return True
         if len(self) != len(other):
