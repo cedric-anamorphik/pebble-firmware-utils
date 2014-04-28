@@ -179,6 +179,27 @@ class Reg(int, Argument):
                 return True
         return self == other
 
+class RegList(List): # list of registers
+    def __init__(self):
+        self.src = []
+    def __repr__(self):
+        return '{%s}' % ','.join(self.src)
+    def append(self, s):
+        if type(s) is not str:
+            raise ValueError(s)
+        if '-' in s: # registers range
+            ss = s.split('-')
+            if len(ss) != 2:
+                raise ParseError("Invalid register range: %s" % s, pos)
+            ra = Reg(ss[0])
+            rb = Reg(ss[1])
+            if ra >= rb:
+                raise ParseError("Unordered register range: %s" % s, pos)
+            for i in range(ra, rb+1):
+                super(RegList, self).append(Reg('R%d' % i))
+        else: # plain register
+            super(RegList, self).append(Reg(s))
+        self.src.append(s)
 class LabelError(Exception):
     """
     This exception is raised when label requested is not found in given context.
