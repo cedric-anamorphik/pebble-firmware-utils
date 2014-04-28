@@ -675,6 +675,8 @@ instruction('ADR', [Reg("LO"), Label()], 2, lambda self,rd,lbl:
             (0b10100 << 11) + (rd << 8) + lbl.offset(self, 8, 2, True, True))
 instruction('BLX', [Reg()], 2, lambda self,rx:
             (1<<14) + (0b1111 << 7) + (rx << 3))
+instruction('BX', [Reg()], 2, lambda self,rx:
+            (0x11<<10)+(0x3<<8)+(rx<<3))
 instruction('CMP', [Reg("LO"), Num(bits=8)], 2, lambda self,rn,imm:
             (0b101 << 11) + (rn << 8) + imm)
 instruction('CMP', [Reg("LO"), Reg("LO")], 2, lambda self,rn,rm:

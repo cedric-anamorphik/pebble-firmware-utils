@@ -78,6 +78,8 @@ def test_ADR_R2_next():
     eq_(op('ADR R2,next'), '\x00\xA2')
 def test_BLX_R8():
     eq_(op('BLX R8'), '\xC0\x47')
+def test_BX_LR():
+    eq_(op('BX LR'), '\x70\x47')
 def test_CMP_R3_0xF():
     eq_(op('CMP R3,0xF'), '\x0F\x2B')
 def test_CMP_R2_R12():
