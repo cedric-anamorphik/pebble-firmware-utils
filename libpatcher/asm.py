@@ -184,7 +184,7 @@ class RegList(List): # list of registers
         self.src = []
     def __repr__(self):
         return '{%s}' % ','.join(self.src)
-    def append(self, s):
+    def append(self, s, pos):
         if type(s) is not str:
             raise ValueError(s)
         if '-' in s: # registers range

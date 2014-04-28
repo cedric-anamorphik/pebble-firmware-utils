@@ -66,6 +66,7 @@ def parseInstruction(line, pos):
     s = '' # string repr of current arg
     t = None # type of current arg: None (no current), n(numeric), ',"(quoted str), l(reg or label)
     br = False # whether we are in [] block
+    rl = False # whether we are in {register list} block
     for c in arg+'\n': # \n will be processed as last character
         domore = False # if current character needs to be processed further
         if t == None: # state: no current arg
@@ -104,21 +105,13 @@ def parseInstruction(line, pos):
                 s = ''
                 t = None
         elif t == 'l': # label or reg
-            if c.isalnum() or c == '_' or (c == '-' and asm.Reg.is_reg(s)):
+            if c.isalnum() or c == '_' or (rl and c == '-'):
                 s += c
             else:
                 domore = True
-                if '-' in s: # registers range
-                    ss = s.split('-')
-                    if len(ss) != 2 or not asm.Reg.is_reg(ss[1]):
-                        raise ParseError("Invalid register range: %s" % s, pos)
-                    ra = asm.Reg(ss[0])
-                    rb = asm.Reg(ss[1])
-                    if ra >= rb:
-                        raise ParseError("Unordered register range: %s" % s, pos)
-                    for i in range(ra, rb+1):
-                        args.append(asm.Reg('R%d' % i))
-                else: # register or label
+                if rl: # in list of registers
+                    reglist.append(s, pos) # it will handle all validation itself
+                else:
                     if asm.Reg.is_reg(s):
                         a = asm.Reg(s)
                     else:
@@ -159,6 +152,17 @@ def parseInstruction(line, pos):
                 gargs.append(args)
                 args = gargs
                 br = False
+            elif c == '{':
+                if rl:
+                    raise ParseError("Already in register list", pos)
+                rl = True
+                reglist = asm.RegList()
+            elif c == '}':
+                if not rl:
+                    raise ParseError("Unmatched }", pos)
+                args.append(reglist)
+                reglist = None
+                rl = False
             else:
                 raise ParseError("Bad character: %c" % c, pos)
     # now let's check that everything went clean
