@@ -1,6 +1,10 @@
 # This module holds Patch class
 class PatchingError(Exception):
-    pass
+    def __init__(self, message = None, cause = None):
+        self.cause = cause
+        if not message:
+            message = repr(cause)
+        super(PatchingError, self).__init__(message)
 
 class Patch(object):
     """
