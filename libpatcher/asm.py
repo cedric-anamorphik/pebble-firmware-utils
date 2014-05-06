@@ -399,7 +399,7 @@ class Instruction(object):
         if self.original:
             ret += "(mask:%s)" % self.original
         if self.pos:
-            ret += " at " + self.pos
+            ret += " at " + str(self.pos)
         return ret
     def match(self, opcode, args):
         """ Match this definition to given instruction """
