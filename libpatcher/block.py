@@ -1,5 +1,6 @@
 # This module holds Block class
 from asm import LabelInstruction
+from patch import PatchingError
 
 class Block(object):
     def __init__(self, patch, mask, instructions):
@@ -53,4 +54,10 @@ class Block(object):
         for i in self.instructions:
             if len(i.getCode()) != i.getSize():
                 raise AssertionError("Internal check failed: instruction length mismatch for %s" % repr(i))
-        return ''.join([i.getCode() for i in self.instructions])
+        code = b""
+        for i in self.instructions:
+            try:
+                code += i.getCode()
+            except Exception as e:
+                raise PatchingError("Block %s, instruction %s" % (self.mask, i), e)
+        return code

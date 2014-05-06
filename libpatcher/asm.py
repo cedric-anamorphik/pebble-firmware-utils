@@ -398,6 +398,8 @@ class Instruction(object):
         ret = "<%s %s>" % (self.opcode, ','.join([repr(x) for x in self.args]))
         if self.original:
             ret += "(mask:%s)" % self.original
+        if self.pos:
+            ret += " at " + self.pos
         return ret
     def match(self, opcode, args):
         """ Match this definition to given instruction """
