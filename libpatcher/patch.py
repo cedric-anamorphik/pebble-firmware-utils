@@ -2,8 +2,8 @@
 class PatchingError(Exception):
     def __init__(self, message = None, cause = None):
         self.cause = cause
-        if not message:
-            message = repr(cause)
+        if cause:
+            message += repr(cause)
         super(PatchingError, self).__init__(message)
 
 class Patch(object):
@@ -69,7 +69,10 @@ class Patch(object):
         oldlen = len(binary)
         for block in self.blocks:
             bpos = block.getPosition(binary)
-            code = block.getCode()
+            try:
+                code = block.getCode()
+            except Exception as e: # if any error occurs during code generation
+                raise PatchingError("In block %s: " % str(block), e)
             if len(code) > block.mask.getSize() and not ignore:
                 raise PatchingError("Code length %d exceeds mask length %d! Mask at %s" %
                                     (len(code), block.mask.getSize(), block.mask.pos))
