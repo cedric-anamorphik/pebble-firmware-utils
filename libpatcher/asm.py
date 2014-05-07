@@ -656,6 +656,8 @@ class ValInstruction(NullInstruction):
         name = args[0].name
         return ValInstruction(pos, name)
     def setBlock(self, block):
+        if block.mask.floating:
+            raise ValueError("Cannot use val instruction in floating block")
         self.block = block
         # get value...
         addr = self.getAddr()-0x8010000 # FIXME: codebase
