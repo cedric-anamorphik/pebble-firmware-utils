@@ -65,9 +65,3 @@ class Mask(object):
         return sum([len(x) if type(x) is str else x for x in self.parts]) - self.offset
     def getPos(self):
         return self.pos
-class FloatingMask(object):
-    """
-    This class represents floating mask,
-    which will match to any (large enough) free space
-    in the firmware.
-    """
