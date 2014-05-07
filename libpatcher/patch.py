@@ -68,7 +68,7 @@ class Patch(object):
             self.bindall(binary, codebase)
         oldlen = len(binary)
         for block in self.blocks:
-            bpos = block.getPosition(binary)
+            bpos = block.getPosition()
             code = block.getCode()
             if len(code) > block.mask.getSize() and not ignore:
                 raise PatchingError("Code length %d exceeds mask length %d! Mask at %s" %
