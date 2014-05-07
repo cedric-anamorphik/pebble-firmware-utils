@@ -13,6 +13,8 @@ class Ranges(object):
         self._ranges = []
         self._remainder = None
         self._used = False
+    def __repr__(self):
+        return "Ranges: %s" % repr(self._ranges)
 
     def add(self, f, t):
         """
