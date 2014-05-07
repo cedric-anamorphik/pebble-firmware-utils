@@ -59,16 +59,22 @@ class Ranges(object):
         else:
             return binary
 
-    def find(self, size):
+    def find(self, size, aligned=2):
         """
         Returns the best matching range for block of given size,
         and excludes returned range from collection.
+        Will align block to 2 by default;
+        to get block for unaligned data,
+        pass aligned=0
         @returns [from, to]
         """
         self._used = True # for restore_tail
         for r in sorted(self._ranges, key=lambda r: r[1]-r[0]): # sort by size, ascending
-            if r[1]-r[0] >= size:
-                ret = [r[0],r[1]] # copy range
-                r[0] += size # and reduce it
+            alshift = 0
+            if aligned:
+                alshift = aligned - (r[0] % aligned)
+            if r[1]-r[0] >= size+alshift:
+                ret = [r[0]+alshift,r[1]] # copy range
+                r[0] += size+alshift # and reduce it
                 return ret
-        raise RangeError("No suitable range for %d bytes" % size)
+        raise RangeError("No suitable range for %d bytes (align: %d)" % (size,aligned))
