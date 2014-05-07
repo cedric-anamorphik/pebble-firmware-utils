@@ -593,16 +593,13 @@ class ALIGN(Instruction):
         if pos: # not mask
             self.size = args[0]
     def getCode(self):
-        if self.getAddr() % 4 == 0:
-            return ''
-        else:
-            return '\x00\xBF'#*(self.size/2)
+        return '\x00\x00\x00\xBF'[4-self.getSize():]
     def getSize(self):
         if self.getAddr() is None:
             # if checking against unbound block,
-            # assume aligning will occur
-            return 2
-        return 0 if self.getAddr() % 4 == 0 else 2
+            # assume maximum size
+            return 3
+        return 4 - self.getAddr() % 4
 instruction('DCW', [Num(bits=16)], 2, lambda self,num: pack('<H', num))
 instruction('DCD', [Num(bits=32)], 4, lambda self,num: pack('<I', num))
 instruction('DCD', [Label()], 4, lambda self,lbl: pack('<I', lbl.getAddress(self)))
