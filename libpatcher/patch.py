@@ -48,7 +48,7 @@ class Patch(object):
         This is a patch-level global context.
         """
         return self._context
-    def bindall(self, binary, codebase = 0x8010000):
+    def bindall(self, binary, ranges, codebase = 0x8010000):
         """
         Tries to bind all blocks of this patch
         to addresses in given binary.
@@ -57,7 +57,7 @@ class Patch(object):
         if self._is_bound:
             raise ValueError("Already bound")
         for block in self.blocks:
-            block.bind(block.getPosition(binary) + codebase)
+            block.bind(block.getPosition(binary, ranges) + codebase)
     def apply(self, binary, codebase = 0x8010000, ignore=False):
         """
         Applies all blocks from this patch to given binary,
