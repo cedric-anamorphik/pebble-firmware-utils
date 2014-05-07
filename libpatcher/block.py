@@ -15,7 +15,11 @@ class Block(object):
             instr = self.instructions[0]
             if type(instr) is LabelInstruction and instr.glob:
                 name = " "+instr.name
-        return "<<<Block%s at\n%s:\n%s\n>>>" % (name, repr(self.mask), '\n'.join([repr(x) for x in self.instructions]))
+        content = '\n'.join([repr(x) for x in self.instructions])
+        if self.mask:
+            return "<<<Block%s at\n%s:\n%s\n>>>" % (name, repr(self.mask), content)
+        else:
+            return "<<<Floating block%s:\n%s\n>>>" % (name, content)
     @property
     def context(self):
         " Block-local context dictionary "
@@ -23,7 +27,12 @@ class Block(object):
     @property
     def mask(self):
         return self._mask
-    def getPosition(self, binary=None):
+    def getSize(self):
+        " Returns overall size of block's instructions "
+        # FIXME: will this work before binding?
+        # Replace with maxsize?
+        return sum([i.getSize() for i in self.instructions])
+    def getPosition(self, binary=None, ranges=None):
         """
         Returns position of this block's mask in given binary file.
         Will cache its result.
@@ -32,15 +41,21 @@ class Block(object):
                 or (binary and self._binary != binary):
             # if position was not calculated yet
             # or if bin/codebase provided and not same as were saved
-            if binary is None:
-                raise ValueError("No saved position and binary not provided")
-            self.position = self.mask.match(binary)
-            self._binary = binary
+            if self.mask: # fixed block
+                if binary is None:
+                    raise ValueError("No saved position and binary not provided")
+                self.position = self.mask.match(binary)
+                self._binary = binary
+            else: # floating block
+                if ranges == None:
+                    raise ValueError("No ranges provided for floating block")
+                self.position = ranges.find(self.getSize())
         return self.position
     def bind(self, addr):
         """
         This method is called once after construction.
-        It binds block to specific memory address (which is determined with mask.match)
+        It binds block to specific memory address
+        (which is determined with mask.match or is obtained from ranges)
         """
         self.addr = addr
         for i in self.instructions:
