@@ -18,6 +18,8 @@ def parse_args():
                         help="Add some #define'd constant. Usage: either -D constant or -D name=val")
     parser.add_argument("-i", "--ignore-length", action="store_true",
                         help="Don't check for mask length when overwriting block (dangerous!")
+    parser.add_argument("-a", "--append", action="store_true",
+                        help="Use space in the end of firmware to store floating blocks")
     return parser.parse_args()
 
 def patch_fw(args):
