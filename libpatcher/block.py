@@ -42,7 +42,9 @@ class Block(object):
             if self.mask.floating:
                 if ranges == None:
                     raise ValueError("No ranges provided for floating block")
-                self.position = ranges.find(self.getSize())[0]
+                r = ranges.find(self.getSize())
+                self.position = r[0]
+                self.mask.setSize(r[1]-r[0])
             else:
                 if binary is None:
                     raise ValueError("No saved position and binary not provided")
