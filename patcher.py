@@ -29,6 +29,12 @@ def patch_fw(args):
     # which will hold all #included blocks
     library = Patch("#library", binary=data)
 
+    # this holds list of ranges
+    ranges = Ranges()
+
+    if args.append:
+        ranges.add_eof(data, 0x70000, 0x48)
+
     # this is for #defined and pre#defined values
     definitions = {}
     for d in args.define:
@@ -48,13 +54,15 @@ def patch_fw(args):
     print "Binding patches:"
     for p in patches: # including library
         print p
-        p.bindall(data)
+        p.bindall(data, ranges)
     # ...and apply
     print "Applying patches:"
     for p in patches:
         print p
         data = p.apply(data, ignore=args.ignore_length)
     print "Saving..."
+    # restore eof bytes, if file-end range was used
+    data = ranges.restore_tail(data)
     args.output.write(data)
     args.output.close()
     print "Done."
