@@ -66,7 +66,6 @@ class Patch(object):
         """
         if not self._is_bound:
             self.bindall(binary, codebase)
-        oldlen = len(binary)
         for block in self.blocks:
             bpos = block.getPosition()
             code = block.getCode()
@@ -74,6 +73,4 @@ class Patch(object):
                 raise PatchingError("Code length %d exceeds mask length %d! Mask at %s" %
                                     (len(code), block.mask.size, block.mask.pos))
             binary = binary[0:bpos] + code + binary[bpos+len(code):]
-        if len(binary) != oldlen:
-            raise AssertionError("Internal check failed: length mismatch, %d != %d" % (len(binary),oldlen))
         return binary
