@@ -65,19 +65,21 @@ class Mask(object):
         if found is not False:
             return found + self.offset
         raise MaskNotFoundError(self)
-    def getSize(self):
+    @property
+    def size(self):
         """
         Returns size (in bytes) of the 'active' part of mask
         (excluding its part before @, or covered by initial ?-s)
         """
         if self.floating:
-            return self.size
+            return self._size
         else:
             return sum([len(x) if type(x) is str else x for x in self.parts]) - self.offset
-    def setSize(self, size):
+    @size.setter
+    def size(self, size):
         """ For floating masks """
         if not self.floating:
             raise ValueError(repr(self))
-        self.size = size
+        self._size = size
     def getPos(self):
         return self.pos
