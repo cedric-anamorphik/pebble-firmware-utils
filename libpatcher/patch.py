@@ -48,7 +48,7 @@ class Patch(object):
         This is a patch-level global context.
         """
         return self._context
-    def bindall(self, binary, codebase = 0x8010000):
+    def bindall(self, binary, ranges, codebase = 0x8010000):
         """
         Tries to bind all blocks of this patch
         to addresses in given binary.
@@ -57,7 +57,7 @@ class Patch(object):
         if self._is_bound:
             raise ValueError("Already bound")
         for block in self.blocks:
-            block.bind(block.getPosition(binary) + codebase)
+            block.bind(block.getPosition(binary, ranges) + codebase)
     def apply(self, binary, codebase = 0x8010000, ignore=False):
         """
         Applies all blocks from this patch to given binary,
@@ -66,14 +66,14 @@ class Patch(object):
         """
         if not self._is_bound:
             self.bindall(binary, codebase)
-        oldlen = len(binary)
         for block in self.blocks:
-            bpos = block.getPosition(binary)
+            bpos = block.getPosition()
             code = block.getCode()
-            if len(code) > block.mask.getSize() and not ignore:
+            if len(code) > block.mask.size and not ignore:
                 raise PatchingError("Code length %d exceeds mask length %d! Mask at %s" %
-                                    (len(code), block.mask.getSize(), block.mask.pos))
-            binary = binary[0:bpos] + code + binary[bpos+len(code):]
-        if len(binary) != oldlen:
-            raise AssertionError("Internal check failed: length mismatch, %d != %d" % (len(binary),oldlen))
+                                    (len(code), block.mask.size, block.mask.pos))
+            align = b''
+            if len(binary) < bpos:
+                align = b'\x00'*(bpos-len(binary)) # perform alignment
+            binary = binary[0:bpos] + align + code + binary[bpos+len(code):]
         return binary

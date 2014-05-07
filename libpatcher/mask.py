@@ -16,14 +16,20 @@ class Mask(object):
         self.parts = parts
         self.offset = offset
         self.pos = pos
+        self._size = None
         # TODO: validate
     def __repr__(self):
+        if not self.parts: # floating mask
+            return "Floating mask"
         def str2hex(s):
             if type(s) is int:
                 return "?%d" % s
             else:
                 return ' '.join(["%02X" % ord(c) for c in s])
         return "Mask at %s: %s @%d" % (self.pos, ','.join([str2hex(x) for x in self.parts]), self.offset)
+    @property
+    def floating(self):
+        return not self.parts or len(self.parts) == 0
     def match(self, data):
         """
         Tries to match this mask to given data.
@@ -31,6 +37,8 @@ class Mask(object):
         False if not found
         or (exception?) if found more than one occurance.
         """
+        if self.floating:
+            raise ValueError("Cannot match floating mask")
         # if mask starts with skip, append it to offset
         if type(self.parts[0]) is int:
             self.offset += self.parts[0]
@@ -57,11 +65,21 @@ class Mask(object):
         if found is not False:
             return found + self.offset
         raise MaskNotFoundError(self)
-    def getSize(self):
+    @property
+    def size(self):
         """
         Returns size (in bytes) of the 'active' part of mask
         (excluding its part before @, or covered by initial ?-s)
         """
-        return sum([len(x) if type(x) is str else x for x in self.parts]) - self.offset
+        if self.floating:
+            return self._size
+        else:
+            return sum([len(x) if type(x) is str else x for x in self.parts]) - self.offset
+    @size.setter
+    def size(self, size):
+        """ For floating masks """
+        if not self.floating:
+            raise ValueError(repr(self))
+        self._size = size
     def getPos(self):
         return self.pos

@@ -593,14 +593,13 @@ class ALIGN(Instruction):
         if pos: # not mask
             self.size = args[0]
     def getCode(self):
-        if self.getAddr() % 4 == 0:
-            return ''
-        else:
-            return '\x00\xBF'#*(self.size/2)
+        return '\x00\x00\x00\xBF'[4-self.getSize():]
     def getSize(self):
         if self.getAddr() is None:
-            raise ValueError("No address, cannot determine size")
-        return 0 if self.getAddr() % 4 == 0 else 2
+            # if checking against unbound block,
+            # assume maximum size
+            return 3
+        return 3 - (self.getAddr()+3) % 4
 instruction('DCW', [Num(bits=16)], 2, lambda self,num: pack('<H', num))
 instruction('DCD', [Num(bits=32)], 4, lambda self,num: pack('<I', num))
 instruction('DCD', [Label()], 4, lambda self,lbl: pack('<I', lbl.getAddress(self)))
@@ -652,11 +651,13 @@ class ValInstruction(NullInstruction):
         Instruction.__init__(self, "val", [Label()], None, True, pos)
         self.name = name
     def __repr__(self):
-        return "<%slabel:%s>" % ("global " if self.glob else "", self.name)
+        return "<value:%s>" % (self.name)
     def instantiate(self, opcode, args, pos):
         name = args[0].name
         return ValInstruction(pos, name)
     def setBlock(self, block):
+        if block.mask.floating:
+            raise ValueError("Cannot use val instruction in floating block")
         self.block = block
         # get value...
         addr = self.getAddr()-0x8010000 # FIXME: codebase
