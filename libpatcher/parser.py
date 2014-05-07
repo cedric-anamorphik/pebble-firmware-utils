@@ -85,7 +85,7 @@ def parseInstruction(line, pos):
             c = c.replace('n','\n')
             s += c
             t=t[0]
-        elif t in ['n','ns']: # number, maybe 0xHEX or 0bBINARY or 0octal, or numshift
+        elif t in ['n','ns','nm']: # number, maybe 0xHEX or 0bBINARY or 0octal, or numshift
             if c.isdigit() or c in 'aAbBcCdDeEfFxX':
                 s += c
             else:
@@ -95,9 +95,15 @@ def parseInstruction(line, pos):
                 if opcode == "db":
                     s = "0x"+s
                 try:
-                    if t == 'ns': # numshift for label
+                    if t == 'ns' and type(args[-1]) is asm.Label: # numshift for label
                         # args[-1] must exist and be label, or else t would not be 'ns'
                         args[-1].shift = int(s, 0)
+                    elif t in ['ns','nm']:
+                        newnum = asm.Num(s)
+                        oldnum = args[-1]
+                        rval = oldnum*newnum if t == 'nm' else oldnum+newnum
+                        rin = str(oldnum) + ('*' if t == 'nm' else '+' if newnum>0 else '-') + str(newnum)
+                        args[-1] = asm.Num(rval, rin)
                     else: # regular number
                         args.append(asm.Num(s))
                 except ValueError:
@@ -130,10 +136,15 @@ def parseInstruction(line, pos):
                 s += c
                 t = 'l' # label
             elif c == '+': # shift-value for label
-                if args and type(args[-1]) is asm.Label:
+                if args and type(args[-1]) in (asm.Label, asm.Num):
                     t = 'ns' # number,shift
                 else:
                     raise ParseError("Unexpected +", pos)
+            elif c == '*': # multiplier for number
+                if args and type(args[-1]) is asm.Num:
+                    t = 'nm' # number,multiplier
+                else:
+                    raise ParseError("Unexpected *", pos)
             elif c in "'\"": # quoted str
                 t = c
             elif c.isspace(): # including last \n

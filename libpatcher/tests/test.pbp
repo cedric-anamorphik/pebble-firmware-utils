@@ -32,5 +32,6 @@
 	CBZ R4, home
 	ALIGN 4
 	B none
+	MOV R0, 3*4
 	; it should warn if block is unclosed
 }

@@ -15,7 +15,7 @@ class Argument(object):
 
 class Num(int, Argument):
     """ Just remember initially specified value format """
-    def __new__(cls, val=None, bits='any', positive=False):
+    def __new__(cls, val=None, initial=None, bits='any', positive=False):
         if type(val) is str:
             ret = int.__new__(cls, val, 0) # auto determine base
         elif val is None:
@@ -27,7 +27,7 @@ class Num(int, Argument):
             return ret
         else:
             ret = int.__new__(cls, val)
-        ret.initial = str(val)
+        ret.initial = str(val) if initial is None else initial
         # and for consistency with Reg:
         ret.val = ret
         ret.bits = None
