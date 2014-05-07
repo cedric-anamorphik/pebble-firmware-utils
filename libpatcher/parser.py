@@ -131,11 +131,16 @@ def parseInstruction(line, pos):
         if domore: # current character was not processed yet
             if c.isdigit() or c == '-' or (opcode == "db" and c in "AaBbCcDdEeFf"):
                 s += c
-                t = 'n'
+                if c == '-' and args and type(args[-1]) is asm.Num: # shift value for number
+                    # FIXME: this will break stuff like MOV R0,4,-2
+                    # But is such stuff possible?
+                    t = 'ns'
+                else:
+                    t = 'n'
             elif c.isalpha() or c == '_':
                 s += c
                 t = 'l' # label
-            elif c == '+': # shift-value for label
+            elif c == '+': # shift-value for label or number
                 if args and type(args[-1]) in (asm.Label, asm.Num):
                     t = 'ns' # number,shift
                 else:
