@@ -72,5 +72,8 @@ class Patch(object):
             if len(code) > block.mask.size and not ignore:
                 raise PatchingError("Code length %d exceeds mask length %d! Mask at %s" %
                                     (len(code), block.mask.size, block.mask.pos))
-            binary = binary[0:bpos] + code + binary[bpos+len(code):]
+            align = b''
+            if len(binary) < bpos:
+                align = b'\x00'*(bpos-len(binary)) # perform alignment
+            binary = binary[0:bpos] + align + code + binary[bpos+len(code):]
         return binary
