@@ -54,7 +54,7 @@ class Ranges(object):
             return
         self._remainder = binary[-retain:]
         self.add(len(binary), maxbin-retain)
-    def restore_tail(binary):
+    def restore_tail(self, binary):
         """ Restore file's ending bytes, if EOF range was used """
         if self._remainder and self._used:
             return binary + self._remainder
