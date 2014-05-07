@@ -16,6 +16,7 @@ class Mask(object):
         self.parts = parts
         self.offset = offset
         self.pos = pos
+        self._size = None
         # TODO: validate
     def __repr__(self):
         if not self.parts: # floating mask
@@ -69,6 +70,14 @@ class Mask(object):
         Returns size (in bytes) of the 'active' part of mask
         (excluding its part before @, or covered by initial ?-s)
         """
-        return sum([len(x) if type(x) is str else x for x in self.parts]) - self.offset
+        if self.floating:
+            return self.size
+        else:
+            return sum([len(x) if type(x) is str else x for x in self.parts]) - self.offset
+    def setSize(self, size):
+        """ For floating masks """
+        if not self.floating:
+            raise ValueError(repr(self))
+        self.size = size
     def getPos(self):
         return self.pos
