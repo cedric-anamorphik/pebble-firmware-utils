@@ -11,6 +11,8 @@ class Ranges(object):
     """
     def __init__(self):
         self._ranges = []
+        self._remainder = None
+        self._used = False
 
     def add(self, f, t):
         """
@@ -42,6 +44,20 @@ class Ranges(object):
 
         # this is completely new range
         self._ranges.append([f,t])
+    def add_eof(self, binary, maxbin, retain):
+        """ Add end-of-file range, if applicable """
+        if len(binary) >= maxbin-retain:
+            print("Will not append anything because binary is too large: "
+                  "%x > %x-%x" % (len(binary), maxbin, retain))
+            return
+        self._remainder = binary[-retain:]
+        self.add(len(binary), maxbin-retain)
+    def restore_tail(binary):
+        """ Restore file's ending bytes, if EOF range was used """
+        if self._remainder and self._used:
+            return binary + self._remainder
+        else:
+            return binary
 
     def find(self, size):
         """
@@ -49,6 +65,7 @@ class Ranges(object):
         and excludes returned range from collection.
         @returns [from, to]
         """
+        self._used = True # for restore_tail
         for r in sorted(self._ranges, key=lambda r: r[1]-r[0]): # sort by size, ascending
             if r[1]-r[0] >= size:
                 ret = [r[0],r[1]] # copy range
