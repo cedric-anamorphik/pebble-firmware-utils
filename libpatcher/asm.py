@@ -599,7 +599,9 @@ class ALIGN(Instruction):
             return '\x00\xBF'#*(self.size/2)
     def getSize(self):
         if self.getAddr() is None:
-            raise ValueError("No address, cannot determine size")
+            # if checking against unbound block,
+            # assume aligning will occur
+            return 2
         return 0 if self.getAddr() % 4 == 0 else 2
 instruction('DCW', [Num(bits=16)], 2, lambda self,num: pack('<H', num))
 instruction('DCD', [Num(bits=32)], 4, lambda self,num: pack('<I', num))
