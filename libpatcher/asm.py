@@ -651,7 +651,7 @@ class ValInstruction(NullInstruction):
         Instruction.__init__(self, "val", [Label()], None, True, pos)
         self.name = name
     def __repr__(self):
-        return "<%slabel:%s>" % ("global " if self.glob else "", self.name)
+        return "<value:%s>" % (self.name)
     def instantiate(self, opcode, args, pos):
         name = args[0].name
         return ValInstruction(pos, name)
