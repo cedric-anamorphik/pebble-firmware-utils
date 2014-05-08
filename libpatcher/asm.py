@@ -56,7 +56,7 @@ class Num(int, Argument):
         def __init__(self, bits=12):
             self.bits = bits
         def __repr__(self):
-            return "ThumbExpandable integer for %s bits"
+            return "ThumbExpandable integer for %s bits" % self.bits
         def match(self, other):
             def encode(n):
                 " Encodes n to thumb-form or raises ValueError if impossible "
