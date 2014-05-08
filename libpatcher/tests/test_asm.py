@@ -142,5 +142,9 @@ def test_SUB_R2_0x12():
     eq_(op('SUB R2,0x12'), '\x12\x3A')
 def test_SUB_R4_R6_R4():
     eq_(op('SUB R4,R6,R4'), '\x34\x1B')
+def test_SUB_R2_R0_8():
+    eq_(op('SUB R2,R0,8'), b'\xa0\xf1\x08\x02')
+def test_SUB_R1_R4_1():
+    eq_(op('SUB R1,R4,1'), b'\x61\x1E')
 def test_UXTB_R5_R4():
     eq_(op('UXTB R5,R4'), '\xE5\xB2')
