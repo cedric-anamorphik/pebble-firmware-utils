@@ -768,5 +768,15 @@ instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO"),Reg("LO")], 2, lambda self,rd,
             simpleAddSub(self,rd,rn,rm,1))
 instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
             simpleAddSub(self,rd,rd,rm,1))
+instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO"), Num(bits=3)], 2, lambda self,rd,rn,imm:
+            (0b1111 << 9) + (imm << 6) + (rn << 3) + (rd))
+instruction(['SUB','SUB.W'], [Reg(),Reg(),Num(bits=12)], 4, lambda self,rd,rn,imm:
+            ((0b11110 << 11) +
+             (imm.part(1,11) << 10) +
+             (0b101010 << 4) +
+             rn,
+             (imm.part(3,8) << 12) +
+             (rd << 8) +
+             imm.part(8)))
 instruction('UXTB', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
             (0b1011001011 << 6) + (rm << 3) + rd)
