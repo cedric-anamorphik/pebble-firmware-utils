@@ -65,13 +65,13 @@ class Block(object):
         """
         Calculstes and returns binary code of this whole block.
         """
-        for i in self.instructions:
-            if len(i.getCode()) != i.getSize():
-                raise AssertionError("Internal check failed: instruction length mismatch for %s" % repr(i))
         code = b""
         for i in self.instructions:
             try:
-                code += i.getCode()
+                icode = i.getCode()
             except Exception as e:
                 raise PatchingError("Block %s, instruction %s" % (self.mask, i), e)
+            if len(icode) != i.getSize():
+                raise AssertionError("Internal check failed: instruction length mismatch for %s" % repr(i))
+            code += icode
         return code
