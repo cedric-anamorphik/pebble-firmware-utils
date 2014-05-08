@@ -22,7 +22,7 @@ class Mask(object):
         if not self.parts: # floating mask
             return "Floating mask"
         def str2hex(s):
-            if type(s) is int:
+            if isinstance(s, (int,long)):
                 return "?%d" % s
             else:
                 return ' '.join(["%02X" % ord(c) for c in s])
@@ -40,7 +40,7 @@ class Mask(object):
         if self.floating:
             raise ValueError("Cannot match floating mask")
         # if mask starts with skip, append it to offset
-        if type(self.parts[0]) is int:
+        if isinstance(self.parts[0], (int,long)):
             self.offset += self.parts[0]
             del self.parts[0]
         pos1 = data.find(self.parts[0])
@@ -48,7 +48,7 @@ class Mask(object):
         while pos1 != -1:
             pos = pos1+len(self.parts[0])
             for p in self.parts[1:]:
-                if type(p) is int:
+                if isinstance(p, (int,long)):
                     pos += p
                 else:
                     if p == data[pos:pos+len(p)]:
@@ -74,7 +74,7 @@ class Mask(object):
         if self.floating:
             return self._size
         else:
-            return sum([len(x) if type(x) is str else x for x in self.parts]) - self.offset
+            return sum([len(x) if isinstance(x, (str,bytes)) else x for x in self.parts]) - self.offset
     @size.setter
     def size(self, size):
         """ For floating masks """

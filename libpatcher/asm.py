@@ -16,7 +16,7 @@ class Argument(object):
 class Num(int, Argument):
     """ Just remember initially specified value format """
     def __new__(cls, val=None, initial=None, bits='any', positive=False):
-        if type(val) is str:
+        if isinstance(val, str):
             ret = int.__new__(cls, val, 0) # auto determine base
         elif val is None:
             ret = int.__new__(cls, 0)
@@ -40,7 +40,7 @@ class Num(int, Argument):
             return "Integer%s" % (", positive" if self.positive else "")
         return str(self.initial)
     def match(self, other):
-        if type(other) is not Num:
+        if not isinstance(other, Num):
             return False
         if self.bits != None:
             if self.positive and other < 0:
@@ -86,7 +86,7 @@ class Num(int, Argument):
                 raise ValueError
             def the(bits, shift):
                 return (val >> shift) & (2**bits-1)
-            if type(other) is not Num:
+            if not isinstance(other, Num):
                 return False
             if abs(other) > 2**32-1:
                 return False # too large
@@ -105,12 +105,12 @@ class Num(int, Argument):
 
 class List(list, Argument):
     def match(self, other):
-        if type(other) not in (List, list): # it may be either our specific List obj or plain list
+        if not isinstance(other, (List, list)): # it may be either our specific List obj or plain list
             return False
         if len(self) != len(other):
             return False
         for i,j in zip(self, other):
-            if type(i) is not tuple:
+            if not isinstance(i, tuple):
                 i = (i,) # to be iterable
             for ii in i:
                 if ii.match(j):
@@ -168,7 +168,7 @@ class Reg(int, Argument):
     def __repr__(self):
         return self.name
     def match(self, other):
-        if not type(other) is Reg:
+        if not isinstance(other, Reg):
             return False
         if self.mask != None:
             if self.mask == True: # hireg
@@ -193,7 +193,7 @@ class RegList(List): # list of registers
     def __repr__(self):
         return '{%s}' % ','.join(self.src)
     def append(self, s, pos):
-        if type(s) is not str:
+        if not isinstance(s, str):
             raise ValueError(s)
         if '-' in s: # registers range
             ss = s.split('-')
@@ -209,7 +209,7 @@ class RegList(List): # list of registers
             super(RegList, self).append(Reg(s))
         self.src.append(s)
     def match(self, other):
-        if type(other) is not RegList:
+        if not isinstance(other, RegList):
             return False
         if self.mask or other.mask:
             m,o = (self,other) if self.mask else (other,self)
@@ -250,7 +250,7 @@ class RegList(List): # list of registers
                 return False
         return True
     def has(self, reg):
-        if type(reg) is str:
+        if isinstance(reg, str):
             reg = Reg(reg)
         if reg in self:
             return 1
@@ -277,7 +277,7 @@ class Label(Argument):
     def __repr__(self):
         return (":%s"%self.name) if self.name else "Label"
     def match(self, other):
-        return type(other) is Label
+        return isinstance(other, Label)
     def getAddress(self, instr):
         if not self.name:
             raise LabelError("This is a mask, not label!")
@@ -371,7 +371,7 @@ class Str(str, Argument):
         ret.mask = mask
         return ret
     def match(self, other):
-        if type(other) is not Str:
+        if not isinstance(other, Str):
             return False
         if self.mask:
             return True
@@ -406,7 +406,7 @@ class Instruction(object):
         if not self.mask:
             raise ValueError("This is not mask, cannot match")
         # check mnemonic...
-        if type(self.opcode) is str:
+        if isinstance(self.opcode, str):
             if self.opcode != opcode:
                 return False
         else: # multiple opcodes possible
@@ -460,14 +460,14 @@ class Instruction(object):
             code = self.proc(self, *self.args)
         else:
             code = self.proc
-        if type(code) is str:
+        if isinstance(code, bytes):
             return code
-        elif type(code) is int:
+        elif isinstance(code, (int, long)):
             return pack('<H', code)
-        elif type(code) is tuple:
+        elif isinstance(code, tuple):
             return pack('<HH', code[0], code[1])
         else:
-            raise ValueError("Bad code: %s" % repr(code))
+            raise ValueError("Instruction %s: bad code: %s" % (repr(self), repr(code)))
     def getSize(self):
         """ default implementation; may be overriden by decorator """
         return self.size
@@ -512,10 +512,10 @@ def instruction(opcode, args, size=2, proc=None):
         # Replace all [lists] with List instances, recursing tuples
         def replace(args):
             for n,a in enumerate(args):
-                if type(a) is list:
+                if type(a) is list: # don't use isinstance, as we only need to replace "exact" Lists
                     args[n] = List()
                     [args[n].append(k) for k in a]
-                elif type(a) is tuple:
+                elif isinstance(a, tuple):
                     args[n] = tuple(replace(list(a)))
             return args
         replace(args)
@@ -569,9 +569,9 @@ class DCB(Instruction):
         if args:
             code = ''
             for a in args:
-                if type(a) is Str:
+                if isinstance(a, Str):
                     code += a
-                elif type(a) is Num:
+                elif isinstance(a, Num):
                     code += pack('<B', a)
                 else:
                     raise ValueError("Bad argument: %s" % repr(a))

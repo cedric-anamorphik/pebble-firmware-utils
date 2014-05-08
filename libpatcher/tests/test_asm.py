@@ -8,7 +8,7 @@ from nose.tools import *
 mock_patch = Patch('test_patch', binary="test_bin")
 def op_gen(instr, addr=0, context={}):
     pos = FilePos('test_asm.pbp',0)
-    if type(instr) is str:
+    if isinstance(instr, str):
         i = parseInstruction(instr, pos)
     else:
         i = findInstruction(instr[0], instr[1], pos)
@@ -27,9 +27,9 @@ def op(instr, addr=0, context={}):
 def eq_(a,b):
     def unhex(s):
         return ' '.join(["%02X"%ord(c) for c in s])
-    if type(a) is str:
+    if isinstance(a, str):
         a = unhex(a)
-    if type(b) is str:
+    if isinstance(b, str):
         b = unhex(b)
     assert a==b, "%s != %s" % (a,b)
 def test_BL_self():

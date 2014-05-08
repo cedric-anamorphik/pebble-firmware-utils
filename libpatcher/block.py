@@ -13,7 +13,7 @@ class Block(object):
         name=""
         if len(self.instructions) > 0:
             instr = self.instructions[0]
-            if type(instr) is LabelInstruction and instr.glob:
+            if isinstance(instr, LabelInstruction) and instr.glob:
                 name = " "+instr.name
         content = '\n'.join([repr(x) for x in self.instructions])
         if self.mask:

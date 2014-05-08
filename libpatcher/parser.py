@@ -95,7 +95,7 @@ def parseInstruction(line, pos):
                 if opcode == "db":
                     s = "0x"+s
                 try:
-                    if t == 'ns' and type(args[-1]) is asm.Label: # numshift for label
+                    if t == 'ns' and isinstance(args[-1], asm.Label): # numshift for label
                         # args[-1] must exist and be label, or else t would not be 'ns'
                         args[-1].shift = int(s, 0)
                     elif t in ['ns','nm']:
@@ -131,7 +131,7 @@ def parseInstruction(line, pos):
         if domore: # current character was not processed yet
             if c.isdigit() or c == '-' or (opcode == "db" and c in "AaBbCcDdEeFf"):
                 s += c
-                if c == '-' and args and type(args[-1]) is asm.Num: # shift value for number
+                if c == '-' and args and isinstance(args[-1], asm.Num): # shift value for number
                     # FIXME: this will break stuff like MOV R0,4,-2
                     # But is such stuff possible?
                     t = 'ns'
@@ -141,12 +141,12 @@ def parseInstruction(line, pos):
                 s += c
                 t = 'l' # label
             elif c == '+': # shift-value for label or number
-                if args and type(args[-1]) in (asm.Label, asm.Num):
+                if args and isinstance(args[-1], (asm.Label, asm.Num)):
                     t = 'ns' # number,shift
                 else:
                     raise ParseError("Unexpected +", pos)
             elif c == '*': # multiplier for number
-                if args and type(args[-1]) is asm.Num:
+                if args and isinstance(args[-1], asm.Num):
                     t = 'nm' # number,multiplier
                 else:
                     raise ParseError("Unexpected *", pos)
@@ -285,7 +285,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
 
         # process ${definitions} everywhere
         for d, v in definitions.items():
-            if type(v) is str and '${'+d+'}' in line:
+            if isinstance(v, str) and '${'+d+'}' in line:
                 line = line.replace('${'+d+'}', v)
 
         if instructions == None: # not in block, reading mask
@@ -307,7 +307,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                     # outside of {blocks}
                     # FIXME: $definitions inside of {blocks} [and in "strings"?]
                     for d, v in definitions.items():
-                        if type(v) is str and '$'+d in token: # FIXME: $var and $variable
+                        if isinstance(v, str) and '$'+d in token: # FIXME: $var and $variable
                             token = token.replace('$'+d, v)
 
                     ts = token.split()
@@ -336,7 +336,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                         elif t == '@':
                             if mofs:
                                 raise ParseError("Duplicate '@'", pos)
-                            mofs = sum([len(x) if type(x) is str else x for x in mask]) + len(bstr) + bskip
+                            mofs = sum([len(x) if isinstance(x, str) else x for x in mask]) + len(bstr) + bskip
                         elif t == '{':
                             if bstr:
                                 mask.append(bstr)
