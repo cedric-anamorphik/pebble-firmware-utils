@@ -664,7 +664,7 @@ class ValInstruction(NullInstruction):
         value = unpack('<I', self.block.patch.binary[addr:addr+4])[0]
         # ...and store it at patch level
         block.patch.context[self.name] = value
-instruction('ADD', [Reg("LO"), Num()], 2, lambda self,rd,imm:
+instruction('ADD', [Reg("LO"), Num(bits=8)], 2, lambda self,rd,imm:
             (1 << 13) + (2 << 11) + (rd << 8) + imm)
 def simpleAddSub(self, rd, rn, rm, is_sub):
     return (0b11 << 11) + ((1 if is_sub else 0) << 9) + (rm << 6) + (rn << 3) + rd
