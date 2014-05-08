@@ -672,6 +672,17 @@ instruction(['ADDS','ADD'], [Reg("LO"), Reg("LO"), Reg("LO")], 2, lambda self,rd
             simpleAddSub(self,rd,rn,rm,0))
 instruction(['ADDS','ADD'], [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
             simpleAddSub(self,rd,rd,rm,0))
+instruction(['ADD','ADD.W','ADDS','ADDS.W'], [Reg(),Reg(),Num.ThumbExpandable()], 4, lambda self,rd,rn,imm:
+            (
+                (0b11110 << 11) +
+                (imm.the(1,11) << 10) +
+                (0b1000 << 5) +
+                ((1 if 'S' in self.opcode else 0) << 4) +
+                rn,
+                (imm.the(3,8) << 12) +
+                (rd << 8) +
+                imm.the(8,0)
+            ))
 instruction('ADD', [Reg("LO"), Reg("SP"), Num(bits=10)], 2, lambda self,rd,sp,imm:
             (0b10101 << 11) + (rd << 8) + (imm >> 2))
 instruction('ADR', [Reg("LO"), Label()], 2, lambda self,rd,lbl:

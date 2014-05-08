@@ -70,10 +70,12 @@ def test_DCD_name_p_1():
     eq_(op('DCD name+1'), 'uest')
 def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == '\x01\x31'
-#def test_ADD_R3_R0_R2():
-#    eq_(op('ADD R3,R0,R2'), '\x83\x18')
-def test_ADD_R7_SP_12():
-    eq_(op('ADD R7,SP,12'), '\x03\xAF')
+def test_ADD_R3_R0_R2():
+    eq_(op('ADD R3,R0,R2'), '\x83\x18')
+#def test_ADD_R7_SP_12():
+#    eq_(op('ADD R7,SP,12'), '\x03\xAF')
+def test_ADD_R0_R4_0x64():
+    eq_(op('ADD R0,R4,0x64'), b'\x04\xf1\x64\x00')
 def test_ADR_R2_next():
     eq_(op('ADR R2,next'), '\x00\xA2')
 def test_BLX_R8():
