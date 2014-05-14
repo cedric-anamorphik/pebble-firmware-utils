@@ -497,10 +497,10 @@ class LabelInstruction(NullInstruction):
         return "<%slabel:%s>" % ("global " if self.glob else "", self.name)
     def setBlock(self, block):
         self.block = block
-        ctx = block.patch.context if self.glob else block.context
-        if self.name in ctx:
-            raise LabelError("Duplicate label %s" % self.name)
-        ctx[self.name] = self.getAddr()
+        if self.glob:
+            block.patch.context[self.name] = self.getAddr()
+        else:
+            block.context[self.name] = self.getAddr()
 _instructions = []
 def instruction(opcode, args, size=2, proc=None):
     """
