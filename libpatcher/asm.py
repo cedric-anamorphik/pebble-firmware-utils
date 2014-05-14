@@ -69,9 +69,9 @@ class Num(int, Argument):
                 b4 = n & 0xFF
                 if b1 == b2 == b3 == b4:
                     return (0b11 << 8) + b1
-                if b1 == 0 and b3 == 0:
+                if b1 == 0 and b3 == 0 and b2 == b4:
                     return (0b01 << 8) + b2
-                if b2 == 0 and b4 == 0:
+                if b2 == 0 and b4 == 0 and b1 == b3:
                     return (0b10 << 8) + b1
                 # rotating scheme
                 def rol(n, ofs):

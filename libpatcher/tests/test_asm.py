@@ -5,6 +5,13 @@ from libpatcher.block import *
 from libpatcher.patch import Patch
 from nose.tools import *
 
+# test thumb expandable integers
+def test_thumbex():
+    tx = Num.ThumbExpandable()
+    o = Num(0x00ff0000)
+    assert tx.match(o)
+    eq_(o.theval, 0b1111111 + (8<<8))
+
 mock_patch = Patch('test_patch', binary="test_bin")
 def op_gen(instr, addr=0, context={}):
     pos = FilePos('test_asm.pbp',0)
