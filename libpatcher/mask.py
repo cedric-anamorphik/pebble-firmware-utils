@@ -40,8 +40,9 @@ class Mask(object):
         if self.floating:
             raise ValueError("Cannot match floating mask")
         # if mask starts with skip, append it to offset
+        # as a negative offset!
         if isinstance(self.parts[0], (int,long)):
-            self.offset += self.parts[0]
+            self.offset -= self.parts[0]
             del self.parts[0]
         pos1 = data.find(self.parts[0])
         found = False
