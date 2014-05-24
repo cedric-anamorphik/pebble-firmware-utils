@@ -97,7 +97,7 @@ def parseInstruction(line, pos):
                 try:
                     if t == 'ns' and isinstance(args[-1], asm.Label): # numshift for label
                         # args[-1] must exist and be label, or else t would not be 'ns'
-                        args[-1].shift = int(s, 0)
+                        args[-1].shift = long(s, 0)
                     elif t in ['ns','nm']:
                         newnum = asm.Num(s)
                         oldnum = args[-1]

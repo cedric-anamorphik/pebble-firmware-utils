@@ -13,20 +13,20 @@ class Argument(object):
         """ Matches this instance with given obj """
         raise NotImplementedError
 
-class Num(int, Argument):
+class Num(long, Argument):
     """ Just remember initially specified value format """
     def __new__(cls, val=None, initial=None, bits='any', positive=False):
         if isinstance(val, str):
-            ret = int.__new__(cls, val, 0) # auto determine base
+            ret = long.__new__(cls, val, 0) # auto determine base
         elif val is None:
-            ret = int.__new__(cls, 0)
+            ret = long.__new__(cls, 0)
             ret.bits = bits
             if bits != 'any':
                 ret.maximum = 1 << bits
             ret.positive = positive
             return ret
         else:
-            ret = int.__new__(cls, val)
+            ret = long.__new__(cls, val)
         ret.initial = str(val) if initial is None else initial
         # and for consistency with Reg:
         ret.val = ret
