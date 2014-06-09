@@ -138,8 +138,6 @@ if __name__ == "__main__":
 			for f in ("tintin_fw.bin", "system_resources.pbpack", "manifest.json"):
 				print "   Storing %s..." % f
 				z.write(workdir+f, f)
-		except Exception as e:
-			print "Error.", e
 		finally:
 			z.close()
 
