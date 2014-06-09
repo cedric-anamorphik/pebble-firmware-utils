@@ -75,9 +75,6 @@ if __name__ == "__main__":
 	if args.original:
 		args.orig_crc = getCrc(args.original)
 		args.original.close()
-        if args.original == args.tintin_fw:
-            print "Warning: will use the same tintin_fw binary as the original one." \
-                "Is it expected behaviour? Did you not apply any patches?"
 
 	print "Will create firmware at %s," % args.outfile
 	print "using %s for manifest, %s for tintin binary" % (args.manifest, args.tintin_fw)
