@@ -133,10 +133,15 @@ if __name__ == "__main__":
 			json.dump(manifest, f)
 
 		print " # Creating output zip..."
-		with zipfile.ZipFile(args.outfile, "w", zipfile.ZIP_STORED) as z:
+		z = zipfile.ZipFile(args.outfile, "w", zipfile.ZIP_STORED)
+		try:
 			for f in ("tintin_fw.bin", "system_resources.pbpack", "manifest.json"):
 				print "   Storing %s..." % f
 				z.write(workdir+f, f)
+		except Exception as e:
+			print "Error.", e
+		finally:
+			z.close()
 
 		print " # Done. Firmware is packed to %s" % args.outfile
 
