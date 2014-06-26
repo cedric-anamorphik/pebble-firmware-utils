@@ -247,6 +247,17 @@ def parseBlock(f, pos, definitions, if_state, patch):
                 if not if_state:
                     raise ParseError("Unmatched #endif", pos)
                 continue
+            elif cmd == "#ver": # desired FW version
+                if not args:
+                    raise ParseError("At least one argument required for #ver", pos)
+                lo = int(args[0])
+                if args[1:]:
+                    hi = int(args[1])
+                else:
+                    hi = 65535 # max version
+                # for now just store that version as a variable
+                definitions['ver'] = str(lo)
+                # TODO: perform some tests for this patch version
             # ...now check if_state...
             if not if_state[-1]:
                 continue # #define must only work if this is met
