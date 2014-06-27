@@ -258,6 +258,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                 # for now just store that version as a variable
                 definitions['ver'] = str(lo)
                 # TODO: perform some tests for this patch version
+                continue
             # ...now check if_state...
             if not if_state[-1]:
                 continue # #define must only work if this is met
