@@ -282,11 +282,11 @@ def parseBlock(f, pos, definitions, if_state, patch):
                 import os.path
                 if not os.path.isabs(arg):
                     arg = os.path.join(os.path.dirname(f.name), arg)
-                f = open(arg, 'r')
+                newf = open(arg, 'r')
                 # parse this file into this patch's library patch.
                 # If this is already library patch,
                 # its library property will return itself.
-                parseFile(f, definitions, patch=patch.library)
+                parseFile(newf, definitions, patch=patch.library)
             else:
                 raise ParseError("Unknown command: %s" % cmd, pos)
             continue # to next line
