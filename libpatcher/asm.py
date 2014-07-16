@@ -697,6 +697,17 @@ instruction('CMP', [Reg("LO"), Reg("LO")], 2, lambda self,rn,rm:
             (1 << 14) + (0b101 << 7) + (rm << 3) + rn)
 instruction('CMP', [Reg(), Reg()], 2, lambda self,rn,rm:
             (1 << 14) + (0b101 << 8) + ((rn>>3)<<7) + (rm << 3) + (rn&0b111))
+instruction(['EOR','EORS'], [Reg(),Reg(),Num.ThumbExpandable()], 4, lambda self,rd,rn,imm:
+            (
+                (0b11110<<11)+
+                (imm.the(1,11)<<10)+
+                (0b100<<5)+
+                ((1 if 'S' in self.opcode else 0) << 4)+
+                (rn<<0),
+                (imm.the(3,8)<<12)+
+                (rd<<8)+
+                (imm.the(8,0)<<0)
+            ))
 instruction('MOVS', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
             (0 << 6) + (rm << 3) + rd)
 instruction(['MOV','MOVS'], [Reg(), Reg()], 2, lambda self,rd,rm:
