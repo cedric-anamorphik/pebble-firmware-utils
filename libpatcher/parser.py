@@ -248,6 +248,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                     raise ParseError("Unmatched #endif", pos)
                 continue
             elif cmd == "#ver": # desired FW version
+                # FIXME: don't bail out on invalid values, just warn
                 if not args:
                     raise ParseError("At least one argument required for #ver", pos)
                 lo = int(args[0])
