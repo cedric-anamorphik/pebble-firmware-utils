@@ -236,10 +236,21 @@ def read_strings_po(f, exclude=[]):
         elif line.startswith("msgstr"):
             right = parsevalline(line, 6)
         elif line.startswith("msgctxt"):
-            try:
-                context = [int(x) for x in parsevalline(line, 7).split(',')]
-            except ValueError:
-                print >>log, "*** ERROR: %s is not an integer or comma-separated list of integers" % line
+            context = []
+            for num in parsevalline(line, 7).split(','):
+                # inplace flag, to replace "fuzzy" usage
+                if num.lower() == 'inplace':
+                    inplace = True
+                    continue
+                # should be a number
+                try:
+                    context = int(num)
+                except ValueError:
+                    print >>log, "*** ERROR: %s is not an integer "
+                    "or comma-separated list of integers "
+                    "and not a supported flag (line %s)" % (num, line)
+            if not context: # only inplace flag
+                context = None
         elif line.startswith('"'): # continuation?
             if right is not None:
                 right += parsevalline(line, 0)
