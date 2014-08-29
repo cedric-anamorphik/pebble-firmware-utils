@@ -457,6 +457,7 @@ def translate_fw(args):
             print >>log, " == found %d ptrs; appending or inserting string and updating them" % len(ps)
 
             stored = {}
+            key_translated = True
             for idx, v in enumerate(vals): # for each contexted value (or for the only value)
                 if v == None:
                     continue # skip empty ones
@@ -476,6 +477,7 @@ def translate_fw(args):
                     if not r: # suitable range not found
                         print >>log, " ## Notice: no (more) ranges available large enough for this phrase. Will skip it."
                         untranslated += 1
+                        key_translated = False
                         continue # to next value variant
                     print >>log, " -- using range 0x%X-0x%X%s" % (r[0],r[1]," (end of file)" if r[1] == EOF else "")
                     newp = r[0]
@@ -497,11 +499,11 @@ def translate_fw(args):
                     datar = datar[0:p] + newps + datar[p+4:]
                     if len(datar) != oldlen:
                         raise AssertionError("Length mismatch")
-            if key in keys:
+            if key_translated and key in keys:
                 keys.remove(key) # as it is translated now
                 translated += 1
             # now that string is translated, we may reuse its place as ranges
-            if args.reuse_ranges:
+            if key_translated and args.reuse_ranges:
                 for o in mustrepoint or os:
                     i = o+1
                     while i < len(data):
