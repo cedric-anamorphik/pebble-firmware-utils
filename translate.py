@@ -244,7 +244,7 @@ def read_strings_po(f, exclude=[]):
                     continue
                 # should be a number
                 try:
-                    context = int(num)
+                    context.append(int(num))
                 except ValueError:
                     print >>log, "*** ERROR: %s is not an integer "
                     "or comma-separated list of integers "
