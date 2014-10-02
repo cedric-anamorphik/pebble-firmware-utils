@@ -48,13 +48,16 @@ if __name__ == "__main__":
     sval = pack('I', val)
     data = open(tintin, "rb").read()
 
-    for i in range(0, len(data)-3):
+    for i in range(0, len(data)-3, 4):
         d = data[i:i+4]
         iadr = i + 0x08010000
         if d == sval:
             print "Offset 0x%X (0x%X): DCD 0x%X" % (i, iadr, val)
-        if d == genCode(iadr, val, False):
-            print "Offset 0x%X (0x%X): B.W 0x%X" % (i, iadr, val)
-        if d == genCode(iadr, val, True):
-            print "Offset 0x%X (0x%X): BL 0x%X" % (i, iadr, val)
+        for ix in (i, i+2) if i<len(data)-1 else (i,):
+            d = data[ix:ix+4]
+            iadr = ix + 0x08010000
+            if d == genCode(iadr, val, False):
+                print "Offset 0x%X (0x%X): B.W 0x%X" % (i, iadr, val)
+            if d == genCode(iadr, val, True):
+                print "Offset 0x%X (0x%X): BL 0x%X" % (i, iadr, val)
     print "Done."
