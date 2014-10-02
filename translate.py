@@ -57,7 +57,7 @@ def find_pointers_to_offset(offset):
     Finds all pointers to given offset; returns offsets to them
     """
     ptr = offset + 0x08010000
-    return [i*4 for i,v in enumerate(datap) if v == ptr]
+    return [i for i,v in enumerate(datap) if v == ptr]
 
 def find_string_offsets(s):
     """ Returns list of offsets to given string """
@@ -273,7 +273,8 @@ def translate_fw(args):
     data = args.tintin.read()
     datar = data # start from just copy, later will change it
     # convert to pointers:
-    for i in range(0, len(data)-3, 4): # each 4-aligned int; -3 to avoid last (partial) value
+    for i in range(0, len(data)-3): # each 4-aligned int; -3 to avoid last (partial) value.
+        # Also include not-aligned values
         n = unpack("I", data[i:i+4])[0]
         datap.append(n)
 
