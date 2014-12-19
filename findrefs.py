@@ -53,11 +53,11 @@ if __name__ == "__main__":
             d = data[ix:ix+4]
             iadr = ix + 0x08010000
             if d == sval:
-                print "Offset 0x%X (0x%X): DCD 0x%X" % (ix, iadr, val)
+                print "Offset 0x%X / 0x%X : DCD 0x%X" % (ix, iadr, val)
         d = data[i:i+4]
         iadr = i + 0x08010000
         if d == genCode(iadr, val, False):
-            print "Offset 0x%X (0x%X): B.W 0x%X" % (i, iadr, val)
+            print "Offset 0x%X / 0x%X : B.W 0x%X" % (i, iadr, val)
         if d == genCode(iadr, val, True):
-            print "Offset 0x%X (0x%X): BL 0x%X" % (i, iadr, val)
+            print "Offset 0x%X / 0x%X : BL 0x%X" % (i, iadr, val)
     print "Done."
