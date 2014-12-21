@@ -24,6 +24,7 @@ while getopts "h?fw:o:t:" opt; do
 			;;
 		f)
 			overwrite=1
+			;;
 		w)
 			framework=$OPTARG
 			;;
