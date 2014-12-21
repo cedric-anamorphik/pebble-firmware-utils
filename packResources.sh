@@ -7,20 +7,24 @@ print_help() {
 	echo "Resource files should be already prepared, or extracted from ready pbpack."
 	echo
 	echo "Usage:"
-	echo "packResources.sh [-f pathToFramework] [-o system_resources.pbpack] [-t timestamp] res_file [...]"
+	echo "packResources.sh [-f] [-w pathToFramework] [-o system_resources.pbpack] [-t timestamp] res_file [...]"
+	echo "use -f to force output file overwriting."
 }
 
 framework="/opt/pebble"
 outfile="system_resources.pbpack"
 timestamp=$(date +%s)
+overwrite=0
 
-while getopts "h?f:o:t:" opt; do
+while getopts "h?fw:o:t:" opt; do
 	case "$opt" in
 		h|\?)
 			print_help
 			exit 0
 			;;
 		f)
+			overwrite=1
+		w)
 			framework=$OPTARG
 			;;
 		o)
@@ -42,8 +46,13 @@ if [ $# -lt 1 ]; then
 fi
 
 if [ -e "$outfile" ]; then
-	echo "Will not overwrite existing output file $outfile!"
-	exit 1
+	if [ $overwrite -eq 1 ]; then
+		echo "Warning: overwriting output file $outfile"
+	else
+		echo "Will not overwrite existing output file $outfile!"
+		echo "Use -f to force."
+		exit 1
+	fi
 fi
 
 fwfile=$framework/Pebble/tools/pbpack_meta_data.py
