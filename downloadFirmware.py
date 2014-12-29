@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # URI = 'http://pebble-static.s3.amazonaws.com/watchfaces/index.html'
 URI = 'http://pebblefw.s3.amazonaws.com/pebble/ev2_4/release/latest.json'
+URI_v2 = 'http://pebblefw.s3.amazonaws.com/pebble/ev2_4/release-v2/latest.json'
 
 from urllib2 import urlopen
 import hashlib
@@ -12,9 +13,9 @@ if __name__ == "__main__":
     logging.basicConfig(format='[%(levelname)-8s] %(message)s')
     log.setLevel(logging.DEBUG)
     
-    log.info("Downloading firmware linked from %s" % URI)
+    log.info("Downloading firmware linked from %s" % URI_v2)
     
-    page = urlopen(URI).read()
+    page = urlopen(URI_v2).read()
     data = json.loads(page)
     
     firmware = data['normal']['url']
