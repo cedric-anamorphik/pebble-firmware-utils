@@ -12,7 +12,7 @@ def mkdir(path):
 		os.mkdir(path)
 	except OSError:
 		pass
-		
+
 def extract_content(pbz, content, output_dir):
 	print 'Extracting %s...' % content['name']
 	pbz.extract(content['name'], output_dir)
@@ -69,7 +69,7 @@ def extract_resources(pbpack, resourceMap, output_dir):
 	for i in range(len(resources)):
 		entry = resources[i]
 		hasRM = resourceMap and i < len(resourceMap)
-		path = resourceMap[i]['file'] if hasRM else 'res/%02d_%08X' % (i, entry['crc'])
+		path = resourceMap[i]['file'] if hasRM else 'res/%02d_%08X' % (i+1, entry['crc'])
 		dirname = os.path.dirname(path)
 		filepath = "/".join((dirname, resourceMap[i]['defName'])) if hasRM else path
 
@@ -89,7 +89,7 @@ def extract_resources(pbpack, resourceMap, output_dir):
 			print '\t[Fail] Checking CRC...'
 			print "\tIt's 0x%x, but should be 0x%x" % (crc, entry['crc'])
 	print 'All resources unpacked.'
-		
+
 
 if __name__ == '__main__':
 	useNaming = True
@@ -129,13 +129,13 @@ if __name__ == '__main__':
 
 	firmware = manifest['firmware']
 	extract_content(pbz, firmware, output_dir)
-	
+
 	if 'resources' in manifest:
 		resources = manifest['resources']
-		extract_content(pbz, resources, output_dir)	
-		
+		extract_content(pbz, resources, output_dir)
+
 		if 'resourceMap' in manifest['debug']:
-			resourceMap = manifest['debug']['resourceMap']['media']	
+			resourceMap = manifest['debug']['resourceMap']['media']
 			print 'Found resource map in manifest. Looks like 1.x firmware.'
 			if useNaming:
 				print 'Will use it to name resources correctly. To ignore, pass -i option.'
