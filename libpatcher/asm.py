@@ -687,7 +687,7 @@ instruction('ADD', [Reg("LO"), Reg("SP"), Num(bits=10)], 2, lambda self,rd,sp,im
             (0b10101 << 11) + (rd << 8) + (imm >> 2))
 instruction('ADR', [Reg("LO"), Label()], 2, lambda self,rd,lbl:
             (0b10100 << 11) + (rd << 8) + lbl.offset(self, 8, 2, True, True))
-instruction(['AND', 'ANDS'], [Reg(), Reg(), Num.ThumbExpandable()], 4, lambda rd,rn,imm:
+instruction(['AND', 'ANDS'], [Reg(), Reg(), Num.ThumbExpandable()], 4, lambda self,rd,rn,imm:
             (
                 (0b11110<<11)+
                 (imm.the(1,11)<<10)+
