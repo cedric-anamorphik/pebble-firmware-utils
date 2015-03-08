@@ -46,26 +46,26 @@ def patch_fw(args):
 
     # Read all requested patch files
     patches = [library]
-    print "Loading files:"
+    print("Loading files:")
     for f in args.patch:
-        print f.name
+        print(f.name)
         patches.append(parseFile(f, definitions, libpatch=library))
     # Bind them all to real binary (i.e. scan masks)...
-    print "Binding patches:"
+    print("Binding patches:")
     for p in patches: # including library
-        print p
+        print(p)
         p.bindall(data, ranges)
     # ...and apply
-    print "Applying patches:"
+    print("Applying patches:")
     for p in patches:
-        print p
+        print(p)
         data = p.apply(data, ignore=args.ignore_length)
-    print "Saving..."
+    print("Saving...")
     # restore eof bytes, if file-end range was used
     data = ranges.restore_tail(data)
     args.output.write(data)
     args.output.close()
-    print "Done."
+    print("Done.")
 
 if __name__ == "__main__":
     args = parse_args()
