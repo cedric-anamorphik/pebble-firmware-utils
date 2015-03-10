@@ -760,10 +760,14 @@ instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
             (0b1001 << 11) + (rt << 8) + lbl.offset(self,8,shift=2,positive=True,align=True))
 instruction('LDRB', [Reg("LO"), ([Reg("LO"), Num(bits=5)],[Reg("LO")])], 2, lambda self,rt,lst:
             (0b1111 << 11) + ((lst[1] if len(lst) > 1 else 0) << 6) + (lst[0] << 3) + rt)
-#instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO"),Num(bits=5)], 2, lambda self,rd,rm,imm:
-#            ((0b01 << 11) + ))
-instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO")], 2, lambda self,rd,rm:
-            (0b010000 << 10) + (0b0011 << 6) + (rm << 3) + (rd))
+instruction(['LSL','LSLS'], [Reg("LO"),Reg("LO"),Num(bits=5)], 2, lambda self,rd,rm,imm:
+            (0b00 << 11) + (imm << 6) +  (rm << 3) + (rd))
+instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO")], 2, lambda self,rdn,rm:
+            (0b010000 << 10) + (0b0010 << 6) + (rm << 3) + (rdn))
+instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO"),Num(bits=5)], 2, lambda self,rd,rm,imm:
+            (0b01 << 11) + (imm << 6) +  (rm << 3) + (rd))
+instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO")], 2, lambda self,rdn,rm:
+            (0b010000 << 10) + (0b0011 << 6) + (rm << 3) + (rdn))
 instruction(['MULS', 'MUL'], [Reg("LO"),Reg("LO")], 2, lambda self,rd,rm:
             (1<<14) + (0b1101 << 6) + (rm << 3) + rd)
 instruction('PUSH', [RegList(lo=True, lr=None)], 2, lambda self,rl:
