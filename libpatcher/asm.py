@@ -758,8 +758,19 @@ instruction(['LDR.W','LDR'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])], 4, lambd
              (lst[1] if len(lst) > 1 else 0)))
 instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
             (0b1001 << 11) + (rt << 8) + lbl.offset(self,8,shift=2,positive=True,align=True))
+# T1
 instruction('LDRB', [Reg("LO"), ([Reg("LO"), Num(bits=5)],[Reg("LO")])], 2, lambda self,rt,lst:
             (0b1111 << 11) + ((lst[1] if len(lst) > 1 else 0) << 6) + (lst[0] << 3) + rt)
+# in T2
+instruction(['LDRB','LDRB.W'], [Reg(), [Reg(), Num(bits=12)]], 4, lambda self,rt,rest:
+            (
+                (0b11111<<11)+
+                (1<<7)+
+                (1<<4)+
+                (rest[0]),
+                (rt<<12)+
+                (rest[1])
+            ))
 # and in T3, with offset
 instruction(['LDRB','LDRB.W'], [Reg(), [Reg()], Num(bits=8)], 4, lambda self,rt,rn,imm:
             (
