@@ -760,6 +760,19 @@ instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
             (0b1001 << 11) + (rt << 8) + lbl.offset(self,8,shift=2,positive=True,align=True))
 instruction('LDRB', [Reg("LO"), ([Reg("LO"), Num(bits=5)],[Reg("LO")])], 2, lambda self,rt,lst:
             (0b1111 << 11) + ((lst[1] if len(lst) > 1 else 0) << 6) + (lst[0] << 3) + rt)
+# and in T3, with offset
+instruction(['LDRB','LDRB.W'], [Reg(), [Reg()], Num(bits=8)], 4, lambda self,rt,rn,imm:
+            (
+                (0b11111<<11)+
+                (1<<4)+
+                (rn[0]),
+                (rt<<12)+
+                (1<<11)+
+                (0<<10)+ # P/index
+                ((1 if imm>=0 else 0)<<9)+ # U/add
+                (1<<8)+ # W/writeback
+                (imm if imm>=0 else -imm)
+            ))
 instruction(['LSL','LSLS'], [Reg("LO"),Reg("LO"),Num(bits=5)], 2, lambda self,rd,rm,imm:
             (0b00 << 11) + (imm << 6) +  (rm << 3) + (rd))
 instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO")], 2, lambda self,rdn,rm:

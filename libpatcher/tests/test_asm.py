@@ -125,6 +125,8 @@ def test_LDR_R12_SP_0x24():
     eq_(op('LDR R12,[SP,0x24]'), '\xDD\xF8\x24\xC0')
 def test_LDRB_R3_R3():
     eq_(op('LDRB R3,[R3]'), '\x1B\x78')
+def test_LDRB_R2_R4_1():
+    eq_(op('LDRB R2,[R4],1'), '\x14\xf8\x01\x2b')
 def test_MUL_R3_R7():
     eq_(op('MUL R3,R7'), '\x7b\x43')
 def test_PUSH_R3_LR():
