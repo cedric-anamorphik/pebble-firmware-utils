@@ -31,10 +31,11 @@ def genCode(pos, to, is_bl):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: findrefs.py [tintin_fw.bin] 0xVALUE"
+        print "Usage: findrefs.py [tintin_fw.bin] 0xVALUE [base]"
         print "Examples:"
         print "  findrefs.py 0x080412f9"
         print "  findrefs.py tintin_fw.patched.bin 0x0801FEDC"
+        print "Base defaults to 0x08010000"
         exit(1)
 
     base = 0x08010000
