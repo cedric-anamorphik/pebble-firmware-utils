@@ -37,12 +37,15 @@ if __name__ == "__main__":
         print "  findrefs.py tintin_fw.patched.bin 0x0801FEDC"
         exit(1)
 
+    base = 0x08010000
     if len(sys.argv) == 2:
         tintin = "tintin_fw.bin"
         val = sys.argv[1]
     else:
         tintin = sys.argv[1]
         val = sys.argv[2]
+        if len(sys.argv) > 3:
+            base = int(sys.argv[3], 0) # from hex
 
     val = int(val, 0)
     sval = pack('I', val)
@@ -51,11 +54,11 @@ if __name__ == "__main__":
     for i in range(0, len(data)-3, 2):
         for ix in (i, i+1) if i<len(data)-1 else (i,):
             d = data[ix:ix+4]
-            iadr = ix + 0x08010000
+            iadr = ix + base
             if d == sval:
                 print "Offset 0x%X / 0x%X : DCD 0x%X" % (ix, iadr, val)
         d = data[i:i+4]
-        iadr = i + 0x08010000
+        iadr = i + base
         if d == genCode(iadr, val, False):
             print "Offset 0x%X / 0x%X : B.W 0x%X" % (i, iadr, val)
         if d == genCode(iadr, val, True):
