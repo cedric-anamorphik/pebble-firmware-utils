@@ -80,7 +80,7 @@ def parse_args():
     group = parser.add_argument_group("Optional parameters")
     group.add_argument("-k", "--keep-dir", action="store_true",
             help="Don't remove temporary directory after work")
-    group.add_argument("-a", "--replace-all", type=lambda x: int(x,16),
+    group.add_argument("-a", "--replace-all", action="store_true",
             help="If crc found more than 1 time, don't bail out but replace 'em all "
             "(may be required for v3.0 firmware)")
     return parser.parse_args()
