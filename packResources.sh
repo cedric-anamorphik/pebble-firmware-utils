@@ -62,7 +62,7 @@ if ! [ -e "$fwfile" ]; then
 	echo "Framework repacking script not found in $framework!"
 	exit 1
 fi
-fwrun="python2 $fwfile"
+fwrun="python2 $fwfile --system"
 
 $fwrun manifest "$outfile".manifest "$timestamp" "$@" || exit 1
 $fwrun table "$outfile".table "$@" || exit 1
