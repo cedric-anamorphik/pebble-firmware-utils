@@ -99,18 +99,23 @@ if __name__ == '__main__':
 
 	if len(sys.argv) <= 1:
 		print 'Usage: unpackFirmware.py [-i] normal.pbz [output_dir/]'
-		print '    -i: ignore resource filenames from manifest.'
-		print '       By default, if manifest contains resource names'
-		print '       (as in 1.x firmwares), we will name resources'
-		print '       according to them.'
-		print '       With this option, resource names will be res/ID_CRC'
-		print '       where ID is sequence index of resource and CRC is'
-		print '       its CRC checksum (for comparing)'
-		print '       On 2.x firmwares, which don\'t contain resource names,'
-		print '       we always use that scheme.'
+		print '	-i: ignore resource filenames from manifest.'
+		print '	   By default, if manifest contains resource names'
+		print '	   (as in 1.x firmwares), we will name resources'
+		print '	   according to them.'
+		print '	   With this option, resource names will be res/ID_CRC'
+		print '	   where ID is sequence index of resource and CRC is'
+		print '	   its CRC checksum (for comparing)'
+		print '	   On 2.x firmwares, which don\'t contain resource names,'
+		print '	   we always use that scheme.'
 		exit()
 
 	pbz_name = sys.argv[1]
+
+	if pbz_name.endswith('pbpack'): # just unpack resources
+		extract_resources(open(pbz_name, 'rb'), None, 'res')
+		sys.exit()
+
 	if len(sys.argv) <= 2:
 		output_dir = 'pebble-firmware/'
 	else:
