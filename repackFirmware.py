@@ -13,13 +13,14 @@ def getCrc(pbpack):
     pbpack.seek(4)
     return unpack('I', pbpack.read(4))[0]
 
-def updateCrc(tintin, nNew, nOld = 0, byOffset = None):
+def updateCrc(tintin, nNew, nOld = 0, byOffset = None, replace_all = False):
     """update CRC sum in tintin binary
        Passing byOffset means nOld will not be used.
     """
     new = pack('I', nNew)
+    offsets = []
     if byOffset:
-        offset = byOffset
+        offsets.append(byOffset)
         print "Checksum must be at 0x%08X." % offset
     else:
         old = pack('I', nOld)
@@ -28,16 +29,22 @@ def updateCrc(tintin, nNew, nOld = 0, byOffset = None):
         if i < 0:
             print "Oops... Couldn't find checksum 0x%08X in tintin_fw.bin! Maybe you specified incorrect data?.."
             exit(1)
-        j = fw.find(old, i+1)
-        if not j < 0: # if it was not the only occurance
-            print "Oops... There are several occurances of possible checksum 0x%08X, at least at 0x%08X and 0x%08X." % (nOld, i, j)
-            print "Bailing out!"
-            exit(1)
-        offset = i
-        print "Found the only occurance of old checksum 0x%08X at 0x%08X" % (nOld, i)
-    print "Replacing it with the new value 0x%08X..." % nNew
-    tintin.seek(offset)
-    tintin.write(new)
+        if replace_all:
+            while i >= 0:
+                offsets.append(i)
+                i = fw.find(old, i+1)
+        else:
+            j = fw.find(old, i+1)
+            if not j < 0: # if it was not the only occurance
+                print "Oops... There are several occurances of possible checksum 0x%08X, at least at 0x%08X and 0x%08X." % (nOld, i, j)
+                print "Bailing out!"
+                exit(1)
+            offsets.append(i)
+            print "Found the only occurance of old checksum 0x%08X at 0x%08X" % (nOld, i)
+    for offset in offsets:
+        print "Replacing checksum at 0x%08X with the new value 0x%08X..." % (offset, nNew)
+        tintin.seek(offset)
+        tintin.write(new)
     tintin.flush()
     print "OK."
 
@@ -73,7 +80,11 @@ def parse_args():
     group = parser.add_argument_group("Optional parameters")
     group.add_argument("-k", "--keep-dir", action="store_true",
             help="Don't remove temporary directory after work")
+    group.add_argument("-a", "--replace-all", type=lambda x: int(x,16),
+            help="If crc found more than 1 time, don't bail out but replace 'em all "
+            "(may be required for v3.0 firmware)")
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -102,7 +113,7 @@ if __name__ == "__main__":
         shutil.copy(args.tintin_fw, workdir+'tintin_fw.bin')
         print " # Updating CRC value in tintin_fw.bin from 0x%08X to 0x%08X:" % (args.orig_crc or 0, newCrc)
         with open(workdir+'tintin_fw.bin', 'r+b') as tintin:
-            updateCrc(tintin, newCrc, args.orig_crc, args.offset)
+            updateCrc(tintin, newCrc, args.orig_crc, args.offset, args.replace_all)
 
         print " # Reading manifest..."
         with open(args.manifest, 'r') as f:
