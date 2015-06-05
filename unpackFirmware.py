@@ -33,6 +33,7 @@ def extract_resources(pbpack, resourceMap, output_dir):
     print('Resource pack claims to have crc 0x%X.' % crc_from_json)
 
     tbl_start=None # this will be set depending on firmware version
+    res_start=None
 
     offsets = [
         (0x200C, '3.x', 0x0C),
@@ -46,6 +47,7 @@ def extract_resources(pbpack, resourceMap, output_dir):
         if crc_resource == crc_from_json:
             print('\t[  OK] This looks like {} firmware'.format(ver))
             tbl_start = tab
+            res_start = ofs
             break
         else:
             print('\t[????] CRC mismatch: found 0x%X' % crc_resource)
@@ -76,7 +78,7 @@ def extract_resources(pbpack, resourceMap, output_dir):
         print('Extracting %s...' % filepath)
         mkdir(output_dir + dirname)
 
-        pbpack.seek(0x1000 + offset + entry['offset'])
+        pbpack.seek(res_start + entry['offset'])
         file = open(output_dir + filepath, 'wb')
         file.write(pbpack.read(entry['size']))
         file.close()
