@@ -56,7 +56,8 @@ if [ -e "$outfile" ]; then
 	fi
 fi
 
-fwfile=$framework/Pebble/tools/pbpack_meta_data.py
+fwfile=$framework/Pebble/common/tools/pbpack_meta_data.py
+[ -e "$fwfile" ] || fwfile=$framework/Pebble/tools/pbpack_meta_data.py
 if ! [ -e "$fwfile" ]; then
 	echo "Framework repacking script not found in $framework!"
 	exit 1
