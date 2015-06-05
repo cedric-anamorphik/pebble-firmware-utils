@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import sys
 from struct import unpack
@@ -33,6 +33,9 @@ def parse_args():
                         help="Offset to beginning of image. If omitted, image will be treated as resource-type file")
     parser.add_argument("-i", "--invert", action="store_true",
                         help="Inverse display (white/black)")
+    parser.add_argument("-b", "--base", type=lambda n: int(n,0), default=0x8004000,
+                        help="Base address of firmware file "
+                        "(0x8010000 for v2, 0x8004000 for v3)")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -40,12 +43,12 @@ if __name__ == "__main__":
     f = args.input
     if args.offset:
         print args.offset
-        if args.offset > 0x08010000:
-            args.offset -= 0x08010000 # convert from memory address to file offset
+        if args.offset > args.base:
+            args.offset -= args.base # convert from memory address to file offset
         f.read(args.offset)
     s = f.read(4)
     ofs = unpack('I', s)[0]
-    if 0x8010000 < ofs and ofs < 0x80fffff: # memory offset
+    if args.base < ofs and ofs < 0x80fffff: # memory offset
         rowsize = unpack('H', f.read(2))[0]
         f.read(2) # unknown field = 0x1000
     else: # resource file
@@ -54,6 +57,6 @@ if __name__ == "__main__":
     f.read(4) # unknown field
     width, height = unpack('HH', f.read(4))
     if ofs:
-        f.seek(ofs-0x8010000)
+        f.seek(ofs-args.base)
     data = f.read()
     showImage(data, rowsize, width, height, args.invert) # or: calcHeightBySize(rowsize, len(data))
