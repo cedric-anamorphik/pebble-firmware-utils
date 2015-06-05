@@ -25,7 +25,7 @@ def extract_content(pbz, content, output_dir):
         print("\tIt's %d, but should be %d" % (content['crc'], crc))
 
 def extract_resources(pbpack, resourceMap, output_dir):
-    numbers = unpack('B', pbpack.read(1))[0]
+    numbers = unpack('I', pbpack.read(4))[0]
     print('Resource pack has %d resources.' % numbers)
 
     pbpack.seek(4)
