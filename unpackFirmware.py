@@ -32,33 +32,33 @@ def extract_resources(pbpack, resourceMap, output_dir):
     crc_from_json = unpack('I', pbpack.read(4))[0]
     print('Resource pack claims to have crc 0x%X.' % crc_from_json)
 
-    offset=None # this will be set depending on firmware version
+    tbl_start=None # this will be set depending on firmware version
 
-    print('Checking CRC with offset 0x100C (2.x)...')
-    pbpack.seek(0x100C)
-    crc_resource = crc32(pbpack.read())
-    if crc_resource == crc_from_json:
-        print('\t[  OK] This seems to be a 2.x firmware.')
-        offset = 0x0C
-    else:
-        print('\t[Info] It is not 2.x firmware, or is corrupted, CRC=0x%08X' % crc_resource)
-        print('Checking CRC with offset 0x101C (1.x)...')
-        pbpack.seek(0x101C)
-        crc_resource2 = crc32(pbpack.read())
-        if crc_resource2 == crc_from_json:
-            print('\t[  OK] This seems to be a 1.x firmware.')
-            offset = 0x1C
+    offsets = [
+        (0x200C, '3.x', 0x0C),
+        (0x100C, '2.x', 0x0C),
+        (0x101C, '1.x', 0x0C),
+    ]
+    for ofs, ver, tab in offsets:
+        print('Checking CRC with offset {} ({})...'.format(ofs, ver))
+        pbpack.seek(ofs)
+        crc_resource = crc32(pbpack.read())
+        if crc_resource == crc_from_json:
+            print('\t[  OK] This looks like {} firmware'.format(ver))
+            tbl_start = tab
+            break
         else:
-            print('\t[Fail] CRC check failed!')
-            print("\tShould be 0x%X, but if 0x%X for 100c and 0x%x for 101c." % (
-                    crc_from_json, crc_resource, crc_resource2))
-            print('Resource pack is either malformed or has unknown format.')
-            return
+            print('\t[????] CRC mismatch: found 0x%X' % crc_resource)
+    else:
+        print('\t[Fail] CRC check failed!')
+        print('\tShould be 0x%X' % crc_from_json)
+        print('Resource pack is either malformed or has unknown format.')
+        return
 
     print('Reading resurce headers...')
     resources = {}
     for i in range(numbers):
-        pbpack.seek(offset + i * 16)
+        pbpack.seek(tbl_start + i * 16)
         index = unpack('i', pbpack.read(4))[0] - 1
         resources[index] = {
             'offset': unpack('i', pbpack.read(4))[0],
