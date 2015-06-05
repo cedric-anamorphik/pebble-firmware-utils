@@ -71,7 +71,7 @@ def extract_resources(pbpack, resourceMap, output_dir):
     for i in range(len(resources)):
         entry = resources[i]
         hasRM = resourceMap and i < len(resourceMap)
-        path = resourceMap[i]['file'] if hasRM else 'res/%02d_%08X' % (i+1, entry['crc'])
+        path = resourceMap[i]['file'] if hasRM else 'res/%03d_%08X' % (i+1, entry['crc'])
         dirname = os.path.dirname(path)
         filepath = "/".join((dirname, resourceMap[i]['defName'])) if hasRM else path
 
