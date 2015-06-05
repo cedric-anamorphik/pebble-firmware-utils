@@ -41,7 +41,7 @@ def extract_resources(pbpack, resourceMap, output_dir):
         (0x101C, '1.x', 0x0C),
     ]
     for ofs, ver, tab in offsets:
-        print('Checking CRC with offset {} ({})...'.format(ofs, ver))
+        print('Checking CRC with offset {} ({})...'.format(hex(ofs), ver))
         pbpack.seek(ofs)
         crc_resource = crc32(pbpack.read())
         if crc_resource == crc_from_json:
