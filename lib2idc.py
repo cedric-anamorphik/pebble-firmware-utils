@@ -19,7 +19,8 @@ bNames = f.read()
 names = []
 first = ""
 for s in bNames.split('\0'):
-    if s == first or len(s) == 0 or not s[0].isalpha(): # if repeating or empty or doesn't look like function name
+    if s == first or len(s) == 0 or not (s[0].isalpha() or s[0] in '_'):
+        # if repeating or empty or doesn't look like function name
         break
     names.append(s)
     if first == "":
