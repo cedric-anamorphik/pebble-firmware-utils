@@ -6,9 +6,13 @@ URIs = {
     3: 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v3/latest.json',
 }
 HWs = {
-    1: ['ev2_4', 'v1_5'],
-    2: ['ev2_4', 'v1_5', 'v2_0'],
-    3: ['snowy_dvt'],
+    1: ['ev2_4',
+        'v1_5'],
+    2: ['ev2_4',    # V2R2
+        'v1_5',     # V3Rx
+        'v2_0'],    # STEEL
+    3: ['snowy_dvt',    # snowy22, snowy23
+        ],
 }
 
 import argparse
