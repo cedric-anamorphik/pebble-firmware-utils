@@ -1,9 +1,14 @@
 #!/usr/bin/env python2
 # URI = 'http://pebble-static.s3.amazonaws.com/watchfaces/index.html'
 URIs = {
-    1: 'http://pebblefw.s3.amazonaws.com/pebble/ev2_4/release/latest.json',
-    2: 'http://pebblefw.s3.amazonaws.com/pebble/ev2_4/release-v2/latest.json',
-    3: 'http://pebblefw.s3.amazonaws.com/pebble/snowy_dvt/release-v3/latest.json',
+    1: 'http://pebblefw.s3.amazonaws.com/pebble/{}/release/latest.json',
+    2: 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v2/latest.json',
+    3: 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v3/latest.json',
+}
+HWs = {
+    1: ['ev2_4', 'v1_5'],
+    2: ['ev2_4', 'v1_5', 'v2_0'],
+    3: ['snowy_dvt'],
 }
 
 import argparse
@@ -17,7 +22,10 @@ def parse_args():
     parser.add_argument('version', default=3, nargs='?',
                         choices = URIs,
                         help='Which version group to use.')
+    parser.add_argument('hardware', nargs='?',
+                        help='Hardware version to use (see code or pebbledev.org)')
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     log = logging.getLogger()
@@ -26,9 +34,10 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    log.info("Downloading firmware linked from %s" % URIs[args.version])
+    uri = URIs[args.version].format(args.hardware or HWs[args.version][-1])
+    log.info("Downloading firmware linked from %s" % uri)
 
-    page = urlopen(URIs[args.version]).read()
+    page = urlopen(uri).read()
     data = json.loads(page)
 
     firmware = data['normal']['url']
