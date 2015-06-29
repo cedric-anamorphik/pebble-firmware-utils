@@ -659,8 +659,9 @@ class ValInstruction(NullInstruction):
         if block.mask and block.mask.floating:
             raise ValueError("Cannot use val instruction in floating block")
         self.block = block
+        codebase = block.patch.codebase
         # get value...
-        addr = self.getAddr()-0x8010000 # FIXME: codebase
+        addr = self.getAddr() - codebase
         value = unpack('<I', self.block.patch.binary[addr:addr+4])[0]
         # ...and store it at patch level
         block.patch.context[self.name] = value

@@ -54,12 +54,12 @@ def patch_fw(args):
     print("Binding patches:")
     for p in patches: # including library
         print(p)
-        p.bindall(data, ranges)
+        p.bindall(data, ranges, codebase)
     # ...and apply
     print("Applying patches:")
     for p in patches:
         print(p)
-        data = p.apply(data, ignore=args.ignore_length)
+        data = p.apply(data, codebase, ignore=args.ignore_length)
     print("Saving...")
     # restore eof bytes, if file-end range was used
     data = ranges.restore_tail(data)
