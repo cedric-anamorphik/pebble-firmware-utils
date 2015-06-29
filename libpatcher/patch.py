@@ -56,9 +56,8 @@ class Patch(object):
         """
         if self._is_bound:
             raise ValueError("Already bound")
-        self.codebase = codebase # for patches which may need it
         for block in self.blocks:
-            block.bind(block.getPosition(binary, ranges) + codebase)
+            block.bind(block.getPosition(binary, ranges) + codebase, codebase)
     def apply(self, binary, codebase = 0x8010000, ignore=False):
         """
         Applies all blocks from this patch to given binary,

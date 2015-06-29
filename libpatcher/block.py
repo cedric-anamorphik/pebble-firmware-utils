@@ -50,13 +50,14 @@ class Block(object):
                     raise ValueError("No saved position and binary not provided")
                 self.position = self.mask.match(binary)
         return self.position
-    def bind(self, addr):
+    def bind(self, addr, codebase):
         """
         This method is called once after construction.
         It binds block to specific memory address
         (which is determined with mask.match or is obtained from ranges)
         """
         self.addr = addr
+        self.codebase = codebase # for instructions which may need it
         for i in self.instructions:
             i.setAddr(addr)
             addr += i.getSize()
