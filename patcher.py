@@ -20,11 +20,14 @@ def parse_args():
                         help="Don't check for mask length when overwriting block (dangerous!")
     parser.add_argument("-a", "--append", action="store_true",
                         help="Use space in the end of firmware to store floating blocks")
+    parser.add_argument("-A", "--always-append", action="store_true",
+                        help="Same as --append, but doesn't check for maximum file size. "
+                        "Useful for PebbleTime firmware which seems to have other size limits")
     parser.add_argument("-c", "--codebase", type=lambda x: int(x, base=0),
                         default=0x8010000,
                         help="Codebase of the binary. "
                         "Defaults to 0x8010000 (which is for 1.x-2.x fw); "
-                        "for 3.x set it to 0x8004000")
+                        "for PebbleTime set it to 0x8004000")
     return parser.parse_args()
 
 def patch_fw(args):
@@ -37,8 +40,9 @@ def patch_fw(args):
     # this holds list of ranges
     ranges = Ranges()
 
-    if args.append:
-        ranges.add_eof(data, 0x70000, 0x48)
+    if args.append or args.always_append:
+        ranges.add_eof(data, 0x70000 if args.append else 0x1000000,
+                       0x48)
 
     # this is for #defined and pre#defined values
     definitions = {}
