@@ -20,6 +20,11 @@ def parse_args():
                         help="Don't check for mask length when overwriting block (dangerous!")
     parser.add_argument("-a", "--append", action="store_true",
                         help="Use space in the end of firmware to store floating blocks")
+    parser.add_argument("-c", "--codebase", type=lambda x: int(x, base=0),
+                        default=0x8010000,
+                        help="Codebase of the binary. "
+                        "Defaults to 0x8010000 (which is for 1.x-2.x fw); "
+                        "for 3.x set it to 0x8004000")
     return parser.parse_args()
 
 def patch_fw(args):
@@ -54,12 +59,12 @@ def patch_fw(args):
     print("Binding patches:")
     for p in patches: # including library
         print(p)
-        p.bindall(data, ranges, codebase)
+        p.bindall(data, ranges, args.codebase)
     # ...and apply
     print("Applying patches:")
     for p in patches:
         print(p)
-        data = p.apply(data, codebase, ignore=args.ignore_length)
+        data = p.apply(data, args.codebase, ignore=args.ignore_length)
     print("Saving...")
     # restore eof bytes, if file-end range was used
     data = ranges.restore_tail(data)
