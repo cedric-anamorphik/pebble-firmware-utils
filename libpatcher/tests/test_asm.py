@@ -23,7 +23,7 @@ def op_gen(instr, addr=0, context={}):
     if addr < 0x8010000:
         addr += 0x8010000
     block = Block(mock_patch, None, [i])
-    block.bind(addr)
+    block.bind(addr, 0x8010000)
     context['self'] = addr # add fake "self" label for our instruction
     context['next'] = addr+4
     block.context.update(context) # append our "fake" labels
