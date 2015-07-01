@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+# By Pavel Volkovitskiy
 
 import os
 import sys
 import time
 import struct
 
-import stm32_crc
+from libpebble import stm32_crc
 
 MAX_NUM_FILES = 256
 BYTES_PER_TABLE_ENTRY = 16
@@ -50,7 +51,12 @@ def pack(resources, pbfile):
         for t in ('manifest', 'table', 'data'):
             f.write(open(pbfile+'.'+t, 'rb').read())
 
+
 if __name__ == '__main__':
+
+    if len(sys.argv) < 3:
+        print('Usage: {} src_dir outfile')
+        sys.exit(1)
 
     src_dir = sys.argv[1]
     pbfile = sys.argv[2]
