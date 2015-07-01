@@ -14,7 +14,7 @@ def process_word(data, crc=0xffffffff):
     d = array.array('I', data)[0]
     crc = crc ^ d
 
-    for i in xrange(0, 32):
+    for i in range(0, 32):
         if (crc & 0x80000000) != 0:
             crc = (crc << 1) ^ CRC_POLY
         else:
@@ -24,12 +24,12 @@ def process_word(data, crc=0xffffffff):
     return result
 
 def process_buffer(buf, c = 0xffffffff):
-    word_count = len(buf) / 4
+    word_count = len(buf) // 4
     if (len(buf) % 4 != 0):
         word_count += 1
 
     crc = c
-    for i in xrange(0, word_count):
+    for i in range(0, word_count):
         crc = process_word(buf[i * 4 : (i + 1) * 4], crc)
     return crc
 
