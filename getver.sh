@@ -16,7 +16,7 @@ if [ -z "$short" ]; then
 fi
 
 #hardwares=${3:-ev2_4 v1_5 v2_0}
-hardwares=${3:-snowy_dvt}
+hardwares=${3:-snowy_dvt snowy_s3}
 
 for hw in $hardwares; do
 	echo "Downloading version $ver for HW $hw"
