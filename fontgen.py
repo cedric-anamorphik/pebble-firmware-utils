@@ -124,11 +124,11 @@ class Font:
     def set_codepoint_list(self, list_path):
         codepoints_file = open(list_path)
         codepoints_json = json.load(codepoints_file)
-        self.codepoints = [int(cp) for cp in codepoints_json["codepoints"]]
         if self.isdir:
-            self.advances = {}
-            for cp, info in zip(self.codepoints, codepoints_json['advances']):
-                self.advances[cp] = info
+            self.advances = {d['codepoint']: d for d in codepoints_json['metadata']}
+            self.codepoints = self.advances.keys()
+        else:
+            self.codepoints = [int(cp) for cp in codepoints_json["codepoints"]]
 
     def char_filename(self, codepoint):
         return os.path.join(self.ttf_path, '%05X.png'%codepoint)
