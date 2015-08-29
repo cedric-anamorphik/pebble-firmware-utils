@@ -193,7 +193,8 @@ class Font:
                 for x in range(width):
                     pixel = image.getpixel((x,y))
                     pixel = sum(pixel)/3 # (r+g+b) / 3 - average
-                    glyph_bitmap.append(1 if pixel > 127 else 0)
+                    # we code white as 0 while in pil it is (255,255,255)
+                    glyph_bitmap.append(0 if pixel > 127 else 1)
         else:
             # freetype-py should never give us a value not in (1,2)
             raise Exception("Unsupported pixel mode: {}".format(pixel_mode))
