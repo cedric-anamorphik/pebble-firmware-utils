@@ -7,16 +7,18 @@ print_help() {
 	echo "Resource files should be already prepared, or extracted from ready pbpack."
 	echo
 	echo "Usage:"
-	echo "packResources.sh [-f] [-w pathToFramework] [-o system_resources.pbpack] [-t timestamp] res_file [...]"
+	echo "packResources.sh [-f] [-a] [-w pathToFramework] [-o system_resources.pbpack] [-t timestamp] res_file [...]"
 	echo "use -f to force output file overwriting."
+	echo "use -a to use application resource format. Default is system resource format."
 }
 
 framework="/opt/pebble"
 outfile="system_resources.pbpack"
 timestamp=$(date +%s)
 overwrite=0
+sys=1
 
-while getopts "h?fw:o:t:" opt; do
+while getopts "h?fw:o:t:a" opt; do
 	case "$opt" in
 		h|\?)
 			print_help
@@ -33,6 +35,9 @@ while getopts "h?fw:o:t:" opt; do
 			;;
 		t)
 			timestamp=$OPTARG
+			;;
+		a)
+			sys=0
 			;;
 	esac
 done
@@ -62,7 +67,8 @@ if ! [ -e "$fwfile" ]; then
 	echo "Framework repacking script not found in $framework!"
 	exit 1
 fi
-fwrun="python2 $fwfile --system"
+fwrun="python2 $fwfile"
+[ $sys -eq 1 ] && fwrun="$fwrun --system"
 
 $fwrun manifest "$outfile".manifest "$timestamp" "$@" || exit 1
 $fwrun table "$outfile".table "$@" || exit 1
