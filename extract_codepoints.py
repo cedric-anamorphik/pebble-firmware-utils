@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from struct import pack, unpack
-import json, sys
+import json, sys, os
 
 import math
 from PIL import Image
@@ -107,9 +107,13 @@ def extract_codepoints(font):
 if __name__ == '__main__':
     if len(sys.argv) <= 2:
         print 'Usage: extract_codepoints.py fontfile output_dir > codepoints.json'
-        exit()
+        exit(1)
 
     file_name, dir_name = sys.argv[1:2]
+    if os.path.exists(dir_name):
+        print('Directory %s already exists!' % dir_name)
+        exit(1)
+    os.mkdir(dir_name)
     font = open(file_name, 'rb')
     extract_codepoints(font)
 
