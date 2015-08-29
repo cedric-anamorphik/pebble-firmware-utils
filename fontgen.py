@@ -9,6 +9,7 @@ import sys
 import itertools
 import json
 from math import ceil
+from PIL import Image
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 import generate_c_byte_array
@@ -88,9 +89,13 @@ class Font:
         self.ttf_path = ttf_path
         self.max_height = int(height)
         self.legacy = legacy
-        self.face = freetype.Face(self.ttf_path)
-        self.face.set_pixel_sizes(0, self.max_height)
-        self.name = self.face.family_name + "_" + self.face.style_name
+        if os.path.isdir(ttf_path):
+            self.isdir = True
+        else:
+            self.isdir = False
+            self.face = freetype.Face(self.ttf_path)
+            self.face.set_pixel_sizes(0, self.max_height)
+            self.name = self.face.family_name + "_" + self.face.style_name
         self.wildcard_codepoint = WILDCARD_CODEPOINT
         self.number_of_glyphs = 0
         self.table_size = HASH_TABLE_SIZE
@@ -120,23 +125,48 @@ class Font:
         codepoints_file = open(list_path)
         codepoints_json = json.load(codepoints_file)
         self.codepoints = [int(cp) for cp in codepoints_json["codepoints"]]
+        if self.isdir:
+            self.advances = {}
+            for cp, info in zip(self.codepoints, codepoints_json['advances']):
+                self.advances[cp] = info
+
+    def char_filename(self, codepoint):
+        return os.path.join(self.ttf_path, '%05X.png'%codepoint)
 
     def is_supported_glyph(self, codepoint):
-        return (self.face.get_char_index(codepoint) > 0 or (codepoint == unichr(self.wildcard_codepoint)))
+        if self.isdir:
+            return os.path.exists(self.char_filename(codepoint))
+        else:
+            return (self.face.get_char_index(codepoint) > 0 or (codepoint == unichr(self.wildcard_codepoint)))
 
-    def glyph_bits(self, gindex):
-        flags = (freetype.FT_LOAD_RENDER if self.legacy else
-            freetype.FT_LOAD_RENDER | freetype.FT_LOAD_MONOCHROME | freetype.FT_LOAD_TARGET_MONO)
-        self.face.load_glyph(gindex, flags)
-        # Font metrics
-        bitmap = self.face.glyph.bitmap
-        advance = self.face.glyph.advance.x / 64     # Convert 26.6 fixed float format to px
-        advance += self.tracking_adjust
-        width = bitmap.width
-        height = bitmap.rows
-        left = self.face.glyph.bitmap_left
-        bottom = self.max_height - self.face.glyph.bitmap_top
-        pixel_mode = self.face.glyph.bitmap.pixel_mode
+    def glyph_bits(self, gindex, codepoint):
+        if self.isdir:
+            if os.path.getsize(self.char_filename(codepoint)):
+                image = Image.open(self.char_filename(codepoint))
+                width, height = image.size
+            else:
+                image = None
+                width, height = 0, 0
+
+            cpinfo = self.advances[codepoint]
+            advance = cpinfo['advance']
+            left = cpinfo['left']
+            bottom = cpinfo['top'] # it is probably a misunderstanding of top and bottom? see below in struct
+
+            pixel_mode = 99 # custom
+        else:
+            flags = (freetype.FT_LOAD_RENDER if self.legacy else
+                freetype.FT_LOAD_RENDER | freetype.FT_LOAD_MONOCHROME | freetype.FT_LOAD_TARGET_MONO)
+            self.face.load_glyph(gindex, flags)
+            # Font metrics
+            bitmap = self.face.glyph.bitmap
+            advance = self.face.glyph.advance.x / 64     # Convert 26.6 fixed float format to px
+            advance += self.tracking_adjust
+            width = bitmap.width
+            height = bitmap.rows
+            left = self.face.glyph.bitmap_left
+            bottom = self.max_height - self.face.glyph.bitmap_top
+            pixel_mode = self.face.glyph.bitmap.pixel_mode
 
         glyph_structure = ''.join((
             '<',  #little_endian
@@ -158,6 +188,12 @@ class Font:
         elif pixel_mode == 2: # grey font, 255 bits per pixel
             for val in bitmap.buffer:
                 glyph_bitmap.extend([1 if val > 127 else 0])
+        elif pixel_mode == 99: # PIL image
+            for y in range(height): # TODO: reverse?
+                for x in range(width):
+                    pixel = image.getpixel((x,y))
+                    pixel = sum(pixel)/3 # (r+g+b) / 3 - average
+                    glyph_bitmap.append(1 if pixel > 127 else 0)
         else:
             # freetype-py should never give us a value not in (1,2)
             raise Exception("Unsupported pixel mode: {}".format(pixel_mode))
@@ -203,7 +239,7 @@ class Font:
         def add_glyph(codepoint, next_offset, gindex, glyph_indices_lookup):
             offset = next_offset
             if gindex not in glyph_indices_lookup:
-                glyph_bits = self.glyph_bits(gindex)
+                glyph_bits = self.glyph_bits(gindex, codepoint)
                 glyph_indices_lookup[gindex] = offset
                 self.glyph_table.append(glyph_bits)
                 next_offset += len(glyph_bits)
@@ -232,7 +268,10 @@ class Font:
         self.number_of_glyphs = 0
         glyph_indices_lookup = dict()
         next_offset = 4
-        codepoint, gindex = self.face.get_first_char()
+        if self.isdir:
+            codepoint, gindex = self.codepoints[0], 1 # +1 for `while gindex` to work
+        else:
+            codepoint, gindex = self.face.get_first_char()
 
         # add wildcard_glyph
         offset, next_offset, glyph_indices_lookup = add_glyph(WILDCARD_CODEPOINT, next_offset, 0, glyph_indices_lookup)
@@ -253,7 +292,14 @@ class Font:
                 offset, next_offset, glyph_indices_lookup = add_glyph(codepoint, next_offset, gindex, glyph_indices_lookup)
                 glyph_entries.append((codepoint, offset))
 
-            codepoint, gindex = self.face.get_next_char(codepoint, gindex)
+            if self.isdir:
+                gindex += 1
+                if gindex >= len(self.codepoints):
+                    gindex = None
+                else:
+                    codepoint = self.codepoints[gindex-1]
+            else:
+                codepoint, gindex = self.face.get_next_char(codepoint, gindex)
 
         # Make sure the entries are sorted by codepoint
         sorted_entries = sorted(glyph_entries, key=lambda entry: entry[0])
