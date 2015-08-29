@@ -31,11 +31,11 @@ def genCode(pos, to, is_bl):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: findrefs.py [tintin_fw.bin] 0xVALUE [base]"
+        print "Usage: findrefs.py [tintin_fw.bin] [base] 0xVALUE"
         print "Examples:"
         print "  findrefs.py 0x080412f9"
         print "  findrefs.py tintin_fw.patched.bin 0x0801FEDC"
-        print "Base defaults to 0x08010000"
+        print "Base defaults to 0x08010000 (v2.x), for v3.x use 0x8004000"
         exit(1)
 
     base = 0x08010000
@@ -44,9 +44,11 @@ if __name__ == "__main__":
         val = sys.argv[1]
     else:
         tintin = sys.argv[1]
-        val = sys.argv[2]
         if len(sys.argv) > 3:
-            base = int(sys.argv[3], 0) # from hex
+            base = int(sys.argv[2], 0) # from hex
+            val = sys.argv[3]
+        else:
+            val = sys.argv[2]
 
     val = int(val, 0)
     sval = pack('I', val)
