@@ -54,7 +54,7 @@ def extract_codepoints(font):
     side += 1
     bitmap = Image.new('RGB', (side*gap, side*gap), 'white')
 
-    advances = []
+    metadata = []
 
     count = 0
     for index in hash_table:
@@ -65,7 +65,13 @@ def extract_codepoints(font):
             font.seek(table_offset+offset)
             width, height, left, top = unpack('<BBbb', font.read(4))
             advance = unpack('b', font.read(1))[0]
-            advances.append({'advance':advance,'left':left,'top':top})
+            metadata.append({
+                'codepoint': codepoint,
+                'char': unichr(codepoint),
+                'advance':advance,
+                'left':left,
+                'top':top,
+            })
             charimg = Image.new('RGB', (width, height), 'white')
 
             size = width*height
@@ -94,8 +100,7 @@ def extract_codepoints(font):
     print json.dumps({
             'max_height': max_height,
             'codepoints': codepoints,
-            'characters': [unichr(cp) for cp in codepoints],
-            'advances': advances,
+            'metadata': metadata,
         }, indent=4, ensure_ascii=False).encode('utf-8')
 
 if __name__ == '__main__':
