@@ -87,11 +87,12 @@ def extract_codepoints(font):
                         if count/side*gap+x+left > 0 and count%side*gap+y+top > 0:
                             bitmap.putpixel((count/side*gap+x+left, count%side*gap+y+top), (0,0,0))
 
+            charfile = '%s/%05X.png' % (dir_name, codepoints[count])
             if width and height:
-                charimg.save('%s_%05X.png'%(file_name,codepoints[count]))
+                charimg.save(charfile)
             else:
                 # just touch it
-                open('%s_%05X.png'%(file_name,codepoints[count]), 'wb').close()
+                open(charfile, 'wb').close()
 
             count += 1
 
@@ -104,11 +105,11 @@ def extract_codepoints(font):
         }, indent=4, ensure_ascii=False).encode('utf-8')
 
 if __name__ == '__main__':
-    if len(sys.argv) <= 1:
-        print 'Usage: extract_codepoints.py fontfile > codepoints.json'
+    if len(sys.argv) <= 2:
+        print 'Usage: extract_codepoints.py fontfile output_dir > codepoints.json'
         exit()
 
-    file_name = sys.argv[1]
+    file_name, dir_name = sys.argv[1:2]
     font = open(file_name, 'rb')
     extract_codepoints(font)
 
