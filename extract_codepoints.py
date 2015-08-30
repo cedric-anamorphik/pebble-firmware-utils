@@ -109,7 +109,7 @@ if __name__ == '__main__':
         print 'Usage: extract_codepoints.py fontfile output_dir > codepoints.json'
         exit(1)
 
-    file_name, dir_name = sys.argv[1:2]
+    file_name, dir_name = sys.argv[1:3]
     if os.path.exists(dir_name):
         print('Directory %s already exists!' % dir_name)
         exit(1)
