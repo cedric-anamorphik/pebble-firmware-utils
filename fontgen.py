@@ -192,7 +192,8 @@ class Font:
             for y in range(height): # TODO: reverse?
                 for x in range(width):
                     pixel = image.getpixel((x,y))
-                    pixel = sum(pixel)/3 # (r+g+b) / 3 - average
+                    if isinstance(pixel, tuple):
+                        pixel = (sum(pixel)/3) # (r+g+b) / 3 - average
                     # we code white as 0 while in pil it is (255,255,255)
                     glyph_bitmap.append(0 if pixel > 127 else 1)
         else:
