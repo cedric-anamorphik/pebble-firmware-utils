@@ -25,6 +25,7 @@ PATCHPATH=../patches
 PATCHES="StringFixer_290"
 PATCHINFO=StringFix
 
+if ! [ $sver == "uploaded" ]; then
 for hw in $HARDWARES; do
 	echo "Building for hw $hw"
 	for lang in $LANGS; do
@@ -74,7 +75,9 @@ for hw in $HARDWARES; do
 done
 
 megaput *${fver}*
-exp=$(megals -e | grep *${fver}*)
+fi
+exp=$(megals -e | grep ${fver})
+echo EXP:$exp:
 variants=""
 
 echo
@@ -82,7 +85,7 @@ echo '-=-=-'
 echo
 cat <<EOF
 <h1>Builds for $fver ready</h1>
-StringFix patch included. Changelog is <a href="http://developer.getpebble.com/sdk/changelogs/$fver/">here</a>.
+StringFix patch included. Changelog is <a href="http://developer.getpebble.com/sdk/changelogs/">here</a>.
 <br/><br/>
 EOF
 for hw in $HARDWARES; do
