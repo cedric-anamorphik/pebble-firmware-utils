@@ -19,7 +19,7 @@ fver=$2
 vid=$3
 
 HARDWARES="snowy_dvt snowy_s3"
-LANGS="LaCyr LaGrHb LaViTh"
+LANGS="LaCyr LaGrHb LaViTh LaRuHb"
 UTILS=../pebble-firmware-utils
 PATCHPATH=../patches
 PATCHES="StringFixer_290"
