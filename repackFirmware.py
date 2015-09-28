@@ -148,12 +148,17 @@ if __name__ == "__main__":
         print " # Creating output zip..."
         z = zipfile.ZipFile(args.outfile, "w", zipfile.ZIP_STORED)
         try:
-            for f in ("tintin_fw.bin", "system_resources.pbpack", "manifest.json"):
+            for f in ("tintin_fw.bin",
+                      "system_resources.pbpack",
+                      "manifest.json"):
                 if f == "system_resources.pbpack" and args.no_resources:
                     print "   SKIPPING resource pack!"
                     continue
                 print "   Storing %s..." % f
                 z.write(workdir+f, f)
+            for f in ("LICENSE.txt",
+                      "layouts.json.auto"):
+                z.write(f, f) # form current dir - FIXME
         finally:
             z.close()
 
