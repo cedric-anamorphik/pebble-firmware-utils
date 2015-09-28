@@ -261,7 +261,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                 # TODO: perform some tests for this patch version
                 continue
             # ...now check if_state...
-            if not if_state[-1]:
+            if False in if_state:
                 continue # #define must only work if this is met
             # ...and following will depend on it
             if cmd in ["#define", "#default"]: # default is like define but will not override already set value
@@ -293,7 +293,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
             continue # to next line
 
         # and now for non-# lines
-        if not if_state[-1]:
+        if False in if_state:
             continue # skip any code if current condition is not met
 
         # process ${definitions} everywhere
