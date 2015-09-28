@@ -785,6 +785,13 @@ instruction(['LDRB','LDRB.W'], [Reg(), [Reg()], Num(bits=8)], 4, lambda self,rt,
                 (1<<8)+ # W/writeback
                 (imm if imm>=0 else -imm)
             ))
+instruction('LDRB', [Reg('LO'),[Reg('LO'),Reg('LO')]], 2, lambda self,rt,rest:
+            (
+                (0b0101110<<9)+
+                (rest[1]<<6)+
+                (rest[0]<<3)+
+                (rt<<0)
+            ))
 instruction(['LSL','LSLS'], [Reg("LO"),Reg("LO"),Num(bits=5)], 2, lambda self,rd,rm,imm:
             (0b00 << 11) + (imm << 6) +  (rm << 3) + (rd))
 instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO")], 2, lambda self,rdn,rm:
