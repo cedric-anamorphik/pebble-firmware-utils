@@ -416,4 +416,7 @@ def parseFile(f, definitions=None, patch=None, libpatch=None):
             break
         patch.blocks.append(block)
 
+    if len(if_state) != 1:
+        raise ValueError('#ifdef count mismatch! '+str(if_state))
+
     return patch
