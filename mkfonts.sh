@@ -76,7 +76,7 @@ done
 
 megaput *${fver}*
 fi
-exp=$(megals -e | grep ${fver})
+exp=$(megatools ls -e | grep ${fver})
 echo EXP:$exp:
 variants=""
 
