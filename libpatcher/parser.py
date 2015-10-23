@@ -371,10 +371,6 @@ def parseBlock(f, pos, definitions, if_state, patch):
                                 bskip = 0
                             line = '"'.join(tokens[tokennum+1:]) # prepare remainder for next if
                             instructions = [] # this will also break for's
-                            if not mask: # floating block
-                                instructions.append(
-                                    asm.findInstruction('ALIGN', [asm.Num(4)], pos)
-                                )
                         else:
                             raise ParseError("Bad token: %s" % t, pos)
                         if instructions != None: # if entered block
