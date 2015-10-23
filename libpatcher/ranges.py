@@ -68,13 +68,13 @@ class Ranges(object):
         Will align block to 2 by default;
         to get block for unaligned data,
         pass aligned=0
-        @returns [from, to]
+        :returns [from, to]
         """
         self._used = True # for restore_tail
         for r in sorted(self._ranges, key=lambda r: r[1]-r[0]): # sort by size, ascending
             alshift = 0
             if aligned:
-                alshift = aligned - (r[0] % aligned)
+                alshift = (aligned-1) - ((r[0]+aligned-1) % aligned)
             if r[1]-r[0] >= size+alshift:
                 ret = [r[0]+alshift,r[1]] # copy range
                 r[0] += size+alshift # and reduce it
