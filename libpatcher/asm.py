@@ -756,6 +756,13 @@ instruction('LDR', [Reg('LO'), [Reg('LO'), Reg('LO')]], 2, lambda self,rt,lst:
             (lst[1] << 6) +
             (lst[0] << 3) +
             rt)
+instruction(['LDR.W','LDR'], [Reg(), ([Reg(),Reg()], [Reg(),Reg(),Num(bits=2)])], 4, lambda self,rt,lst:
+            ((0b11111 << 11) +
+             (0b101 << 4) +
+             lst[0],
+             (rt << 12) +
+             ((lst[2] if len(lst)>2 else 0) << 4) +
+             lst[1]))
 instruction(['LDR.W','LDR'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])], 4, lambda self,rt,lst:
             ((0b11111 << 11) +
              (0b1101 << 4) +
