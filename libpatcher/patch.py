@@ -58,6 +58,7 @@ class Patch(object):
             raise ValueError("Already bound")
         for block in self.blocks:
             block.bind(block.getPosition(binary, ranges) + codebase, codebase)
+        self._is_bound = True
     def apply(self, binary, codebase = 0x8010000, ignore=False):
         """
         Applies all blocks from this patch to given binary,
@@ -65,7 +66,7 @@ class Patch(object):
         Will bind itself firstly if neccessary.
         """
         if not self._is_bound:
-            self.bindall(binary, codebase)
+            self.bindall(binary, None, codebase=codebase) #FIXME ranges
         for block in self.blocks:
             bpos = block.getPosition()
             code = block.getCode()
