@@ -67,6 +67,7 @@ def parseInstruction(line, pos):
     t = None # type of current arg: None (no current), n(numeric), "(quoted str), l(reg or label), '(charcode)
     br = False # whether we are in [] block
     rl = False # whether we are in {register list} block
+    cp = None # previous char
     for c in arg+'\n': # \n will be processed as last character
         domore = False # if current character needs to be processed further
         if t == None: # state: no current arg
@@ -86,12 +87,11 @@ def parseInstruction(line, pos):
             s += c
             t=t[0]
         elif t == "'": # charcode
-            args.append(asm.Num(ord(c)))
-            t = "'e"
-        elif t == "'e": # charcode end
-            if c != "'":
-                raise ParseError('Expected \', got '+c)
-            t = None
+            if c == t and cp != c: # this is ' and something was already added
+                # notice that ''' is valid construction for ord("'") char code
+                t = None
+            else:
+                args.append(asm.Num(ord(c)))
         elif t in ['n','ns','nm']: # number, maybe 0xHEX or 0bBINARY or 0octal, or numshift
             if c.isdigit() or c in 'aAbBcCdDeEfFxX':
                 s += c
@@ -188,6 +188,8 @@ def parseInstruction(line, pos):
                 rl = False
             else:
                 raise ParseError("Bad character: %c" % c, pos)
+
+        cp = c
     # now let's check that everything went clean
     if t:
         raise ParseError("Unterminated string? %c" % t, pos)
