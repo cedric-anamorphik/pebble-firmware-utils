@@ -64,14 +64,14 @@ def parseInstruction(line, pos):
     # now parse args
     args = asm.List()
     s = '' # string repr of current arg
-    t = None # type of current arg: None (no current), n(numeric), ',"(quoted str), l(reg or label)
+    t = None # type of current arg: None (no current), n(numeric), "(quoted str), l(reg or label), '(charcode)
     br = False # whether we are in [] block
     rl = False # whether we are in {register list} block
     for c in arg+'\n': # \n will be processed as last character
         domore = False # if current character needs to be processed further
         if t == None: # state: no current arg
             domore = True
-        elif t in "'\"": # quoted string
+        elif t == '"': # quoted string
             if c == t: # end of string
                 args.append(asm.Str(s))
                 s = ''
@@ -80,11 +80,18 @@ def parseInstruction(line, pos):
                 t += '\\'
             else:
                 s += c
-        elif t in ['"\\', "'\\"]: # state: backslash in quoted string
+        elif t == '"\\': # state: backslash in quoted string
             c = c.replace('r','\r')
             c = c.replace('n','\n')
             s += c
             t=t[0]
+        elif t == "'": # charcode
+            args.append(asm.Num(ord(c)))
+            t = "'e"
+        elif t == "'e": # charcode end
+            if c != "'":
+                raise ParseError('Expected \', got '+c)
+            t = None
         elif t in ['n','ns','nm']: # number, maybe 0xHEX or 0bBINARY or 0octal, or numshift
             if c.isdigit() or c in 'aAbBcCdDeEfFxX':
                 s += c
@@ -150,7 +157,7 @@ def parseInstruction(line, pos):
                     t = 'nm' # number,multiplier
                 else:
                     raise ParseError("Unexpected *", pos)
-            elif c in "'\"": # quoted str
+            elif c in "'\"": # quoted str or charcode
                 t = c
             elif c.isspace(): # including last \n
                 continue # skip
