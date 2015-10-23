@@ -57,7 +57,13 @@ class Patch(object):
         if self._is_bound:
             raise ValueError("Already bound")
         for block in self.blocks:
-            block.bind(block.getPosition(binary, ranges) + codebase, codebase)
+            oldSize = block.getSize()
+            position = block.getPosition(binary, ranges)
+            block.bind(position + codebase, codebase)
+            # block size could shrink because of ALIGNs..
+            newSize = block.getSize()
+            if newSize < oldSize:
+                ranges.add(position+newSize, position+oldSize)
         self._is_bound = True
     def apply(self, binary, codebase = 0x8010000, ignore=False):
         """
