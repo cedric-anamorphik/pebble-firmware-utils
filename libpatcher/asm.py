@@ -669,6 +669,8 @@ instruction('ADD', [Reg("LO"), Num(bits=8)], 2, lambda self,rd,imm:
             (1 << 13) + (2 << 11) + (rd << 8) + imm)
 def simpleAddSub(self, rd, rn, rm, is_sub):
     return (0b11 << 11) + ((1 if is_sub else 0) << 9) + (rm << 6) + (rn << 3) + rd
+
+
 instruction(['ADDS','ADD'], [Reg("LO"), Reg("LO"), Reg("LO")], 2, lambda self,rd,rn,rm:
             simpleAddSub(self,rd,rn,rm,0))
 instruction(['ADDS','ADD'], [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
@@ -803,6 +805,13 @@ instruction('LDRB', [Reg('LO'),[Reg('LO'),Reg('LO')]], 2, lambda self,rt,rest:
                 (rest[1]<<6)+
                 (rest[0]<<3)+
                 (rt<<0)
+            ))
+instruction('LDRH', [Reg('LO'),([Reg('LO'),Num(bits=5)], [Reg('LO')])], 2, lambda self,rt,rest:
+            (
+                (0b10001 << 11) +
+                ((rest[1] if len(rest)>1 else 0) << 6) +
+                (rest[0] << 3) +
+                (rt)
             ))
 instruction(['LSL','LSLS'], [Reg("LO"),Reg("LO"),Num(bits=5)], 2, lambda self,rd,rm,imm:
             (0b00 << 11) + (imm << 6) +  (rm << 3) + (rd))
