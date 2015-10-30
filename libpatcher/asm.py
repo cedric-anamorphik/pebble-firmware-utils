@@ -50,6 +50,11 @@ class Num(long, Argument):
             return True
         return other == self
     def part(self, bits, shift=0):
+        if shift:
+            remain = self & (2**shift-1)
+            if remain:
+                raise ValueError('Was encoding 0x%X with shift %d, remained %X'%(
+                    self, shift, remain))
         return (self >> shift) & (2**bits-1)
     class ThumbExpandable(Argument):
         """ Number compatible with ThumbExpandImm function """
@@ -750,7 +755,7 @@ instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16, positive=True)], 4, lam
             ))
 instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"),Num(bits=7)])], 2, lambda self,rt,lst:
             (0b01101 << 11) +
-            (((lst[1]>>2) if len(lst)>1 else 0) << 6) +
+            ((lst[1].part(5,2) if len(lst)>1 else 0) << 6) +
             (lst[0] << 3) +
             rt)
 instruction('LDR', [Reg('LO'), [Reg('LO'), Reg('LO')]], 2, lambda self,rt,lst:
@@ -806,11 +811,11 @@ instruction('LDRB', [Reg('LO'),[Reg('LO'),Reg('LO')]], 2, lambda self,rt,rest:
                 (rest[0]<<3)+
                 (rt<<0)
             ))
-instruction('LDRH', [Reg('LO'),([Reg('LO'),Num(bits=5)], [Reg('LO')])], 2, lambda self,rt,rest:
+instruction('LDRH', [Reg('LO'),([Reg('LO'),Num(bits=6)], [Reg('LO')])], 2, lambda self,rt,lst:
             (
                 (0b10001 << 11) +
-                ((rest[1] if len(rest)>1 else 0) << 6) +
-                (rest[0] << 3) +
+                ((lst[1].part(5,1) if len(lst)>1 else 0) << 6) +
+                (lst[0] << 3) +
                 (rt)
             ))
 instruction(['LSL','LSLS'], [Reg("LO"),Reg("LO"),Num(bits=5)], 2, lambda self,rd,rm,imm:
@@ -855,9 +860,9 @@ instruction(['STRB.W','STRB'], [Reg(), ([Reg(), Num(bits=12)],[Reg()])], 4, lamb
              lst[0],
              (rt << 12) +
              (lst[1] if len(lst) > 1 else 0)))
-instruction('STRH', [Reg('LO'), ([Reg('LO'), Num(bits=5)],[Reg('LO')])], 2, lambda self,rt,lst:
+instruction('STRH', [Reg('LO'), ([Reg('LO'), Num(bits=6)],[Reg('LO')])], 2, lambda self,rt,lst:
             (1 << 15) +
-            ((lst[1] if len(lst)>1 else 0) << 6) +
+            ((lst[1].part(5,1) if len(lst)>1 else 0) << 6) +
             (lst[0] << 3) +
             rt)
 instruction(['STRH.W','STRH'], [Reg(), ([Reg(), Num(bits=12)],[Reg()])], 4, lambda self,rt,lst:
