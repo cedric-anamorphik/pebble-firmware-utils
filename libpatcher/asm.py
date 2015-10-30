@@ -860,6 +860,12 @@ instruction('STRH', [Reg('LO'), ([Reg('LO'), Num(bits=5)],[Reg('LO')])], 2, lamb
             ((lst[1] if len(lst)>1 else 0) << 6) +
             (lst[0] << 3) +
             rt)
+instruction(['STRH.W','STRH'], [Reg(), ([Reg(), Num(bits=12)],[Reg()])], 4, lambda self,rt,lst:
+            ((0b11111 << 11) +
+             (0b1010 << 4) +
+             (lst[0]),
+             (rt << 12) +
+             (lst[1] if len(lst)>1 else 0)))
 instruction(['SUBS','SUB'], [Reg("LO"), Num(bits=8)], 2, lambda self,rn,imm:
             (0b111 << 11) + (rn << 8) + imm)
 instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO"),Reg("LO")], 2, lambda self,rd,rn,rm:
