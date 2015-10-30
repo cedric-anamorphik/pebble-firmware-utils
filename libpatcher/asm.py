@@ -813,6 +813,14 @@ instruction('LDRH', [Reg('LO'),([Reg('LO'),Num(bits=6)], [Reg('LO')])], 2, lambd
                 (lst[0] << 3) +
                 (rt)
             ))
+instruction(['LDRH.W','LDRH'], [Reg(),([Reg(),Num(bits=12)],[Reg()])], 4, lambda self,rt,lst:
+            (
+                (0b11111 << 11) +
+                (0b1011 << 4) +
+                lst[0],
+                (rt << 12) +
+                (lst[1] if len(lst)>1 else 0)
+            ))
 instruction(['LSL','LSLS'], [Reg("LO"),Reg("LO"),Num(bits=5)], 2, lambda self,rd,rm,imm:
             (0b00 << 11) + (imm << 6) +  (rm << 3) + (rd))
 instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO")], 2, lambda self,rdn,rm:
