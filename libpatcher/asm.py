@@ -668,6 +668,13 @@ class ValInstruction(NullInstruction):
         value = unpack('<I', self.block.patch.binary[addr:addr+4])[0]
         # ...and store it at patch level
         block.patch.context[self.name] = value
+
+
+# ADD version for SP
+instruction('ADD', [Reg('SP'),Reg('SP'),Num(bits=9,lsl=2)], 2, lambda self,sp,sp1,imm:
+            (0b1011 << 12) +
+            (0 << 7) +
+            imm.part(7,2))
 instruction('ADD', [Reg("LO"), Num(bits=8)], 2, lambda self,rd,imm:
             (1 << 13) + (2 << 11) + (rd << 8) + imm)
 def simpleAddSub(self, rd, rn, rm, is_sub):
@@ -877,6 +884,11 @@ instruction(['STRH.W','STRH'], [Reg(), ([Reg(), Num(bits=12)],[Reg()])], 4, lamb
              (lst[0]),
              (rt << 12) +
              (lst[1] if len(lst)>1 else 0)))
+# SUB version for SP
+instruction('SUB', [Reg('SP'),Reg('SP'),Num(bits=9,lsl=2)], 2, lambda self,sp,sp1,imm:
+            (0b1011 << 12) +
+            (1 << 7) +
+            imm.part(7,2))
 instruction(['SUBS','SUB'], [Reg("LO"), Num(bits=8)], 2, lambda self,rn,imm:
             (0b111 << 11) + (rn << 8) + imm)
 instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO"),Reg("LO")], 2, lambda self,rd,rn,rm:
@@ -885,7 +897,7 @@ instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
             simpleAddSub(self,rd,rd,rm,1))
 instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO"), Num(bits=3)], 2, lambda self,rd,rn,imm:
             (0b1111 << 9) + (imm << 6) + (rn << 3) + (rd))
-instruction(['SUB','SUB.W'], [Reg(),Reg(),Num(bits=12)], 4, lambda self,rd,rn,imm:
+instruction(['SUB.W','SUB'], [Reg(),Reg(),Num(bits=12)], 4, lambda self,rd,rn,imm:
             ((0b11110 << 11) +
              (imm.part(1,11) << 10) +
              (0b101010 << 4) +
