@@ -15,7 +15,7 @@ class Argument(object):
 
 class Num(long, Argument):
     """ Just remember initially specified value format """
-    def __new__(cls, val=None, initial=None, bits='any', positive=False):
+    def __new__(cls, val=None, initial=None, bits='any', positive=False, lsl=None):
         if isinstance(val, str):
             ret = long.__new__(cls, val, 0) # auto determine base
         elif val is None:
@@ -24,6 +24,7 @@ class Num(long, Argument):
             if bits != 'any':
                 ret.maximum = 1 << bits
             ret.positive = positive
+            ret.lsl = lsl
             return ret
         else:
             ret = long.__new__(cls, val)
@@ -46,6 +47,8 @@ class Num(long, Argument):
             if self.positive and other < 0:
                 return False
             if self.bits != 'any' and abs(other) >= self.maximum:
+                return False
+            if self.lsl and (other & (1<<self.lsl-1)):
                 return False
             return True
         return other == self
@@ -748,7 +751,7 @@ instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16, positive=True)], 4, lam
                 (rd << 8) +
                 (imm.part(8))
             ))
-instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"),Num(bits=7)])], 2, lambda self,rt,lst:
+instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"),Num(bits=7,lsl=2)])], 2, lambda self,rt,lst:
             (0b01101 << 11) +
             ((lst[1].part(5,2) if len(lst)>1 else 0) << 6) +
             (lst[0] << 3) +
@@ -806,7 +809,7 @@ instruction('LDRB', [Reg('LO'),[Reg('LO'),Reg('LO')]], 2, lambda self,rt,rest:
                 (rest[0]<<3)+
                 (rt<<0)
             ))
-instruction('LDRH', [Reg('LO'),([Reg('LO'),Num(bits=6)], [Reg('LO')])], 2, lambda self,rt,lst:
+instruction('LDRH', [Reg('LO'),([Reg('LO'),Num(bits=6,lsl=1)], [Reg('LO')])], 2, lambda self,rt,lst:
             (
                 (0b10001 << 11) +
                 ((lst[1].part(5,1) if len(lst)>1 else 0) << 6) +
@@ -845,9 +848,9 @@ instruction(['POP','POP.W'], [RegList(lo=True, lcount=13, lr=None, pc=None)], 4,
             (0b1110100010111101,
              (rl.has('PC')<<15) + (rl.has('LR')<<14) +
              rl.lomask(13)))
-instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10)],[Reg("SP")])], 2, lambda self,rt,lst:
+instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10,lsl=2)],[Reg("SP")])], 2, lambda self,rt,lst:
             (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst)>1 else 0))
-instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7)],[Reg("LO")])], 2, lambda self,rt,lst:
+instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7,lsl=2)],[Reg("LO")])], 2, lambda self,rt,lst:
             (0b11 << 13) + (((lst[1] if len(lst)>1 else 0)>>2)<<6) + (lst[0]<<3) + rt)
 instruction(['STR.W','STR'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])], 4, lambda self,rt,lst:
             ((0b11111 << 11) +
@@ -863,7 +866,7 @@ instruction(['STRB.W','STRB'], [Reg(), ([Reg(), Num(bits=12)],[Reg()])], 4, lamb
              lst[0],
              (rt << 12) +
              (lst[1] if len(lst) > 1 else 0)))
-instruction('STRH', [Reg('LO'), ([Reg('LO'), Num(bits=6)],[Reg('LO')])], 2, lambda self,rt,lst:
+instruction('STRH', [Reg('LO'), ([Reg('LO'), Num(bits=6,lsl=1)],[Reg('LO')])], 2, lambda self,rt,lst:
             (1 << 15) +
             ((lst[1].part(5,1) if len(lst)>1 else 0) << 6) +
             (lst[0] << 3) +
