@@ -50,11 +50,6 @@ class Num(long, Argument):
             return True
         return other == self
     def part(self, bits, shift=0):
-        if shift:
-            remain = self & (2**shift-1)
-            if remain:
-                raise ValueError('Was encoding 0x%X with shift %d, remained %X'%(
-                    self, shift, remain))
         return (self >> shift) & (2**bits-1)
     class ThumbExpandable(Argument):
         """ Number compatible with ThumbExpandImm function """
