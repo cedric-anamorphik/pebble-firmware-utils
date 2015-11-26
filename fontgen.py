@@ -60,6 +60,7 @@ FONT_VERSION_2 = 2
 # Set a codepoint that the font doesn't know how to render
 # The watch will use this glyph as the wildcard character
 WILDCARD_CODEPOINT = 0x25AF # White vertical rectangle
+WILDCARD_CODEPOINT = 0x3456 # from def fonts
 ELLIPSIS_CODEPOINT = 0x2026
 
 HASH_TABLE_SIZE = 255
