@@ -18,7 +18,7 @@ sver=$1
 fver=$2
 vid=$3
 
-HARDWARES="snowy_dvt snowy_s3"
+HARDWARES="snowy_dvt snowy_s3 spalding"
 LANGS="LaCyr LaGrHb LaViTh LaRuHb"
 UTILS=../pebble-firmware-utils
 PATCHPATH=../patches

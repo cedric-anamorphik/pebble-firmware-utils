@@ -6,7 +6,7 @@
 
 ver=$1
 short=$2
-channel=${4:-release-v3}
+channel=${4:-release-v3.7}
 [[ $ver == *beta* ]] && channel=beta
 if [ -z "$short" ]; then
 	echo "Usage: $0 version shorthand ['hw_versions' [platform]"
@@ -16,7 +16,7 @@ if [ -z "$short" ]; then
 fi
 
 #hardwares=${3:-ev2_4 v1_5 v2_0}
-hardwares=${3:-snowy_dvt snowy_s3}
+hardwares=${3:-snowy_dvt snowy_s3 spalding}
 
 for hw in $hardwares; do
 	echo "Downloading version $ver for HW $hw"
