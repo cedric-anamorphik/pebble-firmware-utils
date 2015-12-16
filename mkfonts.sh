@@ -42,7 +42,7 @@ for hwid in ${!HARDWARES[*]}; do # enumerate indices
 		echo "  Building for lang $lang"
 		echo
 
-		OUT=Pebble-${hw}-${fver}-${lang}-${PATCHINFO}.pbz
+		OUT=Pebble-${fver}-${hw}-${lang}-${PATCHINFO}.pbz
 		if [ -e $OUT ]; then
 			echo "Already built, skipping"
 			continue
@@ -93,7 +93,7 @@ echo
 for lang in ${LANGS[*]}; do
 	echo -n "| ${fver} | ${lang} "
 	for hw in ${HARDWARES[*]}; do
-		echo -n "| [GH](https://github.com/MarSoft/pebble-firmware-utils/raw/builds/Pebble-${hw}-${fver}-${lang}-${PATCHINFO}.pbz"
+		echo -n "| [GH](https://github.com/MarSoft/pebble-firmware-utils/raw/builds/Pebble-${fver}-${hw}-${lang}-${PATCHINFO}.pbz"
 	done
 	echo "|"
 done
