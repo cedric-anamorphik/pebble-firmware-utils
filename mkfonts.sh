@@ -22,7 +22,7 @@ function calc_vid() {
 	chk=$2
 	# calculate column number:
 	# get first line (title), split it (cols->lines), number lines, grep version and get line number
-	vid=$(sed q fonts.txt | tr '\t' '\n' | nl | grep ${ver} | awk '{print $1}')
+	vid=$(sed q fonts.txt | tr '\t' '\n' | nl | grep ${ver} | sed q | awk '{print $1}')
 	if [ -n "$chk" ]; then
 		if [ -z "$vid" ]; then
 			echo "Couldn't find font resource info for fw $fver!"
