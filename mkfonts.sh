@@ -41,7 +41,7 @@ for hw in $HARDWARES; do
 		DIR=v${sver}-${hw}
 		pushd $DIR
 
-		RES=RES_${lang}_${sver}.pbpack
+		RES=RES_${lang}_${sver}_${hw}.pbpack
 
 		if ! [ -e ../$RES ]; then
 			echo "Resource pack $RES not found, building"
