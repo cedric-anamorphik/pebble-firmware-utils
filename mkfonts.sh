@@ -1,11 +1,11 @@
 #!/bin/bash
-if [ -z "$3" ]; then
+if [ -z "$2" ]; then
 	cat <<EOF
 Usage:
-$0 short_ver full_ver ver_num
+$0 short_ver full_ver
 
 Example:
-$0 330 3.3.0 9
+$0 330 3.3
 
 Short version is used for path: vSVER-HW
 Full version is used for output file name: Pebble-HW-FVER-LANG-patch.pbz
@@ -16,7 +16,14 @@ fi
 
 sver=$1
 fver=$2
-vid=$3
+
+# calculate column number:
+# get first line (title), split it (cols->lines), number lines, grep version and get line number
+vid=$(sed q fonts.txt | tr '\t' '\n' | nl | grep ${fver} | awk '{print $1}')
+if [ -z "$vid" ]; then
+	echo "Couldn't find font resource info for fw $fver!"
+	exit 1
+fi
 
 HARDWARES="snowy_dvt snowy_s3 spalding ev2_4 v1_5 v2_0"
 LANGS="LaCyr LaGrHb LaViTh LaRuHb"
