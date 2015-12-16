@@ -74,25 +74,16 @@ for hw in $HARDWARES; do
 	echo
 done
 
-megaput *${fver}*
+cp *${fver}* repo/
 fi
-exp=$(megatools ls -e | grep ${fver})
-echo EXP:$exp:
-variants=""
 
 echo
 echo '-=-=-'
 echo
-cat <<EOF
-<h1>Builds for $fver ready</h1>
-StringFix patch included. Changelog is <a href="http://developer.getpebble.com/sdk/changelogs/">here</a>.
-<br/><br/>
-EOF
-for hw in $HARDWARES; do
-	echo "<h2>$hw</h2>"
-	for lang in $LANGS; do
-		OUT=Pebble-${hw}-${fver}-${lang}-${PATCHINFO}.pbz
-		mega=$(echo "$exp" | grep $OUT | sed 's/ .*//')
-		echo "${lang}: <a href=\"${mega}\">MEGA</a>, Yandex<br/>"
+for lang in $LANGS; do
+	echo -n "| ${fver} | ${lang} "
+	for hw in $HARDWARES; do
+		echo -n "| [GH](https://github.com/MarSoft/pebble-firmware-utils/raw/builds/Pebble-${hw}-${fver}-${lang}-${PATCHINFO}.pbz"
 	done
+	echo "|"
 done
