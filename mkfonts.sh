@@ -26,7 +26,7 @@ if [ -z "$vid" ]; then
 fi
 
 HARDWARES=(snowy_dvt snowy_s3 spalding ev2_4 v1_5 v2_0)
-HARDRES=(showy showy spalding classic classic steel) # hws with different hres use different resources
+HARDPLATF=(basalt basalt chalk aplite aplite aplite) # different platforms use different resource sets
 LANGS=(LaCyr LaGrHb LaViTh LaRuHb)
 UTILS=../pebble-firmware-utils
 PATCHPATH=../patches
@@ -36,8 +36,8 @@ PATCHINFO=StringFix
 if ! [ $sver == "uploaded" ]; then
 for hwid in ${!HARDWARES[*]}; do # enumerate indices
 	hw=${HARDWARES[hwid]}
-	hres=${HARDRES[hwid]}
-	echo "Building for hw $hw"
+	platf=${HARDPLATF[hwid]}
+	echo "Building for hw $hw, platform $platf"
 	for lang in ${LANGS[*]}; do
 		echo "  Building for lang $lang"
 		echo
@@ -51,7 +51,7 @@ for hwid in ${!HARDWARES[*]}; do # enumerate indices
 		DIR=v${sver}-${hw}
 		pushd $DIR
 
-		RES=RES_${lang}_${sver}_${hres}.pbpack
+		RES=RES_${lang}_${sver}_${platf}.pbpack
 
 		if ! [ -e ../$RES ]; then
 			echo "Resource pack $RES not found, building"
