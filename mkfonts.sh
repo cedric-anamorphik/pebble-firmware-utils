@@ -56,7 +56,7 @@ for hw in $HARDWARES; do
 				../$UTILS/unpackFirmware.py system_resources.pbpack
 				mv resres res
 			fi
-			cat ../fonts.txt | grep 'GOTHIC_' | grep -v 'GOTHIC_09' | awk '{print $1" "$'$vid'}' | while read name id; do
+			cat ../fonts.txt | grep 'GOTHIC_' | grep -v 'GOTHIC_09' | grep -v '_E' | awk '{print $1" "$'$vid'}' | while read name id; do
 				id=$(printf %03d $id)
 				rm res/${id}_*
 				cp ../$lang/$name res/${id}_${name}
