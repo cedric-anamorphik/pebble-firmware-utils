@@ -25,17 +25,20 @@ if [ -z "$vid" ]; then
 	exit 1
 fi
 
-HARDWARES="snowy_dvt snowy_s3 spalding ev2_4 v1_5 v2_0"
-LANGS="LaCyr LaGrHb LaViTh LaRuHb"
+HARDWARES=(snowy_dvt snowy_s3 spalding ev2_4 v1_5 v2_0)
+HARDRES=(showy showy spalding classic classic steel) # hws with different hres use different resources
+LANGS=(LaCyr LaGrHb LaViTh LaRuHb)
 UTILS=../pebble-firmware-utils
 PATCHPATH=../patches
 PATCHES="StringFixer_290"
 PATCHINFO=StringFix
 
 if ! [ $sver == "uploaded" ]; then
-for hw in $HARDWARES; do
+for hwid in ${!HARDWARES[*]}; do # enumerate indices
+	hw=${HARDWARES[hwid]}
+	hres=${HARDRES[hwid]}
 	echo "Building for hw $hw"
-	for lang in $LANGS; do
+	for lang in ${LANGS[*]}; do
 		echo "  Building for lang $lang"
 		echo
 
@@ -48,7 +51,7 @@ for hw in $HARDWARES; do
 		DIR=v${sver}-${hw}
 		pushd $DIR
 
-		RES=RES_${lang}_${sver}_${hw}.pbpack
+		RES=RES_${lang}_${sver}_${hres}.pbpack
 
 		if ! [ -e ../$RES ]; then
 			echo "Resource pack $RES not found, building"
@@ -87,9 +90,9 @@ fi
 echo
 echo '-=-=-'
 echo
-for lang in $LANGS; do
+for lang in ${LANGS[*]}; do
 	echo -n "| ${fver} | ${lang} "
-	for hw in $HARDWARES; do
+	for hw in ${HARDWARES[*]}; do
 		echo -n "| [GH](https://github.com/MarSoft/pebble-firmware-utils/raw/builds/Pebble-${hw}-${fver}-${lang}-${PATCHINFO}.pbz"
 	done
 	echo "|"
