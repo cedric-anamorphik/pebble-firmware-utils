@@ -12,7 +12,8 @@ print_help() {
 	echo "use -a to use application resource format. Default is system resource format."
 }
 
-framework="/opt/pebble/Pebble"
+#framework="/opt/pebble/Pebble"
+framework="$HOME/.pebble-sdk/SDKs/current/sdk-core/pebble"
 outfile="system_resources.pbpack"
 timestamp=$(date +%s)
 overwrite=0
@@ -55,7 +56,7 @@ if [ -e "$outfile" ]; then
 	if [ $overwrite -eq 1 ]; then
 		echo "Warning: overwriting output file $outfile"
 	else
-		echo "Will not overwrite existing output file $outfile!"
+		echo "Will not overwrite existing output file $outfile"
 		echo "Use -f to force."
 		exit 1
 	fi
@@ -64,7 +65,7 @@ fi
 fwfile=$framework/common/tools/pbpack_meta_data.py
 [ -e "$fwfile" ] || fwfile=$framework/Pebble/tools/pbpack_meta_data.py
 if ! [ -e "$fwfile" ]; then
-	echo "Framework repacking script not found in $framework!"
+	echo "Framework repacking script not found in $framework - failed"
 	exit 1
 fi
 fwrun="python2 $fwfile"
