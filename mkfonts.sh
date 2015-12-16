@@ -61,7 +61,7 @@ for hw in $HARDWARES; do
 				rm res/${id}_*
 				cp ../$lang/$name res/${id}_${name}
 			done
-			../$UTILS/packResources.sh -o ../$RES res/*
+			../$UTILS/packResources.sh -w ~/.pebble-sdk/SDKs/current/sdk-core/pebble -o ../$RES res/*
 		fi
 
 

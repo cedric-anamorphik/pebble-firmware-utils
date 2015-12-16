@@ -12,7 +12,7 @@ print_help() {
 	echo "use -a to use application resource format. Default is system resource format."
 }
 
-framework="/opt/pebble"
+framework="/opt/pebble/Pebble"
 outfile="system_resources.pbpack"
 timestamp=$(date +%s)
 overwrite=0
@@ -61,7 +61,7 @@ if [ -e "$outfile" ]; then
 	fi
 fi
 
-fwfile=$framework/Pebble/common/tools/pbpack_meta_data.py
+fwfile=$framework/common/tools/pbpack_meta_data.py
 [ -e "$fwfile" ] || fwfile=$framework/Pebble/tools/pbpack_meta_data.py
 if ! [ -e "$fwfile" ]; then
 	echo "Framework repacking script not found in $framework!"
