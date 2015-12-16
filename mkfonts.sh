@@ -93,7 +93,7 @@ echo
 for lang in ${LANGS[*]}; do
 	echo -n "| ${fver} | ${lang} "
 	for hw in ${HARDWARES[*]}; do
-		echo -n "| [GH](https://github.com/MarSoft/pebble-firmware-utils/raw/builds/Pebble-${fver}-${hw}-${lang}-${PATCHINFO}.pbz"
+		echo -n "| [GH](https://github.com/MarSoft/pebble-firmware-utils/raw/builds/Pebble-${fver}-${hw}-${lang}-${PATCHINFO}.pbz) "
 	done
 	echo "|"
 done
