@@ -17,13 +17,23 @@ fi
 sver=$1
 fver=$2
 
-# calculate column number:
-# get first line (title), split it (cols->lines), number lines, grep version and get line number
-vid=$(sed q fonts.txt | tr '\t' '\n' | nl | grep ${fver} | awk '{print $1}')
-if [ -z "$vid" ]; then
-	echo "Couldn't find font resource info for fw $fver!"
-	exit 1
-fi
+function calc_vid() {
+	ver=$1
+	chk=$2
+	# calculate column number:
+	# get first line (title), split it (cols->lines), number lines, grep version and get line number
+	vid=$(sed q fonts.txt | tr '\t' '\n' | nl | grep ${ver} | awk '{print $1}')
+	if [ -n "$chk" ]; then
+		if [ -z "$vid" ]; then
+			echo "Couldn't find font resource info for fw $fver!"
+			exit 1
+		fi
+	else
+		echo "$vid"
+	fi
+}
+calc_vid ${fver} t # primary
+calc_vid ${fver}a t # aplite
 
 HARDWARES=(snowy_dvt snowy_s3 spalding ev2_4 v1_5 v2_0)
 HARDPLATF=(basalt basalt chalk aplite aplite aplite) # different platforms use different resource sets
@@ -37,7 +47,10 @@ if ! [ $sver == "uploaded" ]; then
 for hwid in ${!HARDWARES[*]}; do # enumerate indices
 	hw=${HARDWARES[hwid]}
 	platf=${HARDPLATF[hwid]}
-	echo "Building for hw $hw, platform $platf"
+	fver_vid=$fver
+	[[ $platf == aplite ]] && fver_vid=${fver_vid}a
+	vid=$(calc_vid ${fver_vid})
+	echo "Building for hw $hw, platform $platf, column $vid"
 	for lang in ${LANGS[*]}; do
 		echo "  Building for lang $lang"
 		echo
