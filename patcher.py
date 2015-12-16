@@ -24,10 +24,10 @@ def parse_args():
                         help="Same as --append, but doesn't check for maximum file size. "
                         "Useful for PebbleTime firmware which seems to have other size limits")
     parser.add_argument("-c", "--codebase", type=lambda x: int(x, base=0),
-                        default=0x8010000,
+                        default=0x8004000,
                         help="Codebase of the binary. "
-                        "Defaults to 0x8010000 (which is for 1.x-2.x fw); "
-                        "for PebbleTime set it to 0x8004000")
+                        "Defaults to 0x8004000 (which is for 3.x fw); "
+                        "for 1.x-2.x set it to 0x8010000")
     return parser.parse_args()
 
 def patch_fw(args):

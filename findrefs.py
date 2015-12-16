@@ -35,10 +35,10 @@ if __name__ == "__main__":
         print "Examples:"
         print "  findrefs.py 0x080412f9"
         print "  findrefs.py tintin_fw.patched.bin 0x0801FEDC"
-        print "Base defaults to 0x08010000 (v2.x), for v3.x use 0x8004000"
+        print "Base defaults to 0x08004000 (v3.x), for v2.x use 0x8010000"
         exit(1)
 
-    base = 0x08010000
+    base = 0x08004000
     if len(sys.argv) == 2:
         tintin = "tintin_fw.bin"
         val = sys.argv[1]

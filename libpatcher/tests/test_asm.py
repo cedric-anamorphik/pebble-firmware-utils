@@ -20,10 +20,10 @@ def op_gen(instr, addr=0, context={}):
     else:
         i = findInstruction(instr[0], instr[1], pos)
     assert i
-    if addr < 0x8010000:
-        addr += 0x8010000
+    if addr < 0x8004000:
+        addr += 0x8004000
     block = Block(mock_patch, None, [i])
-    block.bind(addr, 0x8010000)
+    block.bind(addr, 0x8004000)
     context['self'] = addr # add fake "self" label for our instruction
     context['next'] = addr+4
     block.context.update(context) # append our "fake" labels
