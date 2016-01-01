@@ -6,7 +6,8 @@
 
 ver=$1
 short=$2
-channel=${4:-release-v3.7}
+ver_s=$(echo $ver | sed 's/([0-9]+\.[0-9]+)\.[0-9]+/\1/')
+channel=${4:-release-v${ver_s}}
 [[ $ver == *beta* ]] && channel=beta
 if [ -z "$short" ]; then
 	echo "Usage: $0 version shorthand ['hw_versions' [platform]"
