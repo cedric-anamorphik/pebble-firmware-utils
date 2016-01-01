@@ -25,8 +25,13 @@ function calc_vid() {
 	vid=$(sed q fonts.txt | tr '\t' '\n' | nl | grep ${ver} | sed q | awk '{print $1}')
 	if [ -n "$chk" ]; then
 		if [ -z "$vid" ]; then
-			echo "Couldn't find font resource info for fw $fver!"
-			exit 1
+			if echo "$vid" | grep -Eq '\..+\.'; then
+				calc_vid "${vid%.*}"
+				return
+			else
+				echo "Couldn't find font resource info for fw $fver!"
+				exit 1
+			fi
 		fi
 	else
 		echo "$vid"
