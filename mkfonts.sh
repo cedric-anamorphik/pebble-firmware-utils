@@ -26,7 +26,7 @@ function calc_vid() {
 	if [ -n "$chk" ]; then
 		if [ -z "$vid" ]; then
 			if echo "$vid" | grep -Eq '\..+\.'; then
-				calc_vid "${vid%.*}"
+				calc_vid "$(echo "$vid" | perl -pe 's/\.[0-9]+(?!\.)//')" # cut off last .x version component
 				return
 			else
 				echo "Couldn't find font resource info for fw $fver!"
