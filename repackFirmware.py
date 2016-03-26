@@ -88,17 +88,21 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.original:
+    do_crc = not args.original or args.respack != args.original.name
+
+    if do_crc and args.original:
         args.orig_crc = getCrc(args.original)
         args.original.close()
 
     print "Will create firmware at %s," % args.outfile
     print "using %s for manifest, %s for tintin binary" % (args.manifest, args.tintin_fw)
     print "and %s for resource pack." % args.respack
-    if args.orig_crc:
-        print "Will replace 0x%08X with new CRC." % args.orig_crc
-    else:
-        print "Will write new CRC at 0x%08X." % args.offset
+
+    if do_crc:
+        if args.orig_crc:
+            print "Will replace 0x%08X with new CRC." % args.orig_crc
+        else:
+            print "Will write new CRC at 0x%08X." % args.offset
     print
 
     try:
@@ -111,20 +115,22 @@ if __name__ == "__main__":
 
         print " # Copying tintin_fw.bin..."
         shutil.copy(args.tintin_fw, workdir+'tintin_fw.bin')
-        print " # Updating CRC value in tintin_fw.bin from 0x%08X to 0x%08X:" % (args.orig_crc or 0, newCrc)
-        with open(workdir+'tintin_fw.bin', 'r+b') as tintin:
-            updateCrc(tintin, newCrc, args.orig_crc, args.offset, args.replace_all)
+        if do_crc:
+            print " # Updating CRC value in tintin_fw.bin from 0x%08X to 0x%08X:" % (args.orig_crc or 0, newCrc)
+            with open(workdir+'tintin_fw.bin', 'r+b') as tintin:
+                updateCrc(tintin, newCrc, args.orig_crc, args.offset, args.replace_all)
 
         print " # Reading manifest..."
         with open(args.manifest, 'r') as f:
             manifest = json.load(f)
 
         print " # Updating manifest..."
-        rp_size = os.path.getsize(args.respack)
-        print "   res pack size = %d" % rp_size
-        with open(args.respack) as f:
-            rp_crc = crc32(f.read())
-        print "   res pack crc = %d" % rp_crc
+        if do_crc:
+            rp_size = os.path.getsize(args.respack)
+            print "   res pack size = %d" % rp_size
+            with open(args.respack) as f:
+                rp_crc = crc32(f.read())
+            print "   res pack crc = %d" % rp_crc
         tintin_size = os.path.getsize(workdir+"tintin_fw.bin")
         print "   tintin size = %d" % tintin_size
         with open(workdir+"tintin_fw.bin") as f:
@@ -132,10 +138,11 @@ if __name__ == "__main__":
         print "   tintin crc = %d" % tintin_crc
 
         print " # Changing values:"
-        print "  resources.size: %d => %d" % (manifest['resources']['size'], rp_size)
-        manifest['resources']['size'] = rp_size
-        print "  resources.crc: %d => %d" % (manifest['resources']['crc'], rp_crc)
-        manifest['resources']['crc'] = rp_crc
+        if do_crc:
+            print "  resources.size: %d => %d" % (manifest['resources']['size'], rp_size)
+            manifest['resources']['size'] = rp_size
+            print "  resources.crc: %d => %d" % (manifest['resources']['crc'], rp_crc)
+            manifest['resources']['crc'] = rp_crc
         print "  firmware.size: %d => %d" % (manifest['firmware']['size'], tintin_size)
         manifest['firmware']['size'] = tintin_size
         print "  firmware.crc: %d => %d" % (manifest['firmware']['crc'], tintin_crc)
