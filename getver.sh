@@ -6,7 +6,7 @@
 
 ver=$1
 short=$2
-ver_s=$(echo $ver | sed 's/([0-9]+\.[0-9]+)\.[0-9]+/\1/')
+ver_s=${ver_s:-$(echo $ver | sed 's/([0-9]+\.[0-9]+)\.[0-9]+/\1/')}
 channel=${4:-release-v${ver_s}}
 [[ $ver == *beta* ]] && channel=beta
 if [ -z "$short" ]; then
