@@ -14,3 +14,6 @@ adb shell am start \
 	-n com.getpebble.android.basalt/com.getpebble.android.main.activity.MainActivity \
 	-a android.intent.action.VIEW \
 	-d file:///sdcard/$filename
+
+echo
+echo "Now please confirm firmware installation on your phone"
