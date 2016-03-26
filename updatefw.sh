@@ -1,4 +1,7 @@
 #!/bin/sh
+# Usage:
+# updatefw.sh [filename.pbz]
+# filename defaults to patched.pbz
 
 origfile=${1:-patched.pbz}
 
