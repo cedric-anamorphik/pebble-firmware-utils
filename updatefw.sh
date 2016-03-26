@@ -1,5 +1,7 @@
 #!/bin/sh
 
+origfile=${1:-patched.pbz}
+
 # we randomize filename to make sure caching will not interfere
 filename=patched-$RANDOM.pbz
 
@@ -7,7 +9,7 @@ filename=patched-$RANDOM.pbz
 adb shell rm '/sdcard/patched-*.pbz'
 
 # push new one
-adb push patched.pbz /sdcard/$filename || exit 1
+adb push "$origfile" /sdcard/$filename || exit 1
 
 # and show confirmation dialog
 adb shell am start \
