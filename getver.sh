@@ -25,7 +25,7 @@ for hw in $hardwares; do
 	cd $short-$hw
 	outfile="Pebble-$ver-${hw}.pbz"
 	[ -e "$outfile" ] && rm "$outfile"
-	wget "https://pebblefw.s3.amazonaws.com/pebble/$hw/$channel/pbz/Pebble-$ver-$hw.pbz"
+	wget "https://pebblefw.s3.amazonaws.com/pebble/$hw/$channel/pbz/Pebble-$ver-$hw.pbz" || exit 1
 	unzip "$outfile"
 	cd ..
 done
