@@ -905,5 +905,23 @@ instruction(['SUB.W','SUB'], [Reg(),Reg(),Num(bits=12)], 4, lambda self,rd,rn,im
              (imm.part(3,8) << 12) +
              (rd << 8) +
              imm.part(8)))
+instruction(['TST.W', 'TST'], [Reg(), Num.ThumbExpandable()], 4, lambda self,rn,imm:
+            (
+                (0b11110 << 11) +
+                (imm.the(1,11) << 10) +
+                (1 << 4) +
+                rn,
+                (imm.the(3, 8) << 12) +
+                (0b1111 << 8) +
+                imm.the(8,0)
+            ))
+instruction('TST', [Reg('LO'), Reg('LO')], 2, lambda self,rn,rm:
+            (
+                (1 << 14) +
+                (1 << 9) +
+                (rm << 3) +
+                rn
+            ))
+
 instruction('UXTB', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
             (0b1011001011 << 6) + (rm << 3) + rd)

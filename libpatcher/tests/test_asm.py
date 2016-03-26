@@ -159,5 +159,9 @@ def test_SUB_R2_R0_8(): # with T4 encoding - f2; T3 -> f1
     eq_(op('SUB R2,R0,8'), b'\xa0\xf2\x08\x02')
 def test_SUB_R1_R4_1():
     eq_(op('SUB R1,R4,1'), b'\x61\x1E')
+def test_TST_R5_R3():
+    eq_(op('TST R5,R3'), b'\x1D\x42')
+def test_TST_R1_100000():
+    eq_(op('TST R1,0x100000'), b'\x11\xF4\x80\x1F')
 def test_UXTB_R5_R4():
     eq_(op('UXTB R5,R4'), '\xE5\xB2')
