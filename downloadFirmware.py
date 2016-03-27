@@ -32,24 +32,35 @@ import hashlib
 import logging, os.path
 import json
 
-def parse_args():
-    parser = argparse.ArgumentParser('Download latest firmware bundle from Pebble')
-    parser.add_argument('version', default='3.7', nargs='?',
-                        choices = URIs,
-                        help='Which version group to use.')
-    parser.add_argument('hardware', nargs='?',
-                        help='Hardware version to use (see code or pebbledev.org)')
-    return parser.parse_args()
-
-
 if __name__ == "__main__":
     log = logging.getLogger()
     logging.basicConfig(format='[%(levelname)-8s] %(message)s')
     log.setLevel(logging.DEBUG)
 
-    args = parse_args()
 
-    uri = URIs[args.version].format(args.hardware or HWs[args.version[0]][-1])
+    parser = argparse.ArgumentParser(
+        description='Download latest firmware bundle from Pebble')
+    parser.add_argument('version', default='3.7', nargs='?',
+                        choices = URIs,
+                        help='Which version group to use.')
+    parser.add_argument('hardware', nargs='?',
+                        help='Hardware version to use (see code or pebbledev.org)')
+
+    args = parser.parse_args()
+
+
+    curr_hws = HWs[args.version[0]]
+    if args.hardware:
+        if args.hardware not in curr_hws:
+            parser.error('Available hardwares for version %s: %s' % (
+                args.version,
+                ', '.join(curr_hws),
+            ))
+    else:
+        args.hardware = curr_hws[-1]
+
+
+    uri = URIs[args.version].format(args.hardware)
     log.info("Downloading firmware linked from %s" % uri)
 
     page = urlopen(uri).read()
