@@ -6,13 +6,22 @@
 
 ver=$1
 short=$2
-ver_s=${ver_s:-$(echo $ver | sed 's/([0-9]+\.[0-9]+)\.[0-9]+/\1/')}
+if [[ "$ver" =~ .*/.* ]]; then
+	ver_s=${ver%/*}
+	ver=${ver#*/}
+elif [[ "$ver" =~ 3\.[7891].* ]]; then
+	ver_s=${ver_s:-3.7}
+else
+	ver_s=${ver_s:-$(echo ${ver:-0.0} | sed 's/\..*//')}
+fi
 channel=${4:-release-v${ver_s}}
 [[ $ver == *beta* ]] && channel=beta
 if [ -z "$short" ]; then
-	echo "Usage: $0 version shorthand ['hw_versions' [platform]"
+	echo "Usage: $0 [channel/]version shorthand ['hw_versions' [platform]"
 	echo "Example: $0 2.2 v220"
-	echo "Example: $0 2.9-beta5 v29b5     # channel will be automatigically set to beta"
+	echo "Example: $0 2.9-beta5 v29b5"
+	echo "Example: $0 3/3.6 v360"
+	echo "Example: $0 3.7/3.10.1 v3A1"
 	exit 1
 fi
 
