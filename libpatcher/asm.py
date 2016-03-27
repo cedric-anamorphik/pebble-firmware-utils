@@ -866,6 +866,8 @@ instruction(['POP','POP.W'], [RegList(lo=True, lcount=13, lr=None, pc=None)], 4,
             (0b1110100010111101,
              (rl.has('PC')<<15) + (rl.has('LR')<<14) +
              rl.lomask(13)))
+instruction('RSB', [Reg("LO"), Reg("LO"), Num(0)], 2, lambda self,rd,rn:
+            (1 << 14) + (0b1001 << 6) + (rn << 3) + rd)
 instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10,lsl=2)],[Reg("SP")])], 2, lambda self,rt,lst:
             (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst)>1 else 0))
 instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7,lsl=2)],[Reg("LO")])], 2, lambda self,rt,lst:
