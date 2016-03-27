@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Download latest firmware bundle from Pebble')
     parser.add_argument('version', default='3.7', nargs='?',
-                        choices = URIs,
+                        choices=sorted(URIs.keys()),
                         help='Which version group to use.')
     parser.add_argument('hardware', nargs='?',
                         help='Hardware version to use (see code or pebbledev.org)')
