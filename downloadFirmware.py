@@ -1,18 +1,29 @@
 #!/usr/bin/env python2
 # URI = 'http://pebble-static.s3.amazonaws.com/watchfaces/index.html'
 URIs = {
-    1: 'http://pebblefw.s3.amazonaws.com/pebble/{}/release/latest.json',
-    2: 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v2/latest.json',
-    3: 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v3/latest.json',
+    '1': 'http://pebblefw.s3.amazonaws.com/pebble/{}/release/latest.json',
+    '2': 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v2/latest.json',
+    '3': 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v3/latest.json',
+    '3.7': 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v3.7/latest.json',
 }
 HWs = {
-    1: ['ev2_4',
-        'v1_5'],
-    2: ['ev2_4',    # V2R2
+    '1': [
+        'ev2_4',
+        'v1_5',
+    ],
+    '2': [
+        'ev2_4',    # V2R2
         'v1_5',     # V3Rx
-        'v2_0'],    # STEEL
-    3: ['snowy_dvt',    # snowy22, snowy23
-        ],
+        'v2_0',     # STEEL
+    ],
+    '3': [
+        'ev2_4',      # V2R2
+        'v1_5',       # V3Rx
+        'v2_0',       # STEEL
+        'snowy_dvt',  # Time
+        'snowy_s3',   # Time Steel
+        'spalding',   # Round
+    ],
 }
 
 import argparse
@@ -23,7 +34,7 @@ import json
 
 def parse_args():
     parser = argparse.ArgumentParser('Download latest firmware bundle from Pebble')
-    parser.add_argument('version', default=3, nargs='?',
+    parser.add_argument('version', default='3.7', nargs='?',
                         choices = URIs,
                         help='Which version group to use.')
     parser.add_argument('hardware', nargs='?',
@@ -38,7 +49,7 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    uri = URIs[args.version].format(args.hardware or HWs[args.version][-1])
+    uri = URIs[args.version].format(args.hardware or HWs[args.version[0]][-1])
     log.info("Downloading firmware linked from %s" % uri)
 
     page = urlopen(uri).read()
