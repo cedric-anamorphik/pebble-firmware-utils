@@ -720,6 +720,17 @@ instruction('CMP', [Reg("LO"), Reg("LO")], 2, lambda self,rn,rm:
             (1 << 14) + (0b101 << 7) + (rm << 3) + rn)
 instruction('CMP', [Reg(), Reg()], 2, lambda self,rn,rm:
             (1 << 14) + (0b101 << 8) + ((rn>>3)<<7) + (rm << 3) + (rn&0b111))
+# T2
+instruction(['CMP.W', 'CMP'], [Reg(), Num.ThumbExpandable()], 4, lambda self,rn,imm:
+            (
+                (0b11110 << 11) +
+                (imm.the(1, 11) << 10) +
+                (0b11011 << 4) +
+                (rn),
+                (imm.the(3, 8) << 12) +
+                (0b1111 << 8) +
+                (imm.the(8,0))
+            ))
 instruction(['EOR','EORS'], [Reg(),Reg(),Num.ThumbExpandable()], 4, lambda self,rd,rn,imm:
             (
                 (0b11110<<11)+

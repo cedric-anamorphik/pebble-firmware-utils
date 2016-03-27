@@ -95,6 +95,8 @@ def test_CMP_R2_R12():
     eq_(op('CMP R2,R12'), '\x62\x45')
 def test_CMP_R0_R1():
     eq_(op('CMP R0,R1'), '\x88\x42')
+def test_CMP_R5_0x240():
+    eq_(op('CMP R5, 0x240'), '\xB5\xF5\x10\x7F')
 def test_MOV_R0_2C():
     eq_(op('MOV R0,0x2C'), '\x2c\x20')
 def test_MOV_R0_3x4():
