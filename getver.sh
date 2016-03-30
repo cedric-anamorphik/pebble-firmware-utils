@@ -10,7 +10,7 @@ if [[ "$ver" =~ .*/.* ]]; then
 	ver_s=${ver%/*}
 	ver=${ver#*/}
 elif [[ "$ver" =~ 3\.[7891].* ]]; then
-	ver_s=${ver_s:-3.7}
+	ver_s=${ver_s:-3.8}
 else
 	ver_s=${ver_s:-$(echo ${ver:-0.0} | sed 's/\..*//')}
 fi
@@ -21,7 +21,7 @@ if [ -z "$short" ]; then
 	echo "Example: $0 2.2 v220"
 	echo "Example: $0 2.9-beta5 v29b5"
 	echo "Example: $0 3/3.6 v360"
-	echo "Example: $0 3.7/3.10.1 v3A1"
+	echo "Example: $0 3.8/3.10.1 v3A1"
 	exit 1
 fi
 
