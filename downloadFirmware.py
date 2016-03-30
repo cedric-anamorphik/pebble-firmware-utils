@@ -5,6 +5,7 @@ URIs = {
     '2': 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v2/latest.json',
     '3': 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v3/latest.json',
     '3.7': 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v3.7/latest.json',
+    '3.8': 'http://pebblefw.s3.amazonaws.com/pebble/{}/release-v3.8/latest.json',
 }
 HWs = {
     '1': [
