@@ -214,7 +214,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
     # mask offset (for @)
     mofs = 0
     # current mask item (bytestring)
-    bstr = ''
+    bstr = b''
     # current mask item (integer, number of bytes to skip)
     bskip = 0
 
@@ -323,7 +323,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                     if bskip:
                         mask.append(bskip)
                         bskip = 0
-                    bstr += token
+                    bstr += token.encode()
                 else:
                     # process $definitions only outside of "strings" and
                     # outside of {blocks}
@@ -339,7 +339,8 @@ def parseBlock(f, pos, definitions, if_state, patch):
                                 mask.append(bskip)
                                 bskip = 0
                             try:
-                                c = chr(int(t, 16))
+                                # convert '65' to b'A'
+                                c = bytes([int(t, 16)])
                             except ValueError:
                                 raise ParseError("Bad token: %s" % t, pos)
                             bstr += c
@@ -353,7 +354,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                                     raise ParseError("Bad token: %s" % t, pos)
                             if bstr:
                                 mask.append(bstr)
-                                bstr = ''
+                                bstr = b''
                             bskip += count
                         elif t == '@':
                             if mofs:
@@ -362,7 +363,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                         elif t == '{':
                             if bstr:
                                 mask.append(bstr)
-                                bstr = ''
+                                bstr = b''
                                 if bskip:
                                     print(mask,bstr,bskip)
                                     raise ParseError("Internal error: both bstr and bskip used", pos)
