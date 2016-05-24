@@ -850,7 +850,8 @@ instruction('CMP', [Reg("LO"), Num(bits=8)], 2, lambda self, rn, imm:
 instruction('CMP', [Reg("LO"), Reg("LO")], 2, lambda self, rn, rm:
             (1 << 14) + (0b101 << 7) + (rm << 3) + rn)
 instruction('CMP', [Reg(), Reg()], 2, lambda self, rn, rm:
-            (1 << 14) + (0b101 << 8) + ((rn >> 3) << 7) + (rm << 3) + (rn & 0b111))
+            (1 << 14) + (0b101 << 8) + ((rn >> 3) << 7) +
+            (rm << 3) + (rn & 0b111))
 # T2
 instruction(['CMP.W', 'CMP'], [Reg(), Num.ThumbExpandable()], 4,
             lambda self, rn, imm:
@@ -878,7 +879,8 @@ instruction(['EOR', 'EORS'], [Reg(), Reg(), Num.ThumbExpandable()], 4,
 instruction('MOVS', [Reg("LO"), Reg("LO")], 2, lambda self, rd, rm:
             (0 << 6) + (rm << 3) + rd)
 instruction(['MOV', 'MOVS'], [Reg(), Reg()], 2, lambda self, rd, rm:
-            (0b1000110 << 8) + ((rd >> 3) << 7) + (rm << 3) + ((rd & 0b111) << 0))
+            (0b1000110 << 8) + ((rd >> 3) << 7) + (rm << 3) +
+            ((rd & 0b111) << 0))
 instruction(['MOV', 'MOVS'], [Reg("LO"), Num(bits=8)], 2, lambda self, rd, imm:
             (1 << 13) + (rd << 8) + imm)
 instruction(['MOV', 'MOV.W', 'MOVS', 'MOVS.W'],
@@ -964,7 +966,8 @@ instruction(['LDRB', 'LDRB.W'], [Reg(), [Reg()], Num(bits=8)], 4,
                 (1 << 8) +  # W/writeback
                 (imm if imm >= 0 else -imm)
 ))
-instruction('LDRB', [Reg('LO'), [Reg('LO'), Reg('LO')]], 2, lambda self, rt, rest:
+instruction('LDRB', [Reg('LO'), [Reg('LO'), Reg('LO')]], 2,
+            lambda self, rt, rest:
             (
                 (0b0101110 << 9) +
                 (rest[1] << 6) +
@@ -1020,7 +1023,8 @@ instruction('RSB', [Reg("LO"), Reg("LO"), Num(0)], 2, lambda self, rd, rn, imm:
             (1 << 14) + (0b1001 << 6) + (rn << 3) + rd)
 instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10, lsl=2)], [Reg("SP")])],
             2, lambda self, rt, lst:
-            (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst) > 1 else 0))
+            (0b10010 << 11) + (rt << 8) +
+            ((lst[1] >> 2) if len(lst) > 1 else 0))
 instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7, lsl=2)], [Reg("LO")])],
             2, lambda self, rt, lst:
             (0b11 << 13) + (((lst[1] if len(lst) > 1 else 0) >> 2) << 6) +
