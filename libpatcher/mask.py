@@ -29,13 +29,13 @@ class Mask(object):
         if not self.parts:  # floating mask
             return "Floating mask"
 
-        def str2hex(s):
-            if isinstance(s, int):
-                return "?%d" % s
+        def bytes2hex(bs):
+            if isinstance(bs, int):
+                return "?%d" % bs
             else:
-                return ' '.join(["%02X" % ord(c) for c in s])
+                return ' '.join(["%02X" % c for c in bs])
         return "Mask at %s: %s @%d" % (
-            self.pos, ','.join([str2hex(x) for x in self.parts]),
+            self.pos, ','.join([bytes2hex(x) for x in self.parts]),
             self.offset
         )
 
