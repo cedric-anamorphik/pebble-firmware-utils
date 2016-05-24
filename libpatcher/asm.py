@@ -562,7 +562,7 @@ class NullInstruction(Instruction):
         return 0
 
     def getCode(self):
-        return ''
+        return b''
 
 
 class LabelInstruction(NullInstruction):
