@@ -415,15 +415,19 @@ class Label(Argument):
         return 0
 
 
-class Str(str, Argument):
+class Str(bytes, Argument):
     """ This represents _quoted_ string """
     def __new__(cls, val=None):
+        # val is expected to be bytes
+        if isinstance(val, str):
+            val = val.encode()
+
         if val is None:
             val = "String"
             mask = True
         else:
             mask = False
-        ret = str.__new__(cls, val)
+        ret = bytes.__new__(cls, val)
         ret.mask = mask
         return ret
 
@@ -665,7 +669,7 @@ class DCB(Instruction):
     def __init__(self, opcode=None, args=None, pos=None):
         Instruction.__init__(self, opcode, args, None, pos=pos)
         if args:
-            code = ''
+            code = b''
             for a in args:
                 if isinstance(a, Str):
                     code += a
