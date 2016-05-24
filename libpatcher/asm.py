@@ -2,8 +2,6 @@
 
 from struct import pack, unpack
 
-from .parser import ParseError
-
 __all__ = ['Num', 'List', 'Reg', 'Label', 'Str',
            #'Argument', 'LabelError', 'Instruction',
            'findInstruction']
@@ -235,11 +233,11 @@ class RegList(List):  # list of registers
         if '-' in s:  # registers range
             ss = s.split('-')
             if len(ss) != 2:
-                raise ParseError("Invalid register range: %s" % s, pos)
+                raise ValueError("Invalid register range: %s" % s, pos)
             ra = Reg(ss[0])
             rb = Reg(ss[1])
             if ra >= rb:
-                raise ParseError("Unordered register range: %s" % s, pos)
+                raise ValueError("Unordered register range: %s" % s, pos)
             for i in range(ra, rb + 1):
                 super(RegList, self).append(Reg('R%d' % i))
         else:  # plain register
