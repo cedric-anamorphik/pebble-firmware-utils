@@ -1,11 +1,11 @@
 # This is a parser for assembler listings (?)
 __all__ = ['parseFile', 'ParseError', 'FilePos']
 
-import asm
+from . import asm
 from itertools import chain
-from mask import Mask
-from block import Block
-from patch import Patch
+from .mask import Mask
+from .block import Block
+from .patch import Patch
 
 class FilePos:
     " This holds current line info (filename, line text, line number) "
@@ -104,7 +104,7 @@ def parseInstruction(line, pos):
                 try:
                     if t == 'ns' and isinstance(args[-1], asm.Label): # numshift for label
                         # args[-1] must exist and be label, or else t would not be 'ns'
-                        args[-1].shift = long(s, 0)
+                        args[-1].shift = int(s, 0)
                     elif t in ['ns','nm']:
                         newnum = asm.Num(s)
                         oldnum = args[-1]
@@ -236,7 +236,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                     raise ParseError("%s requires at least one argument" % cmd, pos)
                 newstate = 'n' in cmd # False for 'ifdef', etc.
                 if "val" in cmd:
-                    vals = definitions.values()
+                    vals = list(definitions.values())
                 # "OR" logic, as one can implement "AND" with nested #ifdef's
                 # so any matched arg stops checking
                 for a in args:
@@ -328,7 +328,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                     # process $definitions only outside of "strings" and
                     # outside of {blocks}
                     # FIXME: $definitions inside of {blocks} [and in "strings"?]
-                    for d, v in definitions.items():
+                    for d, v in list(definitions.items()):
                         if isinstance(v, str) and '$'+d in token: # FIXME: $var and $variable
                             token = token.replace('$'+d, v)
 
@@ -364,7 +364,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                                 mask.append(bstr)
                                 bstr = ''
                                 if bskip:
-                                    print mask,bstr,bskip
+                                    print(mask,bstr,bskip)
                                     raise ParseError("Internal error: both bstr and bskip used", pos)
                             if bskip:
                                 mask.append(bskip)
@@ -384,7 +384,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                 # FIXME: what to do with remainder?
                 remainder = line[1:]
                 if remainder:
-                    print "Warning: spare characters after '}', will ignore: %s" % remainder
+                    print("Warning: spare characters after '}', will ignore: %s" % remainder)
                 return Block(patch, Mask(mask, mofs, mpos), instructions)
 
             # plain labels:

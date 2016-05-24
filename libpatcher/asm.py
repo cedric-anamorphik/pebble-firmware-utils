@@ -13,13 +13,13 @@ class Argument(object):
         """ Matches this instance with given obj """
         raise NotImplementedError
 
-class Num(long, Argument):
+class Num(int, Argument):
     """ Just remember initially specified value format """
     def __new__(cls, val=None, initial=None, bits='any', positive=False, lsl=None):
         if isinstance(val, str):
-            ret = long.__new__(cls, val, 0) # auto determine base
+            ret = int.__new__(cls, val, 0) # auto determine base
         elif val is None:
-            ret = long.__new__(cls, 0)
+            ret = int.__new__(cls, 0)
             ret.bits = bits
             if bits != 'any':
                 ret.maximum = 1 << bits
@@ -27,7 +27,7 @@ class Num(long, Argument):
             ret.lsl = lsl
             return ret
         else:
-            ret = long.__new__(cls, val)
+            ret = int.__new__(cls, val)
         ret.initial = str(val) if initial is None else initial
         # and for consistency with Reg:
         ret.val = ret
@@ -317,7 +317,7 @@ class Label(Argument):
             rem = ofs & (2**shift-1)
             if rem:
                 # FIXME
-                raise(LabelError("Spare bits in offset 0x%X: %X" % (ofs, rem)))
+                raise LabelError("Spare bits in offset 0x%X: %X" % (ofs, rem))
             ofs = ofs >> shift
         return ofs
     def off_s(self, instr, bits, shift):
@@ -465,7 +465,7 @@ class Instruction(object):
             code = self.proc
         if isinstance(code, bytes):
             return code
-        elif isinstance(code, (int, long)):
+        elif isinstance(code, int):
             return pack('<H', code)
         elif isinstance(code, tuple):
             return pack('<HH', code[0], code[1])
