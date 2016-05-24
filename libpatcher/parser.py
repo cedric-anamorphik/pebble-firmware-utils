@@ -71,6 +71,7 @@ def parseInstruction(line, pos):
 
     # now parse args
     args = asm.List()
+    reglist = None  # here we'll collect register for current instruction
     s = ''  # string repr of current arg
     t = None  # type of current arg:
     # None (no current), n(numeric), "(quoted str), l(reg or label), '(charcode)
