@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from libpatcher import *
+from libpatcher import Patch, Ranges, parseFile
 
 def parse_args():
     import argparse
