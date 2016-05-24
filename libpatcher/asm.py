@@ -11,10 +11,14 @@ __all__ = ['Num', 'List', 'Reg', 'Label', 'Str',
 ###
 # Instruction argument types:
 # integer, list of arguments, register, label
+
+
 class Argument(object):
+
     def match(self, other):
         """ Matches this instance with given obj """
         raise NotImplementedError
+
 
 class Num(int, Argument):
     """ Just remember initially specified value format """
@@ -54,16 +58,17 @@ class Num(int, Argument):
                 return False
             if self.bits != 'any' and abs(other) >= self.maximum:
                 return False
-            if self.lsl and (other & (1 << self.lsl-1)):
+            if self.lsl and (other & (1 << self.lsl - 1)):
                 return False
             return True
         return other == self
 
     def part(self, bits, shift=0):
-        return (self >> shift) & (2**bits-1)
+        return (self >> shift) & (2**bits - 1)
 
     class ThumbExpandable(Argument):
         """ Number compatible with ThumbExpandImm function """
+
         def __init__(self, bits=12):
             self.bits = bits
 
@@ -89,7 +94,7 @@ class Num(int, Argument):
                 # rotating scheme
 
                 def rol(n, ofs):
-                    return ((n << ofs) & 0xFFFFFFFF) | (n >> (32-ofs))
+                    return ((n << ofs) & 0xFFFFFFFF) | (n >> (32 - ofs))
                     # maybe buggy for x >= 1<<32,
                     # but we will not have such values -
                     # see parseNumber above for explanation
@@ -103,11 +108,11 @@ class Num(int, Argument):
                 raise ValueError
 
             def the(bits, shift):
-                return (val >> shift) & (2**bits-1)
+                return (val >> shift) & (2**bits - 1)
 
             if not isinstance(other, Num):
                 return False
-            if abs(other) > 2**32-1:
+            if abs(other) > 2**32 - 1:
                 return False  # too large
             if other < 0:
                 other += 2**32  # convert to positive
@@ -117,12 +122,14 @@ class Num(int, Argument):
                 return False
             other.theval = val
             other.the = the
-            other.imm8 = val & (2**8-1)
-            other.imm3 = (val >> 8) & (2**3-1)
+            other.imm8 = val & (2**8 - 1)
+            other.imm3 = (val >> 8) & (2**3 - 1)
             other.i = val >> 11
             return True
 
+
 class List(list, Argument):
+
     def match(self, other):
         if not isinstance(other, (List, list)):
             # it may be either our specific List obj or plain list
@@ -138,6 +145,7 @@ class List(list, Argument):
             else:  # none matched
                 return False
         return True
+
 
 class Reg(int, Argument):
     _regs = {
@@ -204,7 +212,9 @@ class Reg(int, Argument):
                 return True
         return self == other
 
+
 class RegList(List):  # list of registers
+
     def __init__(self, lo=None, lcount=8, pc=False, lr=False, sp=False):
         self.src = []
         self.mask = False
@@ -230,7 +240,7 @@ class RegList(List):  # list of registers
             rb = Reg(ss[1])
             if ra >= rb:
                 raise ParseError("Unordered register range: %s" % s, pos)
-            for i in range(ra, rb+1):
+            for i in range(ra, rb + 1):
                 super(RegList, self).append(Reg('R%d' % i))
         else:  # plain register
             super(RegList, self).append(Reg(s))
@@ -294,12 +304,17 @@ class RegList(List):  # list of registers
             if r < lcount:
                 m += 2**r
         return m
+
+
 class LabelError(Exception):
     """
     This exception is raised when label requested is not found in given context.
     """
     pass
+
+
 class Label(Argument):
+
     def __init__(self, name=None):
         self.name = name
         # This is used by parser for constructions like DCD someProc+1
@@ -343,10 +358,11 @@ class Label(Argument):
             raise LabelError("Offset is too far: 0x%X" % ofs)
         if ofs < 0:
             if positive:
-                raise LabelError("Negative offset not allowed here: 0x%X" % ofs)
+                raise LabelError(
+                    "Negative offset not allowed here: 0x%X" % ofs)
             ofs = (1 << (bits + shift)) + ofs
         if bits > 0:
-            rem = ofs & (2**shift-1)
+            rem = ofs & (2**shift - 1)
             if rem:
                 # FIXME
                 raise LabelError("Spare bits in offset 0x%X: %X" % (ofs, rem))
@@ -360,12 +376,12 @@ class Label(Argument):
         Doesn't test maximum width, so consider using off_max!
         Maximum supported offset width is 32 bits.
         """
-        if bits+shift > 32:
+        if bits + shift > 32:
             raise ValueError("off_s doesn't support "
                              "offset width more than 32 bits! "
                              "bits=%s, shift=%s" % (bits, shift))
         ofs = self.offset(instr, 32)  # 32 for negative offsets to be 1-padded
-        return (ofs >> shift) & (2**bits-1)
+        return (ofs >> shift) & (2**bits - 1)
 
     def off_max(self, instr, bits):
         """
@@ -400,6 +416,7 @@ class Label(Argument):
                              (ofs, min, max))
         return 0
 
+
 class Str(str, Argument):
     """ This represents _quoted_ string """
     def __new__(cls, val=None):
@@ -421,6 +438,8 @@ class Str(str, Argument):
 
 ###
 # Instructions description
+
+
 class Instruction(object):
     """
     This class may represent either instruction definition
@@ -428,6 +447,7 @@ class Instruction(object):
     or real instruction (with concrete args and context).
     Instruction handler may access its current opcode via self.opcode field.
     """
+
     def __init__(self, opcode, args, proc, mask=True, pos=None):
         self.opcode = opcode
         self.args = args
@@ -529,22 +549,26 @@ class Instruction(object):
         " pos is instruction's position in patch file "
         return self.pos
 
+
 class NullInstruction(Instruction):
     """
     This class represents instruction with no code.
     It is intended to be subclassed.
     """
+
     def getSize(self):
         return 0
 
     def getCode(self):
         return ''
 
+
 class LabelInstruction(NullInstruction):
     """
     This class represents an abstract label instruction. It has zero size.
     It should be instantiated directly.
     """
+
     def __init__(self, name, pos, glob=False):
         Instruction.__init__(self, None, [Label(name)], None, False, pos)
         self.name = name
@@ -557,11 +581,13 @@ class LabelInstruction(NullInstruction):
         self.block = block
         ctx = block.patch.context if self.glob else block.context
         if self.name in ctx:
-            raise ValueError('Duplicate label '+self.name)
+            raise ValueError('Duplicate label ' + self.name)
         ctx[self.name] = self.getAddr()
 
 
 _instructions = []
+
+
 def instruction(opcode, args, size=2, proc=None):
     """
     This is a function decorator for instruction definitions.
@@ -594,10 +620,13 @@ def instruction(opcode, args, size=2, proc=None):
         gethandler(proc)
     else:
         return gethandler
+
+
 def instruct_class(c):
     """ decorator for custom instruction classes """
     _instructions.append(c())
     return c
+
 
 def findInstruction(opcode, args, pos):
     """
@@ -614,11 +643,13 @@ def findInstruction(opcode, args, pos):
 
 ###
 # All the instruction definitions
+
+
 def _longJump(self, dest, bl):
     offset = dest.offset(self, 23)
     offset = offset >> 1
-    hi_o = (offset >> 11) & (2**11-1)
-    lo_o = (offset >> 0) & (2**11-1)
+    hi_o = (offset >> 11) & (2**11 - 1)
+    lo_o = (offset >> 0) & (2**11 - 1)
     hi_c = 0b11110
     lo_c = 0b11111 if bl else 0b10111
     hi = (hi_c << 11) + hi_o
@@ -628,8 +659,11 @@ instruction('BL', [Label()], 4, lambda self, dest:
             _longJump(self, dest, True))
 instruction('B.W', [Label()], 4, lambda self, dest:
             _longJump(self, dest, False))
+
+
 @instruct_class
 class DCB(Instruction):
+
     def __init__(self, opcode=None, args=None, pos=None):
         Instruction.__init__(self, opcode, args, None, pos=pos)
         if args:
@@ -656,9 +690,11 @@ class DCB(Instruction):
     def getSize(self):
         return len(self.code)
 
+
 @instruct_class
 class ALIGN(Instruction):
     # TODO support ALIGN 2?
+
     def __init__(self, opcode='ALIGN', args=[(Num(4), Num(4))],
                  proc=None, mask=True, pos=None):
         Instruction.__init__(self, opcode, args, proc, mask, pos)
@@ -666,30 +702,32 @@ class ALIGN(Instruction):
             self.size = args[0]
 
     def getCode(self):
-        return '\x00\x00\x00\xBF'[4-self.getSize():]
+        return '\x00\x00\x00\xBF'[4 - self.getSize():]
 
     def getSize(self):
         if self.getAddr() is None:
             # if checking against unbound block,
             # assume maximum size
             return 3
-        return 3 - (self.getAddr()+3) % 4
+        return 3 - (self.getAddr() + 3) % 4
 
 instruction('DCW', [Num(bits=16)], 2, lambda self, num: pack('<H', num))
 instruction('DCD', [Num(bits=32)], 4, lambda self, num: pack('<I', num))
 instruction('DCD', [Label()], 4, lambda self, lbl:
             pack('<I', lbl.getAddress(self)))
 instruction('NOP', [], 2, 0xBF00)
+
+
 def Bcond_instruction(cond, val):
-    instruction('B'+cond, [Label()], 2, lambda self,lbl:
-                (0b1101 << 12) + (val << 8) + (lbl.offset(self,9)>>1))
-    instruction('B'+cond+'.W', [Label()], 4, lambda self,lbl:
-                (lbl.off_max(self, 19) + # test for maximum
+    instruction('B' + cond, [Label()], 2, lambda self, lbl:
+                (0b1101 << 12) + (val << 8) + (lbl.offset(self, 9) >> 1))
+    instruction('B' + cond + '.W', [Label()], 4, lambda self, lbl:
+                (lbl.off_max(self, 19) +  # test for maximum
 
-                 (0b11110 << 11) + (lbl.off_s(self,1,18) << 10) +
-                    (val << 6) + (lbl.off_s(self,6,12) >> 0),
+                 (0b11110 << 11) + (lbl.off_s(self, 1, 18) << 10) +
+                    (val << 6) + (lbl.off_s(self, 6, 12) >> 0),
 
-                 (0b10101 << 11) + (lbl.off_s(self,11,1) >> 0)))
+                 (0b10101 << 11) + (lbl.off_s(self, 11, 1) >> 0)))
 for cond, val in {
     'CC': 0x3, 'CS': 0x2, 'EQ': 0x0, 'GE': 0xA,
     'GT': 0xC, 'HI': 0x8, 'LE': 0xD, 'LS': 0x9,
@@ -697,7 +735,9 @@ for cond, val in {
     'VC': 0x7, 'VS': 0x6,
 }.items():
     Bcond_instruction(cond, val)
-@instruction(['CBZ','CBNZ'], [Reg('LO'), Label()])
+
+
+@instruction(['CBZ', 'CBNZ'], [Reg('LO'), Label()])
 def CBx(self, reg, lbl):
     lbl.off_range(self, 0, 126)
     offset = lbl.offset(self, 7) >> 1
@@ -706,31 +746,41 @@ def CBx(self, reg, lbl):
             (op << 11) +
             ((offset >> 5) << 9) +
             (1 << 8) +
-            ((offset & (2**5-1)) << 3) +
+            ((offset & (2**5 - 1)) << 3) +
             reg)
-instruction('B', [Label()], 2, lambda self,lbl:
-            (0b11100 << 11) + (lbl.offset(self, 12)>>1))
+instruction('B', [Label()], 2, lambda self, lbl:
+            (0b11100 << 11) + (lbl.offset(self, 12) >> 1))
+
+
 @instruct_class
 class GlobalLabel(LabelInstruction):
+
     def __init__(self):
-        Instruction.__init__(self, ["global","proc"], [Label()], None)
+        Instruction.__init__(self, ["global", "proc"], [Label()], None)
+
     def instantiate(self, opcode, args, pos):
         label = args[0].name
         return LabelInstruction(label, pos, glob=True)
+
+
 @instruct_class
 class ValInstruction(NullInstruction):
     """
     This class represents "val" instruction. It has zero size.
     It stores 4bytes integer at its position on setBlock.
     """
+
     def __init__(self, pos=None, name=None):
         Instruction.__init__(self, "val", [Label()], None, True, pos)
         self.name = name
+
     def __repr__(self):
         return "<value:%s>" % (self.name)
+
     def instantiate(self, opcode, args, pos):
         name = args[0].name
         return ValInstruction(pos, name)
+
     def setBlock(self, block):
         if block.mask and block.mask.floating:
             raise ValueError("Cannot use val instruction in floating block")
@@ -738,70 +788,72 @@ class ValInstruction(NullInstruction):
         codebase = block.codebase
         # get value...
         addr = self.getAddr() - codebase
-        value = unpack('<I', self.block.patch.binary[addr:addr+4])[0]
+        value = unpack('<I', self.block.patch.binary[addr:addr + 4])[0]
         # ...and store it at patch level
         block.patch.context[self.name] = value
 
 
 # ADD version for SP
-instruction('ADD', [Reg('SP'),Reg('SP'),Num(bits=9,lsl=2)], 2,
-            lambda self,sp,sp1,imm:
+instruction('ADD', [Reg('SP'), Reg('SP'), Num(bits=9, lsl=2)], 2,
+            lambda self, sp, sp1, imm:
             (0b1011 << 12) +
             (0 << 7) +
-            imm.part(7,2))
-instruction('ADD', [Reg("LO"), Num(bits=8)], 2, lambda self,rd,imm:
+            imm.part(7, 2))
+instruction('ADD', [Reg("LO"), Num(bits=8)], 2, lambda self, rd, imm:
             (1 << 13) + (2 << 11) + (rd << 8) + imm)
+
+
 def simpleAddSub(self, rd, rn, rm, is_sub):
     return ((0b11 << 11) + ((1 if is_sub else 0) << 9) +
             (rm << 6) + (rn << 3) + rd)
 
 
-instruction(['ADDS','ADD'], [Reg("LO"), Reg("LO"), Reg("LO")], 2,
-            lambda self,rd,rn,rm:
-            simpleAddSub(self,rd,rn,rm,0))
-instruction(['ADDS','ADD'], [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
-            simpleAddSub(self,rd,rd,rm,0))
-instruction(['ADD','ADD.W','ADDS','ADDS.W'],
-            [Reg(),Reg(),Num.ThumbExpandable()], 4, lambda self,rd,rn,imm:
+instruction(['ADDS', 'ADD'], [Reg("LO"), Reg("LO"), Reg("LO")], 2,
+            lambda self, rd, rn, rm:
+            simpleAddSub(self, rd, rn, rm, 0))
+instruction(['ADDS', 'ADD'], [Reg("LO"), Reg("LO")], 2, lambda self, rd, rm:
+            simpleAddSub(self, rd, rd, rm, 0))
+instruction(['ADD', 'ADD.W', 'ADDS', 'ADDS.W'],
+            [Reg(), Reg(), Num.ThumbExpandable()], 4, lambda self, rd, rn, imm:
             (
                 (0b11110 << 11) +
-                (imm.the(1,11) << 10) +
+                (imm.the(1, 11) << 10) +
                 (0b1000 << 5) +
                 ((1 if 'S' in self.opcode else 0) << 4) +
                 rn,
-                (imm.the(3,8) << 12) +
+                (imm.the(3, 8) << 12) +
                 (rd << 8) +
-                imm.the(8,0)
-            ))
+                imm.the(8, 0)
+))
 instruction('ADD', [Reg("LO"), Reg("SP"), Num(bits=10)], 2,
-            lambda self,rd,sp,imm:
+            lambda self, rd, sp, imm:
             (0b10101 << 11) + (rd << 8) + (imm >> 2))
-instruction('ADR', [Reg("LO"), Label()], 2, lambda self,rd,lbl:
+instruction('ADR', [Reg("LO"), Label()], 2, lambda self, rd, lbl:
             (0b10100 << 11) + (rd << 8) + lbl.offset(self, 8, 2, True, True))
 instruction(['AND', 'ANDS'], [Reg(), Reg(), Num.ThumbExpandable()], 4,
-            lambda self,rd,rn,imm:
+            lambda self, rd, rn, imm:
             (
-                (0b11110<<11)+
-                (imm.the(1,11)<<10)+
-                ((1 if 'S' in self.opcode else 0)<<4)+
+                (0b11110 << 11) +
+                (imm.the(1, 11) << 10) +
+                ((1 if 'S' in self.opcode else 0) << 4) +
                 (rn),
-                (imm.the(3,8)<<12)+
-                (rd<<8)+
-                (imm.the(8,0)<<0)
-            ))
-instruction('BLX', [Reg()], 2, lambda self,rx:
-            (1<<14) + (0b1111 << 7) + (rx << 3))
-instruction('BX', [Reg()], 2, lambda self,rx:
-            (0x11<<10)+(0x3<<8)+(rx<<3))
-instruction('CMP', [Reg("LO"), Num(bits=8)], 2, lambda self,rn,imm:
+                (imm.the(3, 8) << 12) +
+                (rd << 8) +
+                (imm.the(8, 0) << 0)
+))
+instruction('BLX', [Reg()], 2, lambda self, rx:
+            (1 << 14) + (0b1111 << 7) + (rx << 3))
+instruction('BX', [Reg()], 2, lambda self, rx:
+            (0x11 << 10) + (0x3 << 8) + (rx << 3))
+instruction('CMP', [Reg("LO"), Num(bits=8)], 2, lambda self, rn, imm:
             (0b101 << 11) + (rn << 8) + imm)
-instruction('CMP', [Reg("LO"), Reg("LO")], 2, lambda self,rn,rm:
+instruction('CMP', [Reg("LO"), Reg("LO")], 2, lambda self, rn, rm:
             (1 << 14) + (0b101 << 7) + (rm << 3) + rn)
-instruction('CMP', [Reg(), Reg()], 2, lambda self,rn,rm:
-            (1 << 14) + (0b101 << 8) + ((rn>>3)<<7) + (rm << 3) + (rn&0b111))
+instruction('CMP', [Reg(), Reg()], 2, lambda self, rn, rm:
+            (1 << 14) + (0b101 << 8) + ((rn >> 3) << 7) + (rm << 3) + (rn & 0b111))
 # T2
 instruction(['CMP.W', 'CMP'], [Reg(), Num.ThumbExpandable()], 4,
-            lambda self,rn,imm:
+            lambda self, rn, imm:
             (
                 (0b11110 << 11) +
                 (imm.the(1, 11) << 10) +
@@ -809,40 +861,40 @@ instruction(['CMP.W', 'CMP'], [Reg(), Num.ThumbExpandable()], 4,
                 (rn),
                 (imm.the(3, 8) << 12) +
                 (0b1111 << 8) +
-                (imm.the(8,0))
-            ))
-instruction(['EOR','EORS'], [Reg(),Reg(),Num.ThumbExpandable()], 4,
-            lambda self,rd,rn,imm:
-            (
-                (0b11110<<11)+
-                (imm.the(1,11)<<10)+
-                (0b100<<5)+
-                ((1 if 'S' in self.opcode else 0) << 4)+
-                (rn<<0),
-                (imm.the(3,8)<<12)+
-                (rd<<8)+
-                (imm.the(8,0)<<0)
-            ))
-instruction('MOVS', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
-            (0 << 6) + (rm << 3) + rd)
-instruction(['MOV','MOVS'], [Reg(), Reg()], 2, lambda self,rd,rm:
-            (0b1000110 << 8) + ((rd>>3) << 7) + (rm << 3) + ((rd&0b111) << 0))
-instruction(['MOV','MOVS'], [Reg("LO"), Num(bits=8)], 2, lambda self,rd,imm:
-            (1 << 13) + (rd << 8) + imm)
-instruction(['MOV','MOV.W','MOVS','MOVS.W'],
-            [Reg(), Num.ThumbExpandable()], 4, lambda self,rd,imm:
+                (imm.the(8, 0))
+))
+instruction(['EOR', 'EORS'], [Reg(), Reg(), Num.ThumbExpandable()], 4,
+            lambda self, rd, rn, imm:
             (
                 (0b11110 << 11) +
-                (imm.the(1,11) << 10) +
+                (imm.the(1, 11) << 10) +
+                (0b100 << 5) +
+                ((1 if 'S' in self.opcode else 0) << 4) +
+                (rn << 0),
+                (imm.the(3, 8) << 12) +
+                (rd << 8) +
+                (imm.the(8, 0) << 0)
+))
+instruction('MOVS', [Reg("LO"), Reg("LO")], 2, lambda self, rd, rm:
+            (0 << 6) + (rm << 3) + rd)
+instruction(['MOV', 'MOVS'], [Reg(), Reg()], 2, lambda self, rd, rm:
+            (0b1000110 << 8) + ((rd >> 3) << 7) + (rm << 3) + ((rd & 0b111) << 0))
+instruction(['MOV', 'MOVS'], [Reg("LO"), Num(bits=8)], 2, lambda self, rd, imm:
+            (1 << 13) + (rd << 8) + imm)
+instruction(['MOV', 'MOV.W', 'MOVS', 'MOVS.W'],
+            [Reg(), Num.ThumbExpandable()], 4, lambda self, rd, imm:
+            (
+                (0b11110 << 11) +
+                (imm.the(1, 11) << 10) +
                 (0b10 << 5) +
                 ((1 if 'S' in self.opcode else 0) << 4) +
                 (0b1111 << 0),
-                (imm.the(3,8) << 12) +
+                (imm.the(3, 8) << 12) +
                 (rd << 8) +
-                (imm.the(8,0) << 0)
-            ))
-instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16, positive=True)], 4,
-            lambda self,rd,imm:
+                (imm.the(8, 0) << 0)
+))
+instruction(['MOV', 'MOV.W', 'MOVW'], [Reg(), Num(bits=16, positive=True)], 4,
+            lambda self, rd, imm:
             (
                 (0b11110 << 11) +
                 (imm.part(1, 11) << 10) +
@@ -851,201 +903,201 @@ instruction(['MOV','MOV.W','MOVW'], [Reg(), Num(bits=16, positive=True)], 4,
                 (imm.part(3, 8) << 12) +
                 (rd << 8) +
                 (imm.part(8))
-            ))
-instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"),Num(bits=7,lsl=2)])],
-            2, lambda self,rt,lst:
+))
+instruction('LDR', [Reg("LO"), ([Reg("LO")], [Reg("LO"), Num(bits=7, lsl=2)])],
+            2, lambda self, rt, lst:
             (0b01101 << 11) +
-            ((lst[1].part(5,2) if len(lst)>1 else 0) << 6) +
+            ((lst[1].part(5, 2) if len(lst) > 1 else 0) << 6) +
             (lst[0] << 3) +
             rt)
-instruction('LDR', [Reg('LO'), [Reg('LO'), Reg('LO')]], 2, lambda self,rt,lst:
+instruction('LDR', [Reg('LO'), [Reg('LO'), Reg('LO')]], 2, lambda self, rt, lst:
             (0b01011 << 11) +
             (lst[1] << 6) +
             (lst[0] << 3) +
             rt)
-instruction(['LDR.W','LDR'],
-            [Reg(), ([Reg(),Reg()], [Reg(),Reg(),Num(bits=2)])], 4,
-            lambda self,rt,lst:
+instruction(['LDR.W', 'LDR'],
+            [Reg(), ([Reg(), Reg()], [Reg(), Reg(), Num(bits=2)])], 4,
+            lambda self, rt, lst:
             ((0b11111 << 11) +
              (0b101 << 4) +
              lst[0],
              (rt << 12) +
-             ((lst[2] if len(lst)>2 else 0) << 4) +
+             ((lst[2] if len(lst) > 2 else 0) << 4) +
              lst[1]))
-instruction(['LDR.W','LDR'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])], 4,
-            lambda self,rt,lst:
+instruction(['LDR.W', 'LDR'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])], 4,
+            lambda self, rt, lst:
             ((0b11111 << 11) +
              (0b1101 << 4) +
              lst[0],
              (rt << 12) +
              (lst[1] if len(lst) > 1 else 0)))
-instruction('LDR', [Reg("LO"), Label()], 2, lambda self,rt,lbl:
+instruction('LDR', [Reg("LO"), Label()], 2, lambda self, rt, lbl:
             (0b1001 << 11) + (rt << 8) +
-            lbl.offset(self,8,shift=2,positive=True,align=True))
+            lbl.offset(self, 8, shift=2, positive=True, align=True))
 # T1
-instruction('LDRB', [Reg("LO"), ([Reg("LO"), Num(bits=5)],[Reg("LO")])],
-            2, lambda self,rt,lst:
+instruction('LDRB', [Reg("LO"), ([Reg("LO"), Num(bits=5)], [Reg("LO")])],
+            2, lambda self, rt, lst:
             (0b1111 << 11) + ((lst[1] if len(lst) > 1 else 0) << 6) +
             (lst[0] << 3) + rt)
 # in T2
-instruction(['LDRB','LDRB.W'], [Reg(), [Reg(), Num(bits=12)]], 4,
-            lambda self,rt,rest:
+instruction(['LDRB', 'LDRB.W'], [Reg(), [Reg(), Num(bits=12)]], 4,
+            lambda self, rt, rest:
             (
-                (0b11111<<11)+
-                (1<<7)+
-                (1<<4)+
+                (0b11111 << 11) +
+                (1 << 7) +
+                (1 << 4) +
                 (rest[0]),
-                (rt<<12)+
+                (rt << 12) +
                 (rest[1])
-            ))
+))
 # and in T3, with offset
-instruction(['LDRB','LDRB.W'], [Reg(), [Reg()], Num(bits=8)], 4,
-            lambda self,rt,rn,imm:
+instruction(['LDRB', 'LDRB.W'], [Reg(), [Reg()], Num(bits=8)], 4,
+            lambda self, rt, rn, imm:
             (
-                (0b11111<<11)+
-                (1<<4)+
+                (0b11111 << 11) +
+                (1 << 4) +
                 (rn[0]),
-                (rt<<12)+
-                (1<<11)+
-                (0<<10)+ # P/index
-                ((1 if imm>=0 else 0)<<9)+ # U/add
-                (1<<8)+ # W/writeback
-                (imm if imm>=0 else -imm)
-            ))
-instruction('LDRB', [Reg('LO'),[Reg('LO'),Reg('LO')]], 2, lambda self,rt,rest:
+                (rt << 12) +
+                (1 << 11) +
+                (0 << 10) +  # P/index
+                ((1 if imm >= 0 else 0) << 9) +  # U/add
+                (1 << 8) +  # W/writeback
+                (imm if imm >= 0 else -imm)
+))
+instruction('LDRB', [Reg('LO'), [Reg('LO'), Reg('LO')]], 2, lambda self, rt, rest:
             (
-                (0b0101110<<9)+
-                (rest[1]<<6)+
-                (rest[0]<<3)+
-                (rt<<0)
-            ))
-instruction('LDRH', [Reg('LO'),([Reg('LO'),Num(bits=6,lsl=1)], [Reg('LO')])],
-            2, lambda self,rt,lst:
+                (0b0101110 << 9) +
+                (rest[1] << 6) +
+                (rest[0] << 3) +
+                (rt << 0)
+))
+instruction('LDRH', [Reg('LO'), ([Reg('LO'), Num(bits=6, lsl=1)], [Reg('LO')])],
+            2, lambda self, rt, lst:
             (
                 (0b10001 << 11) +
-                ((lst[1].part(5,1) if len(lst)>1 else 0) << 6) +
+                ((lst[1].part(5, 1) if len(lst) > 1 else 0) << 6) +
                 (lst[0] << 3) +
                 (rt)
-            ))
-instruction(['LDRH.W','LDRH'], [Reg(),([Reg(),Num(bits=12)],[Reg()])],
-            4, lambda self,rt,lst:
+))
+instruction(['LDRH.W', 'LDRH'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])],
+            4, lambda self, rt, lst:
             (
                 (0b11111 << 11) +
                 (0b1011 << 4) +
                 lst[0],
                 (rt << 12) +
-                (lst[1] if len(lst)>1 else 0)
-            ))
-instruction(['LSL','LSLS'], [Reg("LO"),Reg("LO"),Num(bits=5)],
-            2, lambda self,rd,rm,imm:
-            (0b00 << 11) + (imm << 6) +  (rm << 3) + (rd))
-instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO")], 2, lambda self,rdn,rm:
+                (lst[1] if len(lst) > 1 else 0)
+))
+instruction(['LSL', 'LSLS'], [Reg("LO"), Reg("LO"), Num(bits=5)],
+            2, lambda self, rd, rm, imm:
+            (0b00 << 11) + (imm << 6) + (rm << 3) + (rd))
+instruction(['LSR', 'LSRS'], [Reg("LO"), Reg("LO")], 2, lambda self, rdn, rm:
             (0b010000 << 10) + (0b0010 << 6) + (rm << 3) + (rdn))
-instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO"),Num(bits=5)],
-            2, lambda self,rd,rm,imm:
-            (0b01 << 11) + (imm << 6) +  (rm << 3) + (rd))
-instruction(['LSR','LSRS'], [Reg("LO"),Reg("LO")], 2, lambda self,rdn,rm:
+instruction(['LSR', 'LSRS'], [Reg("LO"), Reg("LO"), Num(bits=5)],
+            2, lambda self, rd, rm, imm:
+            (0b01 << 11) + (imm << 6) + (rm << 3) + (rd))
+instruction(['LSR', 'LSRS'], [Reg("LO"), Reg("LO")], 2, lambda self, rdn, rm:
             (0b010000 << 10) + (0b0011 << 6) + (rm << 3) + (rdn))
-instruction(['MULS', 'MUL'], [Reg("LO"),Reg("LO")], 2, lambda self,rd,rm:
-            (1<<14) + (0b1101 << 6) + (rm << 3) + rd)
-instruction('PUSH', [RegList(lo=True, lr=None)], 2, lambda self,rl:
-            (0b1011010<<9) +
+instruction(['MULS', 'MUL'], [Reg("LO"), Reg("LO")], 2, lambda self, rd, rm:
+            (1 << 14) + (0b1101 << 6) + (rm << 3) + rd)
+instruction('PUSH', [RegList(lo=True, lr=None)], 2, lambda self, rl:
+            (0b1011010 << 9) +
             (rl.has('LR') << 8) +
             rl.lomask())
-instruction(['PUSH','PUSH.W'], [RegList(lo=True, lcount=13, lr=None)],
-            4, lambda self,rl:
+instruction(['PUSH', 'PUSH.W'], [RegList(lo=True, lcount=13, lr=None)],
+            4, lambda self, rl:
             (0b1110100100101101,
              (rl.has('LR') << 14) + rl.lomask(13)))
-instruction('POP', [RegList(lo=True, pc=None)], 2, lambda self,rl:
-            (0xb<<12) + (1 << 11) + (0x2<<9) +
+instruction('POP', [RegList(lo=True, pc=None)], 2, lambda self, rl:
+            (0xb << 12) + (1 << 11) + (0x2 << 9) +
             (rl.has('PC') << 8) + rl.lomask())
-instruction(['POP','POP.W'], [RegList(lo=True, lcount=13, lr=None, pc=None)],
-            4, lambda self,rl:
+instruction(['POP', 'POP.W'], [RegList(lo=True, lcount=13, lr=None, pc=None)],
+            4, lambda self, rl:
             (0b1110100010111101,
-             (rl.has('PC')<<15) + (rl.has('LR')<<14) +
+             (rl.has('PC') << 15) + (rl.has('LR') << 14) +
              rl.lomask(13)))
-instruction('RSB', [Reg("LO"), Reg("LO"), Num(0)], 2, lambda self,rd,rn,imm:
+instruction('RSB', [Reg("LO"), Reg("LO"), Num(0)], 2, lambda self, rd, rn, imm:
             (1 << 14) + (0b1001 << 6) + (rn << 3) + rd)
-instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10,lsl=2)],[Reg("SP")])],
-            2, lambda self,rt,lst:
-            (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst)>1 else 0))
-instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7,lsl=2)],[Reg("LO")])],
-            2, lambda self,rt,lst:
-            (0b11 << 13) + (((lst[1] if len(lst)>1 else 0)>>2)<<6) +
-            (lst[0]<<3) + rt)
-instruction(['STR.W','STR'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])],
-            4, lambda self,rt,lst:
+instruction('STR', [Reg("LO"), ([Reg("SP"), Num(bits=10, lsl=2)], [Reg("SP")])],
+            2, lambda self, rt, lst:
+            (0b10010 << 11) + (rt << 8) + ((lst[1] >> 2) if len(lst) > 1 else 0))
+instruction('STR', [Reg("LO"), ([Reg("LO"), Num(bits=7, lsl=2)], [Reg("LO")])],
+            2, lambda self, rt, lst:
+            (0b11 << 13) + (((lst[1] if len(lst) > 1 else 0) >> 2) << 6) +
+            (lst[0] << 3) + rt)
+instruction(['STR.W', 'STR'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])],
+            4, lambda self, rt, lst:
             ((0b11111 << 11) +
              (0b1100 << 4) +
              lst[0],
              (rt << 12) +
              (lst[1] if len(lst) > 1 else 0)))
-instruction('STRB', [Reg("LO"), ([Reg("LO"), Num(bits=5)],[Reg("LO")])],
-            2, lambda self,rt,lst:
-            (0b111 << 12) + ((lst[1] if len(lst)>1 else 0)<<6) +
-            (lst[0]<<3) + rt)
-instruction(['STRB.W','STRB'], [Reg(), ([Reg(), Num(bits=12)],[Reg()])],
-            4, lambda self,rt,lst:
+instruction('STRB', [Reg("LO"), ([Reg("LO"), Num(bits=5)], [Reg("LO")])],
+            2, lambda self, rt, lst:
+            (0b111 << 12) + ((lst[1] if len(lst) > 1 else 0) << 6) +
+            (lst[0] << 3) + rt)
+instruction(['STRB.W', 'STRB'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])],
+            4, lambda self, rt, lst:
             ((0b11111 << 11) +
              (0b1000 << 4) +
              lst[0],
              (rt << 12) +
              (lst[1] if len(lst) > 1 else 0)))
-instruction('STRH', [Reg('LO'), ([Reg('LO'), Num(bits=6,lsl=1)],[Reg('LO')])],
-            2, lambda self,rt,lst:
+instruction('STRH', [Reg('LO'), ([Reg('LO'), Num(bits=6, lsl=1)], [Reg('LO')])],
+            2, lambda self, rt, lst:
             (1 << 15) +
-            ((lst[1].part(5,1) if len(lst)>1 else 0) << 6) +
+            ((lst[1].part(5, 1) if len(lst) > 1 else 0) << 6) +
             (lst[0] << 3) +
             rt)
-instruction(['STRH.W','STRH'], [Reg(), ([Reg(), Num(bits=12)],[Reg()])],
-            4, lambda self,rt,lst:
+instruction(['STRH.W', 'STRH'], [Reg(), ([Reg(), Num(bits=12)], [Reg()])],
+            4, lambda self, rt, lst:
             ((0b11111 << 11) +
              (0b1010 << 4) +
              (lst[0]),
              (rt << 12) +
-             (lst[1] if len(lst)>1 else 0)))
+             (lst[1] if len(lst) > 1 else 0)))
 # SUB version for SP
-instruction('SUB', [Reg('SP'),Reg('SP'),Num(bits=9,lsl=2)],
-            2, lambda self,sp,sp1,imm:
+instruction('SUB', [Reg('SP'), Reg('SP'), Num(bits=9, lsl=2)],
+            2, lambda self, sp, sp1, imm:
             (0b1011 << 12) +
             (1 << 7) +
-            imm.part(7,2))
-instruction(['SUBS','SUB'], [Reg("LO"), Num(bits=8)], 2, lambda self,rn,imm:
+            imm.part(7, 2))
+instruction(['SUBS', 'SUB'], [Reg("LO"), Num(bits=8)], 2, lambda self, rn, imm:
             (0b111 << 11) + (rn << 8) + imm)
-instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO"),Reg("LO")],
-            2, lambda self,rd,rn,rm:
-            simpleAddSub(self,rd,rn,rm,1))
-instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
-            simpleAddSub(self,rd,rd,rm,1))
-instruction(['SUBS','SUB'], [Reg("LO"), Reg("LO"), Num(bits=3)],
-            2, lambda self,rd,rn,imm:
+instruction(['SUBS', 'SUB'], [Reg("LO"), Reg("LO"), Reg("LO")],
+            2, lambda self, rd, rn, rm:
+            simpleAddSub(self, rd, rn, rm, 1))
+instruction(['SUBS', 'SUB'], [Reg("LO"), Reg("LO")], 2, lambda self, rd, rm:
+            simpleAddSub(self, rd, rd, rm, 1))
+instruction(['SUBS', 'SUB'], [Reg("LO"), Reg("LO"), Num(bits=3)],
+            2, lambda self, rd, rn, imm:
             (0b1111 << 9) + (imm << 6) + (rn << 3) + (rd))
-instruction(['SUB.W','SUB'], [Reg(),Reg(),Num(bits=12)],
-            4, lambda self,rd,rn,imm:
+instruction(['SUB.W', 'SUB'], [Reg(), Reg(), Num(bits=12)],
+            4, lambda self, rd, rn, imm:
             ((0b11110 << 11) +
-             (imm.part(1,11) << 10) +
+             (imm.part(1, 11) << 10) +
              (0b101010 << 4) +
              rn,
-             (imm.part(3,8) << 12) +
+             (imm.part(3, 8) << 12) +
              (rd << 8) +
              imm.part(8)))
 instruction(['TST.W', 'TST'], [Reg(), Num.ThumbExpandable()],
-            4, lambda self,rn,imm:
+            4, lambda self, rn, imm:
             (
                 (0b11110 << 11) +
-                (imm.the(1,11) << 10) +
+                (imm.the(1, 11) << 10) +
                 (1 << 4) +
                 rn,
                 (imm.the(3, 8) << 12) +
                 (0b1111 << 8) +
-                imm.the(8,0)
-            ))
-instruction('TST', [Reg('LO'), Reg('LO')], 2, lambda self,rn,rm:
+                imm.the(8, 0)
+))
+instruction('TST', [Reg('LO'), Reg('LO')], 2, lambda self, rn, rm:
             (
                 (1 << 14) +
                 (1 << 9) +
                 (rm << 3) +
                 rn
-            ))
-instruction('UXTB', [Reg("LO"), Reg("LO")], 2, lambda self,rd,rm:
+))
+instruction('UXTB', [Reg("LO"), Reg("LO")], 2, lambda self, rd, rm:
             (0b1011001011 << 6) + (rm << 3) + rd)
