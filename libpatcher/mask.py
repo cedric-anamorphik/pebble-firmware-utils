@@ -7,29 +7,37 @@ class Mask(object):
     "This class represents mask"
     def __init__(self, parts, offset=0, pos=None):
         """
-        parts: list of alternating strings and integers.
+        :param parts: list of alternating strings and integers.
             strings mean parts which will be matched,
             integers means "skip N bytes".
-        offset: how many bytes from matched beginning to skip
-        pos: parser.FilePos object describing block's (starting) position in file
+        :param offset: how many bytes from matched beginning to skip
+        :param pos: parser.FilePos object describing block's (starting)
+            position in file
         """
         self.parts = parts
         self.offset = offset
         self.pos = pos
         self._size = None
         # TODO: validate
+
     def __repr__(self):
-        if not self.parts: # floating mask
+        if not self.parts:  # floating mask
             return "Floating mask"
+
         def str2hex(s):
             if isinstance(s, int):
                 return "?%d" % s
             else:
                 return ' '.join(["%02X" % ord(c) for c in s])
-        return "Mask at %s: %s @%d" % (self.pos, ','.join([str2hex(x) for x in self.parts]), self.offset)
+        return "Mask at %s: %s @%d" % (
+            self.pos, ','.join([str2hex(x) for x in self.parts]),
+            self.offset
+        )
+
     @property
     def floating(self):
         return not self.parts or len(self.parts) == 0
+
     def match(self, data):
         """
         Tries to match this mask to given data.
@@ -56,8 +64,8 @@ class Mask(object):
                         pos += len(p)
                     else:
                         break
-            else: # not breaked -> matched
-                if found is not False: # was already found? -> duplicate match
+            else:  # not breaked -> matched
+                if found is not False:  # was already found? -> duplicate match
                     raise AmbiguousMaskError(self)
                 found = pos1
             # and find next occurance:
@@ -66,6 +74,7 @@ class Mask(object):
         if found is not False:
             return found + self.offset
         raise MaskNotFoundError(self)
+
     @property
     def size(self):
         """
@@ -75,12 +84,17 @@ class Mask(object):
         if self.floating:
             return self._size
         else:
-            return sum([len(x) if isinstance(x, (str,bytes)) else x for x in self.parts]) - self.offset
+            return sum([
+                len(x) if isinstance(x, (str, bytes)) else x
+                for x in self.parts
+            ]) - self.offset
+
     @size.setter
     def size(self, size):
         """ For floating masks """
         if not self.floating:
             raise ValueError(repr(self))
         self._size = size
+
     def getPos(self):
         return self.pos
