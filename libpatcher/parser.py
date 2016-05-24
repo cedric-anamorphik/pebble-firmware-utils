@@ -388,7 +388,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                             if mofs:
                                 raise ParseError("Duplicate '@'", pos)
                             mofs = sum([
-                                len(x) if isinstance(x, str) else x
+                                len(x) if isinstance(x, bytes) else x
                                 for x in mask
                             ]) + len(bstr) + bskip
                         elif t == '{':
