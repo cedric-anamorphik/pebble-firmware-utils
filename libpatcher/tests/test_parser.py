@@ -1,6 +1,5 @@
-from libpatcher.parser import *
+from libpatcher.parser import parseFile
 from libpatcher.patch import Patch
-from nose.tools import *
 from pprint import pprint
 
 def test_file():
@@ -8,6 +7,6 @@ def test_file():
         f = open('tests/test.pbp')
     except:
         f = open('libpatcher/tests/test.pbp')
-    patch = parseFile(f, libpatch=Patch('library', binary='bin'))
+    patch = parseFile(f, libpatch=Patch('library', binary=b'bin'))
     print(patch)
     pprint(patch.blocks)
