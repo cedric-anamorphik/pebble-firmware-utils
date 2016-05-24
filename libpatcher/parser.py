@@ -1,11 +1,11 @@
 # This is a parser for assembler listings (?)
-__all__ = ['parseFile', 'ParseError', 'FilePos']
 
 from . import asm
-from itertools import chain
 from .mask import Mask
 from .block import Block
 from .patch import Patch
+
+__all__ = ['parseFile', 'ParseError', 'FilePos']
 
 class FilePos:
     " This holds current line info (filename, line text, line number) "
@@ -13,18 +13,24 @@ class FilePos:
         self.filename = filename
         self.lnum = lnum
         self.line = line
+
     def setLine(self, lnum, line):
         self.lnum = lnum
         self.line = line
+
     def getLine(self):
         return self.line
+
     def getLnum(self):
         return self.lnum
+
     def clone(self):
         " Useful for instructions to hold exact position "
         return FilePos(self.filename, self.lnum, self.line)
+
     #def __repr__(self):
     #    return "\"%s\"\n%s, line %s" % (self.line, self.filename, self.lnum+1)
+
     def __str__(self):
         return "%s, line %s" % (self.filename, self.lnum+1)
 
@@ -32,98 +38,109 @@ class ParseError(Exception):
     def __init__(self, msg, pos):
         self.msg = msg
         self.pos = pos
+
     def __str__(self):
         return "%s: %s\n%s" % (str(self.pos), self.msg, self.pos.getLine())
 
 def uncomment(line):
     """ Removes comment, if any, from line. Also strips line """
-    linewoc = '' # line without comment
+    linewoc = ''  # line without comment
     in_str = ''
     for c in line:
         if in_str:
             if c == in_str:
                 in_str = ''
         else:
-            if c in ';': # our comment character
+            if c in ';':  # our comment character
                 break
             elif c in '"\'':
                 in_str = c
         linewoc += c
-    return linewoc.strip() # remove leading and trailing spaces
+    return linewoc.strip()  # remove leading and trailing spaces
 
 def parseInstruction(line, pos):
     """
-    This methods converts line from source file to Instruction (opcode and args?).
+    This methods converts line from source file to Instruction
+    (opcode and args?).
     """
     try:
-        opcode, arg = line.split(None,1)
-    except ValueError: # only one token
+        opcode, arg = line.split(None, 1)
+    except ValueError:  # only one token
         opcode = line
         arg = ''
 
     # now parse args
     args = asm.List()
-    s = '' # string repr of current arg
-    t = None # type of current arg: None (no current), n(numeric), "(quoted str), l(reg or label), '(charcode)
-    br = False # whether we are in [] block
-    rl = False # whether we are in {register list} block
-    cp = None # previous char
-    for c in arg+'\n': # \n will be processed as last character
-        domore = False # if current character needs to be processed further
-        if t == None: # state: no current arg
+    s = ''  # string repr of current arg
+    t = None  # type of current arg:
+    # None (no current), n(numeric), "(quoted str), l(reg or label), '(charcode)
+    br = False  # whether we are in [] block
+    rl = False  # whether we are in {register list} block
+    cp = None  # previous char
+    for c in arg+'\n':  # \n will be processed as last character
+        domore = False  # if current character needs to be processed further
+        if t is None:  # state: no current arg
             domore = True
-        elif t == '"': # quoted string
-            if c == t: # end of string
+        elif t == '"':  # quoted string
+            if c == t:  # end of string
                 args.append(asm.Str(s))
                 s = ''
                 t = None
-            elif c == '\\': # backslash in string
+            elif c == '\\':  # backslash in string
                 t += '\\'
             else:
                 s += c
-        elif t == '"\\': # state: backslash in quoted string
-            c = c.replace('r','\r')
-            c = c.replace('n','\n')
+        elif t == '"\\':  # state: backslash in quoted string
+            c = c.replace('r', '\r')
+            c = c.replace('n', '\n')
             s += c
-            t=t[0]
-        elif t == "'": # charcode
-            if c == t and cp != c: # this is ' and something was already added
+            t = t[0]
+        elif t == "'":  # charcode
+            if c == t and cp != c:  # this is ' and something was already added
                 # notice that ''' is valid construction for ord("'") char code
                 t = None
             else:
                 args.append(asm.Num(ord(c)))
-        elif t in ['n','ns','nm']: # number, maybe 0xHEX or 0bBINARY or 0octal, or numshift
+        elif t in ['n', 'ns', 'nm']:
+            # number, maybe 0xHEX or 0bBINARY or 0octal, or numshift
             if c.isdigit() or c in 'aAbBcCdDeEfFxX':
                 s += c
             else:
-                domore = True # need to process current character further
+                domore = True  # need to process current character further
                 # for consistency with old version's behaviour,
                 # treat all numeric 'db' arguments as hexadecimal
                 if opcode == "db":
                     s = "0x"+s
                 try:
-                    if t == 'ns' and isinstance(args[-1], asm.Label): # numshift for label
-                        # args[-1] must exist and be label, or else t would not be 'ns'
+                    if t == 'ns' and isinstance(args[-1], asm.Label):
+                        # numshift for label
+                        # args[-1] must exist and be label,
+                        # or else t would not be 'ns'
                         args[-1].shift = int(s, 0)
-                    elif t in ['ns','nm']:
+                    elif t in ['ns', 'nm']:
                         newnum = asm.Num(s)
                         oldnum = args[-1]
                         rval = oldnum*newnum if t == 'nm' else oldnum+newnum
-                        rin = str(oldnum) + ('*' if t == 'nm' else '+' if newnum>0 else '-') + str(newnum)
+                        rin = (
+                            str(oldnum) +
+                            ('*' if t == 'nm' else '+' if newnum > 0 else '-') +
+                            str(newnum)
+                        )
                         args[-1] = asm.Num(rval, rin)
-                    else: # regular number
+                    else:  # regular number
                         args.append(asm.Num(s))
                 except ValueError:
                     raise ParseError("Invalid number: %s" % s, pos)
                 s = ''
                 t = None
-        elif t == 'l': # label or reg
+        elif t == 'l':  # label or reg
             if c.isalnum() or c == '_' or (rl and c == '-'):
                 s += c
             else:
                 domore = True
-                if rl: # in list of registers
-                    reglist.append(s, pos) # it will handle all validation itself
+                if rl:  # in list of registers
+                    reglist.append(s, pos)
+                    # it will handle all validation itself
                 else:
                     if asm.Reg.is_reg(s):
                         a = asm.Reg(s)
@@ -135,10 +152,12 @@ def parseInstruction(line, pos):
         else:
             raise ValueError("Internal error: illegal type state %s" % t)
 
-        if domore: # current character was not processed yet
-            if c.isdigit() or c == '-' or (opcode == "db" and c in "AaBbCcDdEeFf"):
+        if domore:  # current character was not processed yet
+            if(c.isdigit() or c == '-' or
+               (opcode == "db" and c in "AaBbCcDdEeFf")):
                 s += c
-                if c == '-' and args and isinstance(args[-1], asm.Num): # shift value for number
+                if c == '-' and args and isinstance(args[-1], asm.Num):
+                    # shift value for number
                     # FIXME: this will break stuff like MOV R0,4,-2
                     # But is such stuff possible?
                     t = 'ns'
@@ -146,23 +165,24 @@ def parseInstruction(line, pos):
                     t = 'n'
             elif c.isalpha() or c == '_':
                 s += c
-                t = 'l' # label
-            elif c == '+': # shift-value for label or number
+                t = 'l'  # label
+            elif c == '+':  # shift-value for label or number
                 if args and isinstance(args[-1], (asm.Label, asm.Num)):
-                    t = 'ns' # number,shift
+                    t = 'ns'  # number,shift
                 else:
                     raise ParseError("Unexpected +", pos)
-            elif c == '*': # multiplier for number
+            elif c == '*':  # multiplier for number
                 if args and isinstance(args[-1], asm.Num):
-                    t = 'nm' # number,multiplier
+                    t = 'nm'  # number,multiplier
                 else:
                     raise ParseError("Unexpected *", pos)
-            elif c in "'\"": # quoted str or charcode
+            elif c in "'\"":  # quoted str or charcode
                 t = c
-            elif c.isspace(): # including last \n
-                continue # skip
+            elif c.isspace():  # including last \n
+                continue  # skip
             elif c == ',':
-                continue # skip - is it a good approach? allows both "MOV R0,R1" and "MOV R1 R1"
+                continue  # skip - is it a good approach?
+                # allows both "MOV R0,R1" and "MOV R1 R1"
             elif c == '[':
                 if br:
                     raise ParseError("Nested [] are not supported", pos)
@@ -199,7 +219,8 @@ def parseInstruction(line, pos):
     try:
         return asm.findInstruction(opcode, args, pos)
     except IndexError:
-        raise ParseError("Unknown instruction: %s %s" % (opcode, ','.join([repr(x) for x in args])), pos)
+        raise ParseError("Unknown instruction: %s %s" %
+                         (opcode, ','.join([repr(x) for x in args])), pos)
 
 def parseBlock(f, pos, definitions, if_state, patch):
     """
@@ -222,26 +243,27 @@ def parseBlock(f, pos, definitions, if_state, patch):
     instructions = None
 
     for lnum, line in enumerate(f, pos.getLnum()+1):
-        pos.setLine(lnum,line.strip())
+        pos.setLine(lnum, line.strip())
         line = uncomment(line)
-        if not line: # skip empty lines
+        if not line:  # skip empty lines
             continue
 
         if line[0] == '#':
             tokens = line.split()
-            cmd,args = tokens[0],tokens[1:]
+            cmd, args = tokens[0], tokens[1:]
             # these will not depend on if_state...
             if cmd in ["#ifdef", "#ifndef", "#ifval", "#ifnval"]:
                 if not args:
-                    raise ParseError("%s requires at least one argument" % cmd, pos)
-                newstate = 'n' in cmd # False for 'ifdef', etc.
+                    raise ParseError("%s requires at least one argument" % cmd,
+                                     pos)
+                newstate = 'n' in cmd  # False for 'ifdef', etc.
                 if "val" in cmd:
                     vals = list(definitions.values())
                 # "OR" logic, as one can implement "AND" with nested #ifdef's
                 # so any matched arg stops checking
                 for a in args:
-                    if (("def" in cmd and a in definitions) or
-                        ("val" in cmd and a in vals)):
+                    if(("def" in cmd and a in definitions) or
+                       ("val" in cmd and a in vals)):
                         newstate = not newstate
                         break
                 if_state.append(newstate)
@@ -252,35 +274,39 @@ def parseBlock(f, pos, definitions, if_state, patch):
                 if_state[-1] = not if_state[-1]
                 continue
             elif cmd == "#endif":
-                if_state.pop() # remove latest state
+                if_state.pop()  # remove latest state
                 if not if_state:
                     raise ParseError("Unmatched #endif", pos)
                 continue
-            elif cmd == "#ver": # desired FW version
+            elif cmd == "#ver":  # desired FW version
                 # FIXME: don't bail out on invalid values, just warn
                 if not args:
-                    raise ParseError("At least one argument required for #ver", pos)
+                    raise ParseError(
+                        "At least one argument required for #ver", pos)
                 lo = int(args[0])
                 if args[1:]:
                     hi = int(args[1])
                 else:
-                    hi = 65535 # max version
+                    hi = 65535  # max version
                 # for now just store that version as a variable
                 definitions['ver'] = str(lo)
                 # TODO: perform some tests for this patch version
                 continue
             # ...now check if_state...
             if False in if_state:
-                continue # #define must only work if this is met
+                continue  # #define must only work if this is met
             # ...and following will depend on it
-            if cmd in ["#define", "#default"]: # default is like define but will not override already set value
+            if cmd in ["#define", "#default"]:
+                # default is like define but will not override already set value
                 if not args:
-                    raise ParseError("At least one argument required for #define", pos)
+                    raise ParseError(
+                        "At least one argument required for #define", pos)
                 name = args[0]
                 val = True
                 if args[1:]:
-                    val = line.split(None, 2)[2] # remaining args as string
-                # always set for #define, and only if unset / just True if #default
+                    val = line.split(None, 2)[2]  # remaining args as string
+                # always set for #define,
+                # and only if unset / just True if #default
                 if cmd == "#define" \
                         or name not in definitions \
                         or definitions[name] == True:
@@ -288,7 +314,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
             elif cmd == "#include":
                 if not args:
                     raise ParseError("#include requires an argument", pos)
-                arg = line.split(None, 1)[1] # all args as a string
+                arg = line.split(None, 1)[1]  # all args as a string
                 import os.path
                 if not os.path.isabs(arg):
                     arg = os.path.join(os.path.dirname(f.name), arg)
@@ -299,24 +325,24 @@ def parseBlock(f, pos, definitions, if_state, patch):
                 parseFile(newf, definitions, patch=patch.library)
             else:
                 raise ParseError("Unknown command: %s" % cmd, pos)
-            continue # to next line
+            continue  # to next line
 
         # and now for non-# lines
         if False in if_state:
-            continue # skip any code if current condition is not met
+            continue  # skip any code if current condition is not met
 
         # process ${definitions} everywhere
         for d, v in definitions.items():
             if isinstance(v, str) and '${'+d+'}' in line:
                 line = line.replace('${'+d+'}', v)
 
-        if instructions == None: # not in block, reading mask
+        if instructions is None:  # not in block, reading mask
             # read mask: it consists of 00 f7 items, ? ?4 items, and "strings"
             tokens = line.split('"')
             if len(tokens) % 2 == 0:
                 raise ParseError("Unterminated string", pos)
             if not mpos:
-                mpos = pos.clone() # save starting position of mask
+                mpos = pos.clone()  # save starting position of mask
             is_str = False
             for tokennum, token in enumerate(tokens):
                 if is_str:
@@ -329,7 +355,8 @@ def parseBlock(f, pos, definitions, if_state, patch):
                     # outside of {blocks}
                     # FIXME: $definitions inside of {blocks} [and in "strings"?]
                     for d, v in list(definitions.items()):
-                        if isinstance(v, str) and '$'+d in token: # FIXME: $var and $variable
+                        if isinstance(v, str) and '$'+d in token:
+                            # ^^ FIXME: $var and $variable
                             token = token.replace('$'+d, v)
 
                     ts = token.split()
@@ -359,41 +386,49 @@ def parseBlock(f, pos, definitions, if_state, patch):
                         elif t == '@':
                             if mofs:
                                 raise ParseError("Duplicate '@'", pos)
-                            mofs = sum([len(x) if isinstance(x, str) else x for x in mask]) + len(bstr) + bskip
+                            mofs = sum([
+                                len(x) if isinstance(x, str) else x
+                                for x in mask
+                            ]) + len(bstr) + bskip
                         elif t == '{':
                             if bstr:
                                 mask.append(bstr)
                                 bstr = b''
                                 if bskip:
-                                    print(mask,bstr,bskip)
-                                    raise ParseError("Internal error: both bstr and bskip used", pos)
+                                    print(mask, bstr, bskip)
+                                    raise ParseError(
+                                        "Internal error: "
+                                        "both bstr and bskip used", pos)
                             if bskip:
                                 mask.append(bskip)
                                 bskip = 0
-                            line = '"'.join(tokens[tokennum+1:]) # prepare remainder for next if
-                            instructions = [] # this will also break for's
+                            line = '"'.join(tokens[tokennum+1:])
+                            # prepare remainder for next if
+                            instructions = []  # this will also break for's
                         else:
                             raise ParseError("Bad token: %s" % t, pos)
-                        if instructions != None: # if entered block
+                        if instructions is not None:  # if entered block
                             break
                 is_str = not is_str
-                if instructions != None: # if entered block
+                if instructions is not None:  # if entered block
                     break
         # mask read finished. Now read block content, if in block
-        if instructions != None and line: # if still have something in current line
+        if instructions is not None and line:
+            # still have something in current line
             if line.startswith('}'):
                 # FIXME: what to do with remainder?
                 remainder = line[1:]
                 if remainder:
-                    print("Warning: spare characters after '}', will ignore: %s" % remainder)
+                    print("Warning: spare characters after '}', "
+                          "will ignore: %s" % remainder)
                 return Block(patch, Mask(mask, mofs, mpos), instructions)
 
             # plain labels:
             label = line.split(None, 1)[0]
-            if label.endswith(':'): # really label
-                line = line.replace(label, '', 1).strip() # remove it
+            if label.endswith(':'):  # really label
+                line = line.replace(label, '', 1).strip()  # remove it
                 instructions.append(asm.LabelInstruction(label[:-1], pos))
-            if not line: # had only the label
+            if not line:  # had only the label
                 continue
 
             instr = parseInstruction(line, pos)
@@ -409,7 +444,7 @@ def parseFile(f, definitions=None, patch=None, libpatch=None):
     If patch was not provided, it will be created,
     in which case libpatch (patch for includes) must be provided.
     """
-    if definitions == None:
+    if definitions is None:
         definitions = {}
     if not patch:
         if not libpatch:
@@ -417,7 +452,7 @@ def parseFile(f, definitions=None, patch=None, libpatch=None):
         patch = Patch(f.name, libpatch)
 
     # for #commands:
-    if_state = [True] # this True should always remain there
+    if_state = [True]  # this True should always remain there
 
     pos = FilePos(f.name)
     while True:
