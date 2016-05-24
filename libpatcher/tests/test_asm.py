@@ -12,7 +12,7 @@ def test_thumbex():
     assert tx.match(o)
     eq_(o.theval, 0b1111111 + (8<<8))
 
-mock_patch = Patch('test_patch', binary="test_bin")
+mock_patch = Patch('test_patch', binary=b"test_bin")
 def op_gen(instr, addr=0, context={}):
     pos = FilePos('test_asm.pbp',0)
     if isinstance(instr, str):
