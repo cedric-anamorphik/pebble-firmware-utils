@@ -33,7 +33,7 @@ class Mask(object):
             if isinstance(bs, int):
                 return "?%d" % bs
             else:
-                return ' '.join(["%02X" % c for c in bs])
+                return ' '.join(["%02X" % b for b in bs])
         return "Mask at %s: %s @%d" % (
             self.pos, ','.join([bytes2hex(x) for x in self.parts]),
             self.offset
