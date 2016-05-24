@@ -8,21 +8,28 @@ def parse_args():
         description="Pebble firmware patcher")
     parser.add_argument("patch", nargs='+', type=argparse.FileType("r"),
                         help="File with a patch to apply")
-    parser.add_argument("-o", "--output", required=True, type=argparse.FileType("wb"),
+    parser.add_argument("-o", "--output", required=True,
+                        type=argparse.FileType("wb"),
                         help="Output file name")
-    parser.add_argument("-t", "--tintin", nargs='?', default="tintin_fw.bin", type=argparse.FileType("rb"),
+    parser.add_argument("-t", "--tintin", nargs='?', default="tintin_fw.bin",
+                        type=argparse.FileType("rb"),
                         help="Input tintin_fw file, defaults to tintin_fw.bin")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Print debug information while patching")
     parser.add_argument("-D", "--define", action="append", default=[],
-                        help="Add some #define'd constant. Usage: either -D constant or -D name=val")
+                        help="Add some #define'd constant. "
+                        "Usage: either -D constant or -D name=val")
     parser.add_argument("-i", "--ignore-length", action="store_true",
-                        help="Don't check for mask length when overwriting block (dangerous!")
+                        help="Don't check for mask length "
+                        "when overwriting block (dangerous!")
     parser.add_argument("-a", "--append", action="store_true",
-                        help="Use space in the end of firmware to store floating blocks")
+                        help="Use space in the end of firmware "
+                        "to store floating blocks")
     parser.add_argument("-A", "--always-append", action="store_true",
-                        help="Same as --append, but doesn't check for maximum file size. "
-                        "Useful for PebbleTime firmware which seems to have other size limits")
+                        help="Same as --append, but doesn't check "
+                        "for maximum file size. "
+                        "Useful for PebbleTime firmware "
+                        "which seems to have other size limits")
     parser.add_argument("-c", "--codebase", type=lambda x: int(x, base=0),
                         default=0x8004000,
                         help="Codebase of the binary. "
@@ -48,7 +55,7 @@ def patch_fw(args):
     definitions = {}
     for d in args.define:
         if '=' in d:
-            name,val = d.split('=', 1)
+            name, val = d.split('=', 1)
             definitions[name] = val
         else:
             definitions[d] = True
@@ -61,7 +68,7 @@ def patch_fw(args):
         patches.append(parseFile(f, definitions, libpatch=library))
     # Bind them all to real binary (i.e. scan masks)...
     print("Binding patches:")
-    for p in patches: # including library
+    for p in patches:  # including library
         print(p)
         p.bindall(data, ranges, args.codebase)
     # ...and apply
