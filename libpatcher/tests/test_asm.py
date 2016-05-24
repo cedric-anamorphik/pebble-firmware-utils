@@ -69,12 +69,13 @@ def test_B_self():
 def test_global_label():
     instr = op_gen('global globlabel')
 def test_val():
-    eq_(op('val name'), '')
-    eq_(mock_patch.context['name'], 0x74736574) # integer representation of 'test'
+    eq_(op('val name'), b'')
+    eq_(mock_patch.context['name'], 0x74736574)
+    # 0x74.. is an integer representation of 'test'
 def test_DCD_name():
-    eq_(op('DCD name'), 'test')
+    eq_(op('DCD name'), b'test')
 def test_DCD_name_p_1():
-    eq_(op('DCD name+1'), 'uest')
+    eq_(op('DCD name+1'), b'uest')
 def test_ADD_R1_1():
     assert op(('ADD', [Reg('R1'), Num(1)])) == b'\x01\x31'
 def test_ADD_R3_R0_R2():
