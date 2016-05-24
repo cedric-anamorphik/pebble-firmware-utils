@@ -1,4 +1,4 @@
-from mask import MaskNotFoundError
+from .mask import MaskNotFoundError
 
 class RangeError(MaskNotFoundError):
     """

@@ -1,6 +1,6 @@
 # This module holds Block class
-from asm import LabelInstruction
-from patch import PatchingError
+from .asm import LabelInstruction
+from .patch import PatchingError
 
 class Block(object):
     def __init__(self, patch, mask, instructions):
