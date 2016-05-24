@@ -1,5 +1,10 @@
-class MaskNotFoundError(Exception):
+class MaskError(Exception):
+    def __init__(self, mask):
+        return super().__init__(repr(mask))
+
+class MaskNotFoundError(MaskError):
     "Thrown if mask was not found"
+
 class AmbiguousMaskError(MaskNotFoundError):
     "Thrown if mask was found more than 1 time"
 
