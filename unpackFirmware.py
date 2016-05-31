@@ -110,7 +110,9 @@ def parse_args():
                         'its CRC checksum (for comparing)'
                         'On 2.x firmwares, which don\'t contain resource names,'
                         'we always use that scheme.')
-    parser.add_argument('infile')
+    parser.add_argument('infile',
+                        help='Input file: either pbz to be unzipped&extracted '
+                        'or pbpack/pbl/whatever to be just extracted')
     parser.add_argument('output_dir', nargs='?', default='pebble-firmware/')
     return parser.parse_args()
 
