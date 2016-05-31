@@ -113,18 +113,23 @@ def parse_args():
     parser.add_argument('infile',
                         help='Input file: either pbz to be unzipped&extracted '
                         'or pbpack/pbl/whatever to be just extracted')
-    parser.add_argument('output_dir', nargs='?', default='pebble-firmware/')
+    parser.add_argument('output_dir', nargs='?', default=None)
     return parser.parse_args()
 
 def main():
     args = parse_args()
 
-    if not args.infile.endswith('pbz'):  # just unpack resources
-        extract_resources(open(args.infile, 'rb'), None, 'res')
-        return
-
-    if not args.output_dir.endswith('/'):
+    if not args.output_dir:
+        if args.infile.endswith('pbz'):
+            args.output_dir = 'pebble-firmware/'
+        else:
+            args.output_dir = './'
+    elif not args.output_dir.endswith('/'):
         args.output_dir += '/'
+
+    if not args.infile.endswith('pbz'):  # just unpack resources
+        extract_resources(open(args.infile, 'rb'), None, args.output_dir)
+        return
 
     print('Will unpack firmware from %s to directory %s, '
           'using %s for filenames' % (
