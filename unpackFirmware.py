@@ -117,7 +117,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    if args.infile.endswith('pbpack'):  # just unpack resources
+    if not args.infile.endswith('pbz'):  # just unpack resources
         extract_resources(open(args.infile, 'rb'), None, 'res')
         return
 
