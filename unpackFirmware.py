@@ -1,10 +1,13 @@
 #!/usr/bin/env python2
 
-import zipfile, zlib
-import os, sys, io
+import zipfile
+import os
+import sys
+import io
 import json
 from libpebble.stm32_crc import crc32
-from struct import pack, unpack
+from struct import unpack
+import argparse
 
 
 def mkdir(path):
