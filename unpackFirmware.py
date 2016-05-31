@@ -99,7 +99,7 @@ def extract_resources(pbpack, resourceMap, output_dir):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--ignore-filenames', target='useNaming',
+    parser.add_argument('-i', '--ignore-filenames', dest='useNaming',
                         action='store_false', default=True,
                         help='Ignore resource filenames from manifest. '
                         'By default, if manifest contains resource names'
