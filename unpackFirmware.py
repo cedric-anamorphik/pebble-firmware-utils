@@ -34,8 +34,8 @@ def extract_resources(pbpack, resourceMap, output_dir):
     crc_from_json = unpack('I', pbpack.read(4))[0]
     print('Resource pack claims to have crc 0x%X.' % crc_from_json)
 
-    tbl_start=None # this will be set depending on firmware version
-    res_start=None
+    tbl_start = None  # this will be set depending on firmware version
+    res_start = None
 
     offsets = [
         (0x200C, '3.x', 0x0C),
@@ -73,9 +73,11 @@ def extract_resources(pbpack, resourceMap, output_dir):
     for i in range(len(resources)):
         entry = resources[i]
         hasRM = resourceMap and i < len(resourceMap)
-        path = resourceMap[i]['file'] if hasRM else 'res/%03d_%08X' % (i+1, entry['crc'])
+        path = resourceMap[i]['file'] if hasRM else 'res/%03d_%08X' % (
+            i+1, entry['crc'])
         dirname = os.path.dirname(path)
-        filepath = "/".join((dirname, resourceMap[i]['defName'])) if hasRM else path
+        filepath = ("/".join((dirname, resourceMap[i]['defName']))
+                    if hasRM else path)
 
         print('Extracting %s...' % filepath)
         mkdir(output_dir + dirname)
