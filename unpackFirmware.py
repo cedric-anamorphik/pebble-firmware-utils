@@ -2,7 +2,6 @@
 
 import zipfile
 import os
-import sys
 import io
 import json
 from libpebble.stm32_crc import crc32
@@ -96,65 +95,70 @@ def extract_resources(pbpack, resourceMap, output_dir):
     print('All resources unpacked.')
 
 
-if __name__ == '__main__':
-    useNaming = True
-    if len(sys.argv) > 1 and sys.argv[1] == '-i':
-        useNaming = False
-        sys.argv.pop(1)
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--ignore-filenames', target='useNaming',
+                        action='store_false', default=True,
+                        help='Ignore resource filenames from manifest. '
+                        'By default, if manifest contains resource names'
+                        '(as in 1.x firmwares), we will name resources'
+                        'according to them.'
+                        'With this option, resource names will be res/ID_CRC'
+                        'where ID is sequence index of resource and CRC is'
+                        'its CRC checksum (for comparing)'
+                        'On 2.x firmwares, which don\'t contain resource names,'
+                        'we always use that scheme.')
+    parser.add_argument('infile')
+    parser.add_argument('output_dir', nargs='?', default='pebble-firmware/')
+    return parser.parse_args()
 
-    if len(sys.argv) <= 1:
-        print('Usage: unpackFirmware.py [-i] normal.pbz [output_dir/]')
-        print('    -i: ignore resource filenames from manifest.')
-        print('       By default, if manifest contains resource names')
-        print('       (as in 1.x firmwares), we will name resources')
-        print('       according to them.')
-        print('       With this option, resource names will be res/ID_CRC')
-        print('       where ID is sequence index of resource and CRC is')
-        print('       its CRC checksum (for comparing)')
-        print('       On 2.x firmwares, which don\'t contain resource names,')
-        print('       we always use that scheme.')
-        exit()
+def main():
+    args = parse_args()
 
-    pbz_name = sys.argv[1]
+    if args.infile.endswith('pbpack'):  # just unpack resources
+        extract_resources(open(args.infile, 'rb'), None, 'res')
+        return
 
-    if pbz_name.endswith('pbpack'): # just unpack resources
-        extract_resources(open(pbz_name, 'rb'), None, 'res')
-        sys.exit()
+    if not args.output_dir.endswith('/'):
+        args.output_dir += '/'
 
-    if len(sys.argv) <= 2:
-        output_dir = 'pebble-firmware/'
-    else:
-        output_dir = sys.argv[2]
-        if not output_dir.endswith('/'):
-            output_dir += '/'
-    print('Will unpack firmware from %s to directory %s, using %s for filenames' % (
-            pbz_name, output_dir,
-            'resource names (if possible)' if useNaming else 'resource indices'))
+    print('Will unpack firmware from %s to directory %s, '
+          'using %s for filenames' % (
+              args.infile, args.output_dir,
+              'resource names (if possible)'
+              if args.useNaming else 'resource indices'))
 
-    pbz = zipfile.ZipFile(pbz_name)
+    pbz = zipfile.ZipFile(args.infile)
 
     print('Extracting manifest.json...')
-    pbz.extract('manifest.json', output_dir)
-    manifest = json.load(open(output_dir + 'manifest.json', 'rb'))
+    pbz.extract('manifest.json', args.output_dir)
+    manifest = json.load(open(args.output_dir + 'manifest.json', 'rb'))
 
     firmware = manifest['firmware']
-    extract_content(pbz, firmware, output_dir)
+    extract_content(pbz, firmware, args.output_dir)
 
     if 'resources' in manifest:
         resources = manifest['resources']
-        extract_content(pbz, resources, output_dir)
+        extract_content(pbz, resources, args.output_dir)
 
         if 'resourceMap' in manifest['debug']:
             resourceMap = manifest['debug']['resourceMap']['media']
             print('Found resource map in manifest. Looks like 1.x firmware.')
-            if useNaming:
-                print('Will use it to name resources correctly. To ignore, pass -i option.')
+            if args.useNaming:
+                print('Will use it to name resources correctly. '
+                      'To ignore, pass -i option.')
             else:
                 print('Will not use it however because of -i option')
         else:
             resourceMap = None
-            print("Couldn't find resource map in manifest. Looks like 2.x firmware.")
+            print("Couldn't find resource map in manifest. "
+                  "Looks like 2.x firmware.")
             print('Resources will be named by their indices.')
-            useNaming = False
-        pbpack = open(output_dir + resources['name'], 'rb')
-        extract_resources(pbpack, resourceMap if useNaming else None, output_dir)
+            args.useNaming = False
+        pbpack = open(args.output_dir + resources['name'], 'rb')
+        extract_resources(pbpack,
+                          resourceMap if args.useNaming else None,
+                          args.output_dir)
+
+if __name__ == '__main__':
+    main()
