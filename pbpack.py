@@ -37,9 +37,9 @@ def pack(resources, pbfile):
 
     timestamp = int(time.time())
 
-    with TemporaryFile('manifest') as tmp_manifest, \
-         TemporaryFile('table') as tmp_table, \
-         TemporaryFile('data') as tmp_data:
+    with TemporaryFile(suffix='.manifest') as tmp_manifest, \
+         TemporaryFile(suffix='.table') as tmp_table, \
+         TemporaryFile(suffix='.data') as tmp_data:
 
         table(tmp_table, resources)
 
