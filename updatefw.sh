@@ -4,12 +4,13 @@
 # filename defaults to patched.pbz
 
 origfile=${1:-patched.pbz}
+ext=${origfile##*.}
 
 # we randomize filename to make sure caching will not interfere
-filename=patched-$RANDOM.pbz
+filename=patched-$RANDOM.$ext
 
 # remove old files...
-adb shell rm '/sdcard/patched-*.pbz'
+adb shell rm '/sdcard/patched-*.'$ext
 
 # push new one
 adb push "$origfile" /sdcard/$filename || exit 1
