@@ -73,7 +73,7 @@ for f in funcs:
     print('\tMakeUnkn(Dword(pbl_table+0x%08X)-1, DOUNK_DELNAMES);' % f[0])
     print('\tMakeName(Dword(pbl_table+0x%08X)-1, "%s");' % f)
     print('\tMakeFunction(Dword(pbl_table+0x%08X)-1, BADADDR);' % f[0])
-print("\t// Now mark these offsets (somewhat buggy approach though)")
-for i in range(0, len(funcs)*4, 4):
+print("\t// Now mark these offsets (including blanks)")
+for i in range(0, addrs[-1]+4, 4):
     print("\tOpOff(pbl_table+0x%08X, 0, 0);" % i)
 print("}")
