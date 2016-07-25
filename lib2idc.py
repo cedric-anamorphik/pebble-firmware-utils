@@ -3,18 +3,34 @@
 import sys
 from struct import unpack
 
-if len(sys.argv) < 5:
+if len(sys.argv) < 3:
     print("Usage:")
-    print("lib2idc.py libpebble.a (names-offset) (funcs-offset) (pbl_table-offset)")
-    print("for sdk 2.0b3 offsets are: 0x9D8, 0x40AE")
+    print("lib2idc.py libpebble.a (pbl_table-offset-in-fw)")
     sys.exit(1)
 
-szLibfile, szNames, szFuncs, pbl_table = sys.argv[1:]
-ofsNames = int(szNames, 16)
-ofsFuncs = int(szFuncs, 16)
+szLibfile, pbl_table = sys.argv[1:]
 
 f = open(szLibfile, "rb")
-f.seek(ofsNames)
+
+# validate file type
+header = f.read(8)
+if header != b'!<arch>\n':
+    print("This doesn\'t look like a proper .a file")
+    sys.exit(1)
+
+# find names start - in pbl libraries it starts with accel_,
+# unless they make a breaking change again (like 2 to 3)
+f.seek(0x48)  # skip header stuff
+while True:
+    val = f.read(4)
+    if not val:
+        print("Could not find names section, but reached EOF")
+        sys.exit(1)
+    if val != b'\x00\x00F\x98' and b'a' in val:
+        right_apos = len(val) - val.index(b'a')
+        f.seek(f.tell() - right_apos)
+        break
+
 bNames = f.read()
 names = []
 first = ""
@@ -28,7 +44,17 @@ for s in bNames.split(b'\0'):
     if first == "":
         first = s
 
-f.seek(ofsFuncs)
+# now let's find funcs
+f.seek(0)
+while True:
+    val = f.read(4)
+    if not val:
+        print("Could not find funcs section, but reached EOF")
+        sys.exit(1)
+    if val == b'\xA8\xA8\xA8\xA8':
+        # found
+        break
+
 funcs = []
 addrs = []
 for i in range(len(names)):
