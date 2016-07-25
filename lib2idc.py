@@ -18,10 +18,12 @@ f.seek(ofsNames)
 bNames = f.read()
 names = []
 first = ""
-for s in bNames.split('\0'):
-    if s == first or len(s) == 0 or not (s[0].isalpha() or s[0] in '_'):
+alphabet = b'_' + bytes(range(ord('a'), ord('z')+1))
+for s in bNames.split(b'\0'):
+    if s == first or len(s) == 0 or not (s[0] in alphabet):
         # if repeating or empty or doesn't look like function name
         break
+    s = s.decode()
     names.append(s)
     if first == "":
         first = s
