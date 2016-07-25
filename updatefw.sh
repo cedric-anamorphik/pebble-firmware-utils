@@ -10,10 +10,13 @@ ext=${origfile##*.}
 filename=patched-$RANDOM.$ext
 
 # remove old files...
-adb shell rm '/sdcard/patched-*.'$ext
+adb shell rm '/sdcard/patched-*.'$ext 
 
 # push new one
-adb push "$origfile" /sdcard/$filename || exit 1
+if ! adb push "$origfile" /sdcard/$filename; then
+	echo "Failed to push file to the phone. Is ADB connected?"
+	exit 1
+fi
 
 # and show confirmation dialog
 adb shell am start \
