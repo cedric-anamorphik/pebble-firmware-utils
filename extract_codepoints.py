@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 
+import codecs
 from struct import pack, unpack
 import json, sys, os
 
@@ -98,15 +99,16 @@ def extract_codepoints(font):
 
     #bitmap.show()
 
-    print json.dumps({
+    with codecs.open('%s/list.json' % dir_name, 'w', 'utf-8') as out:
+        json.dump({
             'max_height': max_height,
             'codepoints': codepoints,
             'metadata': metadata,
-        }, indent=4, ensure_ascii=False).encode('utf-8')
+        }, out, indent=4, ensure_ascii=False)
 
 if __name__ == '__main__':
     if len(sys.argv) <= 2:
-        print 'Usage: extract_codepoints.py fontfile output_dir > codepoints.json'
+        print 'Usage: extract_codepoints.py fontfile output_dir'
         exit(1)
 
     file_name, dir_name = sys.argv[1:3]
