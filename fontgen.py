@@ -393,7 +393,7 @@ def process_cmd_line_args():
 
     pbh_parser = subparsers.add_parser('header', help="make a .h (pebble fallback font) file")
     pbh_parser.add_argument('height', metavar='HEIGHT', help="Height at which to render the font")
-    pbh_parser.add_argument('input_ttf', metavar='INPUT_TTF', help="The ttf to process")
+    pbh_parser.add_argument('input_ttf', metavar='INPUT_TTF', help="The ttf to process - or directory with extracted font")
     pbh_parser.add_argument('output_header', metavar='OUTPUT_HEADER', help="The pfo output file")
     pbh_parser.add_argument('--filter', help="Regex to match the characters that should be included in the output")
 
