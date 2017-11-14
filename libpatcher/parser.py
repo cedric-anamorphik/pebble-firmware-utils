@@ -368,7 +368,7 @@ def parseBlock(f, pos, definitions, if_state, patch):
                                 bskip = 0
                             try:
                                 # convert '65' to b'A'
-                                c = bytes([int(t, 16)])
+                                c = bytes(bytearray([int(t, 16)]))
                             except ValueError:
                                 raise ParseError("Bad token: %s" % t, pos)
                             bstr += c
