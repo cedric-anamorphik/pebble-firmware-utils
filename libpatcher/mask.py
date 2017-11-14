@@ -1,6 +1,6 @@
 class MaskError(Exception):
     def __init__(self, mask):
-        return super().__init__(repr(mask))
+        return super(MaskError, self).__init__(repr(mask))
 
 class MaskNotFoundError(MaskError):
     "Thrown if mask was not found"
