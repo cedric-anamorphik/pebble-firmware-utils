@@ -482,8 +482,9 @@ class Instruction(object):
         # ... and args
         if len(self.args) != len(args):
             return False
-        # match() will excellently work on plain list.
-        if not List.match(self.args, args):
+        # __func__ to avoid type checking, as match() will excellently work
+        # on plain list.
+        if not List.match.__func__(self.args, args):
             return False
         return True
 
