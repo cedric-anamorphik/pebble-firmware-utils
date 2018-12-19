@@ -57,7 +57,7 @@ def pack(resources, pbfile):
 if __name__ == '__main__':
 
     if len(sys.argv) < 3:
-        print('Usage: {} src_dir outfile')
+        print('Usage: {} src_dir outfile'.format(sys.argv[0]))
         sys.exit(1)
 
     src_dir = sys.argv[1]
